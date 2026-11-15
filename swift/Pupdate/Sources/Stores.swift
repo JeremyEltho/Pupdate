@@ -17,6 +17,9 @@ final class WalkerStore: ObservableObject {
     /// Real walks: this phone's own latest GPS fix, so the walker's dot moves the moment they do.
     @Published var localPos: [Double]?
     @Published var ending = false
+    /// False until the first answer from the server (or the first failure). Until then the app
+    /// doesn't know whether a walk is running, so it shows neither Home nor the walk screen.
+    @Published var loaded = false
     private var loop: Task<Void, Never>?
     private var lastState: String?
     private var spokenTurn: String?
@@ -59,6 +62,7 @@ final class WalkerStore: ObservableObject {
             let msg = error.localizedDescription
             if self.error != msg { self.error = msg }
         }
+        if !loaded { loaded = true }
     }
 
     private func apply(_ w: Walk?) {

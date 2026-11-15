@@ -535,6 +535,22 @@ def test_demo_controls_pause_jump_direction_and_arrive():
     assert c.post("/demo/control", json={"action": "pause"}).status_code == 409   # nothing to drive now
 
 
+
+def test_demo_walk_finishes_at_the_destination_but_waits_out_a_checkin():
+    """The demo walker used to turn around at the end and walk back forever, so an old demo walk
+    greeted everyone who opened the app. Now it finishes at the door, unless a check-in is open."""
+    c.post("/demo/reset")
+    v = c.post("/demo/start", json={}).json()
+    w = walks.STATE["walks"][v["id"]]
+    c.post("/demo/control", json={"action": "jump", "value": 0.99})
+    c.post("/demo/checkin")
+    _advance(w, 20)
+    assert w["status"] == "active" and w["engine"].state != "calm"   # waits at the door mid check-in
+    c.post(f"/walks/{v['id']}/pet")
+    _advance(w, 5)
+    assert w["status"] == "ended" and not w.get("ended_early")
+    assert c.get("/users/jordan/active").json() is None
+
 def test_real_walks_have_no_sim_controls():
     c.post("/demo/reset")
     v = c.post("/walks", json={"walker_id": "jordan", "route_id": "library-to-tooker"}).json()

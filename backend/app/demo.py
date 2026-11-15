@@ -92,7 +92,15 @@ def _step_to(w, now, route):
         walks.finish_walk(w)
         return out
     if sim["dist_m"] >= L:
-        sim["dist_m"], sim["dir"] = L - (sim["dist_m"] - L), -1
+        # Reaching the destination finishes the walk, like a real walker tapping "I'm home". It used to
+        # turn around and walk back forever, so an old demo walk greeted everyone who opened the app.
+        # Mid check-in it waits at the door instead, so the escalation can still be shown.
+        sim["dist_m"] = L
+        if e.state == "calm":
+            events = e.tick(now, point_along(route["points"], L))
+            out = walks.handle(w, events)
+            walks.finish_walk(w)
+            return out
     elif sim["dist_m"] <= 0:
         sim["dist_m"], sim["dir"] = -sim["dist_m"], 1
     pos = point_along(route["points"], sim["dist_m"])

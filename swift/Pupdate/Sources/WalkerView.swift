@@ -11,13 +11,16 @@ struct WalkerView: View {
 
     var body: some View {
         Group {
-            if store.walk != nil {
+            if !store.loaded {
+                LaunchWait().transition(.opacity)
+            } else if store.walk != nil {
                 WalkScreen(store: store, onExit: onExit).transition(.opacity)
             } else {
                 HomeView(store: store, panel: $panel, onExit: onExit).transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.35), value: store.walk?.id)
+        .animation(.easeInOut(duration: 0.25), value: store.loaded)
         .fullScreenCover(item: $panel) { p in
             Group {
                 switch p {
@@ -301,5 +304,20 @@ struct EvolutionOverlay: View {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.55)) { show = true }
             spin = true
         }
+    }
+}
+
+/// Shown for the moment between launch and the server's first answer.
+private struct LaunchWait: View {
+    var body: some View {
+        ZStack {
+            Sky()
+            VStack(spacing: 14) {
+                PetImage(species: "dog", form: "sprout", size: 120, animated: true)
+                ProgressView().tint(Palette.muted)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading")
     }
 }

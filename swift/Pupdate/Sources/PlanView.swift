@@ -343,6 +343,7 @@ struct PlanView: View {
                             Button { plan.query = ""; plan.routes = []; plan.destination = nil } label: {
                                 Image(systemName: "xmark.circle.fill").foregroundStyle(Palette.muted)
                             }
+                            .accessibilityLabel("Clear search")
                         }
                     }
                     .padding(.horizontal, 16).frame(height: 52)

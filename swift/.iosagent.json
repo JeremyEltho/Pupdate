@@ -1,0 +1,18 @@
+{
+  "project": "Pupdate.xcodeproj",
+  "scheme": "Pupdate",
+  "bundle_id": "com.walkbuddy.app.F87457F436",
+  "ui_test_target": "PupdateUITests",
+  "driver_class": "AgentDriverUITests",
+  "build_wrapper": "",
+  "artifacts": "~/.iosagent/runs",
+  "default_target": "sim",
+  "targets": {
+    "sim": {"kind": "simulator", "name": "iPhone-17-Pro iOS-27-0"},
+    "device": {"kind": "device", "name": "iPhone"}
+  },
+  "launch": {
+    "args": ["-wb.server", "http://localhost:8100"],
+    "env": {}
+  }
+}
