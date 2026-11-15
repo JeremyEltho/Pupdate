@@ -1,7 +1,12 @@
 import MapKit
 import SwiftUI
 
-/// Real Apple Map: route, walked trail, the walker's live marker (carrying the buddy) and home.
+/// Real Apple Map: route, walked trail, flags, the walker's live marker (carrying the buddy) and home.
+///
+/// Smoothness: positions arrive about once a second (polling). The marker and camera glide to each new
+/// point with a linear animation lasting one update interval, so motion is continuous instead of
+/// lurching. Tiny GPS jitter is ignored, big jumps (a new walk) snap. Panning the map pauses follow
+/// mode until you tap Recenter, and your zoom and angle are kept while following.
 struct LiveMapView: View {
     var route: [[Double]]?
     var trail: [[Double]] = []
@@ -12,9 +17,14 @@ struct LiveMapView: View {
     var alert = false
     var follow = true
     var flags: [FlagInfo] = []
+    /// Seconds between position updates (walker polls 1 s, friend 1.5 s, phone GPS about 1 s).
+    var interval: Double = 1.0
+
     @State private var camera: MapCameraPosition = .automatic
+    @State private var shown: CLLocationCoordinate2D?
+    @State private var following = true
+    @State private var lastCam: MapCamera?
     @AppStorage("wb.satellite") private var satellite = true
-    @State private var pulse = false
 
     private func c(_ p: [Double]) -> CLLocationCoordinate2D { .init(latitude: p[0], longitude: p[1]) }
 
@@ -39,14 +49,9 @@ struct LiveMapView: View {
                         .shadow(color: .black.opacity(0.4), radius: 4, y: 3)
                 }
             }
-            if let pos, pos.count == 2 {
-                Annotation("", coordinate: c(pos), anchor: .center) {
-                    ZStack {
-                        Circle().fill(dot.opacity(0.28)).frame(width: pulse ? 64 : 38, height: pulse ? 64 : 38)
-                        Circle().fill(.white).frame(width: 40, height: 40).shadow(color: .black.opacity(0.35), radius: 5, y: 3)
-                        Circle().fill(dot).frame(width: 34, height: 34)
-                        petSprite(species, form).image.resizable().scaledToFit().frame(width: 28, height: 28)
-                    }
+            if let s = shown {
+                Annotation("", coordinate: s, anchor: .center) {
+                    WalkerDot(tint: dot, form: form, species: species)
                 }
             }
         }
@@ -54,16 +59,83 @@ struct LiveMapView: View {
                   ? .hybrid(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false)
                   : .standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false))
         .mapControlVisibility(.hidden)
+        .onMapCameraChange(frequency: .onEnd) { ctx in lastCam = ctx.camera }
+        // A finger on the map means the person wants to look around: stop following.
+        .simultaneousGesture(DragGesture(minimumDistance: 8).onChanged { _ in if following { following = false } })
+        .overlay(alignment: .bottomTrailing) {
+            if !following && follow {
+                Button {
+                    following = true
+                    recenter(animated: true)
+                } label: {
+                    Label("Recenter", systemImage: "location.fill").font(Typeface.bold(13)).foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(Capsule().fill(Palette.gold))
+                }
+                .padding(10)
+                .accessibilityLabel("Recenter on the walker")
+            }
+        }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { pulse = true }
+            shown = pos.flatMap { $0.count == 2 ? c($0) : nil }
             recenter(animated: false)
         }
-        .onChange(of: pos) { _, _ in if follow { recenter(animated: true) } }
+        .onChange(of: pos) { _, new in move(to: new) }
+    }
+
+    private func move(to new: [Double]?) {
+        guard let new, new.count == 2 else { return }
+        let target = c(new)
+        guard let old = shown else {
+            shown = target
+            recenter(animated: false)
+            return
+        }
+        let d = CLLocation(latitude: old.latitude, longitude: old.longitude)
+            .distance(from: CLLocation(latitude: target.latitude, longitude: target.longitude))
+        if d < 1.5 { return }  // GPS jitter: don't wiggle
+        if d > 200 {  // a new walk or a reset: jump, don't fly across town
+            shown = target
+            if following && follow { recenter(animated: false) }
+            return
+        }
+        withAnimation(.linear(duration: interval)) {
+            shown = target
+            if following && follow { camera = .camera(cam(at: target)) }
+        }
+    }
+
+    private func cam(at p: CLLocationCoordinate2D) -> MapCamera {
+        // Keep whatever zoom and angle the person chose; only move the center.
+        if let l = lastCam { return MapCamera(centerCoordinate: p, distance: l.distance, heading: l.heading, pitch: l.pitch) }
+        return MapCamera(centerCoordinate: p, distance: 700, heading: 20, pitch: 55)
     }
 
     private func recenter(animated: Bool) {
-        guard let p = pos ?? route?.first, p.count == 2 else { return }
-        let cam = MapCameraPosition.camera(MapCamera(centerCoordinate: c(p), distance: 700, heading: 20, pitch: 55))
-        if animated { withAnimation(.easeInOut(duration: 0.9)) { camera = cam } } else { camera = cam }
+        guard let p = shown ?? route?.first.map(c) else { return }
+        let next = MapCameraPosition.camera(cam(at: p))
+        if animated { withAnimation(.easeInOut(duration: 0.6)) { camera = next } } else { camera = next }
+    }
+}
+
+/// The walker's marker: the buddy in a colored disc with a soft pulse. Its own state, so the pulse
+/// animation never mixes with the map's movement animations.
+private struct WalkerDot: View {
+    let tint: Color
+    let form: String
+    let species: String?
+    @State private var pulse = false
+    var body: some View {
+        ZStack {
+            Circle().fill(tint.opacity(0.28)).frame(width: 38, height: 38)
+                .scaleEffect(pulse ? 1.65 : 1).opacity(pulse ? 0.35 : 1)
+            Circle().fill(.white).frame(width: 40, height: 40).shadow(color: .black.opacity(0.35), radius: 5, y: 3)
+            Circle().fill(tint).frame(width: 34, height: 34)
+            petSprite(species, form).image.resizable().scaledToFit().frame(width: 28, height: 28)
+        }
+        .onAppear {
+            guard !Motion.reduced else { return }
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { pulse = true }
+        }
     }
 }

@@ -14,6 +14,9 @@ final class WalkerStore: ObservableObject {
     @Published var evolvedTo: String?
     @Published var happy = false
     @Published var circle: [FriendInfo] = []
+    /// Real walks: this phone's own latest GPS fix, so the walker's dot moves the moment they do.
+    @Published var localPos: [Double]?
+    @Published var ending = false
     private var loop: Task<Void, Never>?
     private var lastState: String?
     private var spokenTurn: String?
@@ -30,6 +33,13 @@ final class WalkerStore: ObservableObject {
                 await self?.refresh()
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
+        }
+    }
+
+    init() {
+        location.onFix = { [weak self] l in
+            guard l.horizontalAccuracy >= 0, l.horizontalAccuracy <= 50 else { return }
+            Task { @MainActor in self?.localPos = [l.coordinate.latitude, l.coordinate.longitude] }
         }
     }
 
@@ -68,7 +78,8 @@ final class WalkerStore: ObservableObject {
         if w != walk { walk = w }
         // Every active walk (demo too) runs location so the app stays alive with the screen locked
         // and keeps the Live Activity current. Only real walks send GPS fixes to the server.
-        if let w, w.status == "active" { location.start(walkId: w.id, sendFixes: !w.demo) } else { location.stop() }
+        if let w, w.status == "active" { location.start(walkId: w.id, sendFixes: !w.demo) } else { location.stop(); localPos = nil }
+        if w?.demo == true, localPos != nil { localPos = nil }
     }
 
     /// Turn-by-turn and flag heads-ups: spoken (if on), with a tap of haptics.
@@ -131,9 +142,18 @@ final class WalkerStore: ObservableObject {
     }
 
     func end() async {
-        guard let w = walk else { return }
-        if let v = try? await API.shared.end(w.id) { apply(v.status == "active" ? v : nil) }
-        user = try? await API.shared.user(me)
+        guard let w = walk, !ending else { return }  // one end at a time, however many taps
+        ending = true
+        defer { ending = false }
+        do {
+            let v = try await API.shared.end(w.id)
+            apply(v.status == "active" ? v : nil)
+        } catch APIError.http(404, _) {
+            apply(nil)  // the server already forgot this walk (e.g. a demo reset): just leave it
+        } catch {
+            self.error = error.localizedDescription
+        }
+        if let u = try? await API.shared.user(me) { user = u }
     }
 
     private func beHappy() {
@@ -223,6 +243,7 @@ final class LocationTicker: NSObject, CLLocationManagerDelegate {
     private var walkId: String?
     private var sendFixes = true
     private var heartbeat: Timer?
+    var onFix: ((CLLocation) -> Void)?
 
     override init() {
         super.init()
@@ -257,6 +278,7 @@ final class LocationTicker: NSObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard sendFixes, let id = walkId, let l = locations.last else { return }
+        onFix?(l)
         Task { try? await API.shared.tick(id, lat: l.coordinate.latitude, lng: l.coordinate.longitude, accuracy: l.horizontalAccuracy) }
     }
 }

@@ -131,7 +131,7 @@ struct WalkScreen: View {
                         if let n = w.notices, !n.isEmpty { GameCard { NoticeList(notices: n) } }
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert", flags: flagStore.flags)
+                                LiveMapView(route: route?.points, trail: w.trail, pos: (w.demo ? nil : store.localPos) ?? w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert", flags: flagStore.flags)
                                     .frame(height: 280)
                                     .overlay(alignment: .topTrailing) {
                                         Button { flagHere(w) } label: {
@@ -158,7 +158,8 @@ struct WalkScreen: View {
                         }
                         if let p = w.pace { GameCard { PaceCard(pace: p) } }
                         if w.demo { GameCard { TestToolsCard(walk: w) { flagHere(w) } } }
-                        GameButton(title: w.demo ? "End demo walk" : "I'm home, end walk", kind: .ghost) { Task { await store.end() } }
+                        GameButton(title: w.demo ? "End demo walk" : "I'm home, end walk", kind: .ghost, busy: store.ending) { Task { await store.end() } }
+                            .disabled(store.ending)
                         GameCard { WalkLog(events: w.events, species: w.buddy.species) }
                     }
                 }

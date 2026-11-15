@@ -2,7 +2,9 @@ import XCTest
 
 /// End-to-end: the real app, tapping through the demo, against the real backend on localhost:8100.
 final class WalkBuddyE2ETests: XCTestCase {
-    let server = "https://45-76-67-21.sslip.io"
+    /// The live server by default; set TEST_RUNNER_WB_SERVER (e.g. http://localhost:8100) to test a local backend
+    /// without disturbing phones that are using the live one.
+    let server = ProcessInfo.processInfo.environment["WB_SERVER"] ?? "https://45-76-67-21.sslip.io"
 
     override func setUp() { continueAfterFailure = false }
 

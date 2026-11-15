@@ -59,7 +59,7 @@ struct FriendView: View {
                                     Spacer()
                                     Pill(text: friendState(w.engine.state, w.walkerName), tint: tone(w.engine.state)).fixedSize()
                                 }
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: w.engine.state == "alert", flags: flagStore.flags)
+                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: w.engine.state == "alert", flags: flagStore.flags, interval: 1.5)
                                     .frame(height: 240)
                                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 EscalationLadder(state: w.engine.state)
