@@ -27,7 +27,7 @@ struct BuddyBadge: View {
     var size: CGFloat
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            spriteImage(WalkStateStyle.spriteName(form: state.form)).resizable().scaledToFit()
+            spriteImage(WalkStateStyle.spriteName(form: state.form, species: state.species)).resizable().scaledToFit()
                 .frame(width: size, height: size)
             if let b = WalkStateStyle.badgeName(state: state.state) {
                 spriteImage(b).resizable().scaledToFit().frame(width: size * 0.42, height: size * 0.42).offset(x: size * 0.12, y: -size * 0.08)
