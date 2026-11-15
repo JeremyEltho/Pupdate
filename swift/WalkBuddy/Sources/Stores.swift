@@ -16,6 +16,9 @@ final class WalkerStore: ObservableObject {
     @Published var circle: [FriendInfo] = []
     private var loop: Task<Void, Never>?
     private var lastState: String?
+    private var spokenTurn: String?
+    private var announcedTurn: String?
+    private var warnedFlags = Set<String>()
     private let location = LocationTicker()
 
     func start() {
@@ -61,10 +64,34 @@ final class WalkerStore: ObservableObject {
             }
         }
         lastState = st
+        announce(w)
         if w != walk { walk = w }
         // Every active walk (demo too) runs location so the app stays alive with the screen locked
         // and keeps the Live Activity current. Only real walks send GPS fixes to the server.
         if let w, w.status == "active" { location.start(walkId: w.id, sendFixes: !w.demo) } else { location.stop() }
+    }
+
+    /// Turn-by-turn and flag heads-ups: spoken (if on), with a tap of haptics.
+    private func announce(_ w: Walk?) {
+        guard let w, w.status == "active" else { spokenTurn = nil; announcedTurn = nil; warnedFlags = []; return }
+        if let t = w.nextTurn {
+            let key = "\(w.id)-\(t.index)"
+            if announcedTurn != key && !t.near && t.inM <= 150 && t.inM >= 40 {
+                announcedTurn = key
+                Feedback.speak("In \(formatMeters(t.inM)), \(t.text)")
+            }
+            if t.near && spokenTurn != key && (w.engine.state == "calm") {
+                spokenTurn = key
+                announcedTurn = key
+                Haptics.tap()
+                Feedback.speak(t.text)
+            }
+        }
+        if let f = w.flagAhead, !warnedFlags.contains(f.id) {
+            warnedFlags.insert(f.id)
+            Haptics.warning()
+            Feedback.speak("Heads up. \(f.byName) flagged \(f.reason.lowercased()) \(f.inside == true ? "here" : "ahead").")
+        }
     }
 
     func loadCircle() async {
@@ -90,10 +117,10 @@ final class WalkerStore: ObservableObject {
         if let r = try? await API.shared.duress(w.id) { walk = r.walk }
     }
 
-    func startPlanned(points: [[Double]], from: String, to: String, demo: Bool) async {
+    func startPlanned(points: [[Double]], from: String, to: String, demo: Bool, steps: [[String: Any]] = []) async {
         guard points.count > 1 else { return }
         do {
-            let w = try await API.shared.startPlanned(me, points: points, from: from, to: to, demo: demo)
+            let w = try await API.shared.startPlanned(me, points: points, from: from, to: to, demo: demo, steps: steps)
             routes = (try? await API.shared.routes()) ?? routes
             apply(w)
         } catch { self.error = error.localizedDescription }
@@ -148,6 +175,12 @@ final class FriendStore: ObservableObject {
                 routes = (try? await API.shared.routes()) ?? routes
             }
             let hadAlert = alert != nil
+            let oldNotices = Set((feed?.walks ?? []).flatMap { $0.notices ?? [] }.map(\.text))
+            let fresh = f.walks.flatMap { $0.notices ?? [] }.filter { !oldNotices.contains($0.text) }
+            if feed != nil, let n = fresh.first {
+                Haptics.warning()
+                Feedback.speak(n.text)
+            }
             if f != feed { feed = f }
             if error != nil { error = nil }
             if let a = alert, !hadAlert {

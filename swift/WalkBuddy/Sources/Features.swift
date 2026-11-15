@@ -107,6 +107,8 @@ struct WalkLog: View {
             case "moving_fast": "You started moving at car speed"
             case "stopped": "You stopped for a while"
             case "stop_answering": "Demo: walker stopped answering"
+            case "irregular_pace": "Your pace looked irregular"
+            case "flagged_area": "You walked into a flagged spot"
             case "demo": "Demo check-in"
             default: "Scheduled check-in"
             }
@@ -119,6 +121,21 @@ struct WalkLog: View {
             if (e.xp ?? 0) > 0 { return Row(icon: "hand.tap.fill", tint: Palette.ok, title: "Answered on time", sub: "+\(e.xp!) XP", time: t) }
             if e.late == true { return Row(icon: "hand.tap.fill", tint: Palette.warn, title: "Answered late", sub: "No XP this time", time: t) }
             return nil
+        case "pace_irregular":
+            let p: String = switch e.pattern {
+            case "running": "Started running"; case "stop_and_go": "Stop-and-go pace"; case "backtracking": "Turned back"
+            case "sudden_stop": "Stopped suddenly"; case "vehicle": "Moving at car speed"; default: "Pace changed"
+            }
+            return Row(icon: e.pattern == "vehicle" ? "car.fill" : "figure.run", tint: Palette.warn, title: p, sub: "Pace watch noticed", time: t)
+        case "pace_judged":
+            return Row(icon: "sparkles", tint: Palette.gold, title: e.checkIn == true ? "Gemini: worth a check-in" : "Gemini: looks normal",
+                       sub: e.why?.isEmpty == false ? e.why : (e.source == "gemini" ? nil : "Gemini didn't answer, checked in to be safe"), time: t)
+        case "flag_entered":
+            return Row(icon: "nosign", tint: Palette.alert, title: "Entered a flagged spot", sub: e.flag.map { "\($0.byName): \($0.reason)" }, time: t)
+        case "flag_nearby":
+            return Row(icon: "flag.fill", tint: Palette.warn, title: "Passed near a flag", sub: e.flag.map { "\($0.byName): \($0.reason)" }, time: t)
+        case "notice":
+            return Row(icon: "exclamationmark.circle.fill", tint: Palette.warn, title: "Friends notified", sub: e.text, time: t)
         case "pet_ignored":
             return Row(icon: "hand.raised.slash.fill", tint: Palette.muted, title: "Pet ignored", sub: "Demo: not answering", time: t)
         case "escalated":

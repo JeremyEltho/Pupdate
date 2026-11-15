@@ -4,14 +4,64 @@ import SwiftUI
 
 enum RouteChoice: String { case safe, quick }
 
+/// One walking step from Apple Maps: the instruction and where the maneuver happens.
+struct RouteStep { let text: String; let distance: Double; let coord: CLLocationCoordinate2D }
+
+/// A walking route option: straight from Apple Maps, or two Apple routes joined into a detour
+/// around a flagged spot. A class so the view can compare options by identity.
+final class PlannedRoute: Identifiable, Equatable {
+    let id: String
+    let coords: [CLLocationCoordinate2D]
+    let distance: Double
+    let expectedTravelTime: Double
+    let steps: [RouteStep]
+    let detour: Bool
+    lazy var polyline = MKPolyline(coordinates: coords, count: coords.count)
+
+    static func == (a: PlannedRoute, b: PlannedRoute) -> Bool { a.id == b.id }
+
+    private static func coords(_ p: MKPolyline) -> [CLLocationCoordinate2D] {
+        var out = [CLLocationCoordinate2D](repeating: .init(), count: p.pointCount)
+        p.getCoordinates(&out, range: NSRange(location: 0, length: p.pointCount))
+        return out
+    }
+
+    private static func steps(_ r: MKRoute) -> [RouteStep] {
+        r.steps.compactMap { st in
+            guard st.polyline.pointCount > 0 else { return nil }
+            return RouteStep(text: st.instructions, distance: st.distance, coord: coords(st.polyline)[0])
+        }
+    }
+
+    init(id: String, _ r: MKRoute) {
+        self.id = id
+        coords = Self.coords(r.polyline)
+        distance = r.distance
+        expectedTravelTime = r.expectedTravelTime
+        steps = Self.steps(r)
+        detour = false
+    }
+
+    init(id: String, joining a: MKRoute, _ b: MKRoute) {
+        self.id = id
+        coords = Self.coords(a.polyline) + Self.coords(b.polyline).dropFirst()
+        distance = a.distance + b.distance
+        expectedTravelTime = a.expectedTravelTime + b.expectedTravelTime
+        // Drop the "arrive" step of the first leg: the waypoint isn't a destination.
+        let first = Self.steps(a).filter { !$0.text.lowercased().contains("destination") && !$0.text.lowercased().hasPrefix("arrive") }
+        steps = first + Self.steps(b).filter { !$0.text.isEmpty }
+        detour = true
+    }
+}
+
 /// Share of a route's distance on main named streets or campus malls, minus a small cost per turn,
 /// minus a penalty for paths, alleys, trails and parking lots. A heuristic: no crime or lighting data.
-func safetyScore(_ r: MKRoute) -> Double {
+func safetyScore(_ r: PlannedRoute) -> Double {
     let main = ["Dr", "Ave", "Blvd", "St", "Rd", "Pkwy", "Way", "Mall", "Street", "Avenue", "Drive", "Road"]
     let risky = ["path", "trail", "alley", "parking", "lot", "walkway", "footpath", "service"]
     var mainDist = 0.0, riskyDist = 0.0
     for step in r.steps {
-        let text = step.instructions
+        let text = step.text
         let words = text.split(separator: " ").map(String.init)
         if words.contains(where: { main.contains($0.trimmingCharacters(in: .punctuationCharacters)) }) { mainDist += step.distance }
         if risky.contains(where: { text.lowercased().contains($0) }) { riskyDist += step.distance }
@@ -21,7 +71,25 @@ func safetyScore(_ r: MKRoute) -> Double {
     return mainDist / total - riskyDist / total - turns * 0.03
 }
 
-/// Destination search + Apple walking directions.
+/// Flags (not cleared) that a route passes through.
+func flagsOn(_ r: PlannedRoute, _ flags: [FlagInfo], pad: Double = 15) -> [FlagInfo] {
+    flags.filter { f in
+        guard f.status != "ok" else { return false }
+        let c = MKMapPoint(CLLocationCoordinate2D(latitude: f.lat, longitude: f.lng))
+        let limit = f.radiusM + pad
+        for i in 0..<max(0, r.coords.count - 1) {
+            let a = MKMapPoint(r.coords[i]), b = MKMapPoint(r.coords[i + 1])
+            let dx = b.x - a.x, dy = b.y - a.y
+            let L = dx * dx + dy * dy
+            let t = L == 0 ? 0 : max(0, min(1, ((c.x - a.x) * dx + (c.y - a.y) * dy) / L))
+            let p = MKMapPoint(x: a.x + t * dx, y: a.y + t * dy)
+            if p.distance(to: c) <= limit { return true }
+        }
+        return false
+    }
+}
+
+/// Destination search + Apple walking directions, checked against your circle's flags.
 @MainActor
 final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegate, CLLocationManagerDelegate {
     @Published var query = "" { didSet { completer.queryFragment = query } }
@@ -29,24 +97,33 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
     @Published var start = CLLocationCoordinate2D(latitude: 33.41955, longitude: -111.93455) // Hayden Library fallback
     @Published var startName = "Hayden Library"
     @Published var destination: MKMapItem?
-    @Published var routes: [MKRoute] = []
+    @Published var routes: [PlannedRoute] = []
+    @Published var flags: [FlagInfo] = []
+    @Published var detouring = false
     @Published var choice: RouteChoice = RouteChoice(rawValue: UserDefaults.standard.string(forKey: "wb.routePref") ?? "safe") ?? .safe
     @Published var routing = false
 
     /// Quickest: least walking time.
-    var quickest: MKRoute? { routes.min { $0.expectedTravelTime < $1.expectedTravelTime } }
-    /// Gemini's pick (from street names) when available; otherwise the street-based rule.
+    var quickest: PlannedRoute? { routes.min { $0.expectedTravelTime < $1.expectedTravelTime } }
+    /// Gemini's pick (from street names and flags) when available; otherwise the local rule.
     @Published var assessment: RouteAssessment?
-    var safest: MKRoute? {
-        if let id = assessment?.saferId, let i = Int(id.dropFirst()), routes.indices.contains(i) { return routes[i] }
-        return routes.max { safetyScore($0) < safetyScore($1) }
+    func avoidCount(_ r: PlannedRoute) -> Int { flagsOn(r, flags).filter { $0.status == "avoid" }.count }
+    var safest: PlannedRoute? {
+        if let id = assessment?.saferId, let r = routes.first(where: { $0.id == id }) { return r }
+        return routes.max { a, b in
+            let sa = safetyScore(a) - Double(avoidCount(a)) - 0.25 * Double(flagsOn(a, flags).count - avoidCount(a))
+            let sb = safetyScore(b) - Double(avoidCount(b)) - 0.25 * Double(flagsOn(b, flags).count - avoidCount(b))
+            return sa < sb
+        }
     }
-    func reason(for r: MKRoute) -> String? {
-        guard let i = routes.firstIndex(where: { $0 === r }) else { return nil }
-        return assessment?.reasons["r\(i)"]
+    func reason(for r: PlannedRoute) -> String? {
+        if let txt = assessment?.reasons[r.id] { return txt }
+        if let f = flagsOn(r, flags).first { return "Passes \(f.byName)'s \(flagTitle(f.status).lowercased()) flag: \(f.reason.lowercased())" }
+        if r.detour { return "Detour around a flagged spot" }
+        return nil
     }
     var sameRoute: Bool { quickest.map { q in safest.map { $0 === q } ?? true } ?? true }
-    var route: MKRoute? { choice == .safe ? safest : quickest }
+    var route: PlannedRoute? { choice == .safe ? safest : quickest }
     @Published var error: String?
     private let completer = MKLocalSearchCompleter()
     private let loc = CLLocationManager()
@@ -59,6 +136,11 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
         loc.delegate = self
         loc.requestWhenInUseAuthorization()
         loc.requestLocation()
+        Task { await loadFlags() }
+    }
+
+    func loadFlags() async {
+        if let f = try? await API.shared.flags(viewer: "jordan") { flags = f }
     }
 
     nonisolated func completerDidUpdateResults(_ c: MKLocalSearchCompleter) {
@@ -108,19 +190,26 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
         }
     }
 
+    private func walking(from a: MKMapItem, to b: MKMapItem, alternates: Bool) async throws -> [MKRoute] {
+        let req = MKDirections.Request()
+        req.source = a
+        req.destination = b
+        req.transportType = .walking
+        req.requestsAlternateRoutes = alternates
+        return try await MKDirections(request: req).calculate().routes
+    }
+
     func directions() async {
         guard let dest = destination else { return }
         routing = true
         defer { routing = false }
-        let req = MKDirections.Request()
-        req.source = MKMapItem(placemark: MKPlacemark(coordinate: start))
-        req.destination = dest
-        req.transportType = .walking
-        req.requestsAlternateRoutes = true
         do {
             assessment = nil
-            routes = try await MKDirections(request: req).calculate().routes
+            await loadFlags()
+            let found = try await walking(from: MKMapItem(placemark: MKPlacemark(coordinate: start)), to: dest, alternates: true)
+            routes = found.enumerated().map { PlannedRoute(id: "r\($0.offset)", $0.element) }
             if routes.isEmpty { error = "No walking route found" }
+            await detourIfBlocked()
             await assess()
         } catch {
             routes = []
@@ -128,26 +217,55 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
         }
     }
 
-    /// Ask the server (Gemini) which route is safer at night and why. Keeps the rule on failure.
+    /// Apple can't be told to avoid an area. When every route crosses an Avoid flag, try walking
+    /// via a point beside the flag (four sides) and keep the shortest detour that stays clear.
+    func detourIfBlocked() async {
+        guard let dest = destination, !routes.isEmpty, routes.allSatisfy({ avoidCount($0) > 0 }),
+              let q = quickest, let flag = flagsOn(q, flags).first(where: { $0.status == "avoid" }) else { return }
+        detouring = true
+        defer { detouring = false }
+        let center = CLLocationCoordinate2D(latitude: flag.lat, longitude: flag.lng)
+        let off = flag.radiusM + 150
+        let dLat = off / 111_320.0, dLng = off / (111_320.0 * cos(center.latitude * .pi / 180))
+        let vias = [(dLat, 0.0), (-dLat, 0.0), (0.0, dLng), (0.0, -dLng)].map {
+            CLLocationCoordinate2D(latitude: center.latitude + $0.0, longitude: center.longitude + $0.1)
+        }
+        var best: PlannedRoute?
+        for (i, via) in vias.enumerated() {
+            let viaItem = MKMapItem(placemark: MKPlacemark(coordinate: via))
+            guard let a = try? await walking(from: MKMapItem(placemark: MKPlacemark(coordinate: start)), to: viaItem, alternates: false).first,
+                  let b = try? await walking(from: viaItem, to: dest, alternates: false).first else { continue }
+            let r = PlannedRoute(id: "d\(i)", joining: a, b)
+            if avoidCount(r) == 0 && (best == nil || r.distance < best!.distance) { best = r }
+        }
+        if let best { routes.append(best) }
+    }
+
+    /// Ask the server (Gemini) which route is safer at night and why, counting friends' flags.
     func assess() async {
         guard !routes.isEmpty else { return }
-        let payload: [[String: Any]] = routes.enumerated().map { i, r in
-            ["id": "r\(i)", "distance_m": r.distance, "minutes": r.expectedTravelTime / 60,
-             "steps": r.steps.map(\.instructions).filter { !$0.isEmpty }]
+        let payload: [[String: Any]] = routes.map { r in
+            ["id": r.id, "distance_m": r.distance, "minutes": r.expectedTravelTime / 60,
+             "steps": r.steps.map(\.text).filter { !$0.isEmpty }, "points": thin(r.coords, 60)]
         }
         let hour = Calendar.current.component(.hour, from: Date())
         assessment = try? await API.shared.assessRoutes(payload, hour: hour)
     }
 
-    /// Route polyline as [[lat, lng]], thinned to keep the payload small.
-    var points: [[Double]] {
-        guard let poly = route?.polyline else { return [] }
-        var coords = [CLLocationCoordinate2D](repeating: .init(), count: poly.pointCount)
-        poly.getCoordinates(&coords, range: NSRange(location: 0, length: poly.pointCount))
-        let step = max(1, coords.count / 120)
-        var out = stride(from: 0, to: coords.count, by: step).map { [$0 == 0 ? coords[0].latitude : coords[$0].latitude, coords[$0].longitude] }
+    private func thin(_ coords: [CLLocationCoordinate2D], _ n: Int) -> [[Double]] {
+        guard !coords.isEmpty else { return [] }
+        let step = max(1, coords.count / n)
+        var out = stride(from: 0, to: coords.count, by: step).map { [coords[$0].latitude, coords[$0].longitude] }
         if let last = coords.last { out.append([last.latitude, last.longitude]) }
         return out
+    }
+
+    /// Route polyline as [[lat, lng]], thinned to keep the payload small.
+    var points: [[Double]] { route.map { thin($0.coords, 120) } ?? [] }
+
+    /// Turn-by-turn steps for the server: instruction plus where the maneuver happens.
+    var stepsPayload: [[String: Any]] {
+        (route?.steps ?? []).map { ["text": $0.text, "lat": $0.coord.latitude, "lng": $0.coord.longitude, "distance_m": $0.distance] }
     }
 }
 
@@ -183,6 +301,7 @@ struct PlanView: View {
                     MapPolyline(r.polyline).stroke(.black.opacity(0.45), style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
                     MapPolyline(r.polyline).stroke(tint, style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
                 }
+                FlagMarks(flags: plan.flags)
                 if let d = plan.destination {
                     Annotation(d.name ?? "", coordinate: d.placemark.coordinate, anchor: .bottom) {
                         Sprite.house.image.resizable().scaledToFit().frame(width: 46, height: 46)
@@ -287,7 +406,7 @@ struct PlanView: View {
                               buddyName: store.user?.buddy.name ?? "Levin") {
                         Task {
                             starting = true
-                            await store.startPlanned(points: plan.points, from: plan.startName, to: d.name ?? "Destination", demo: demo)
+                            await store.startPlanned(points: plan.points, from: plan.startName, to: d.name ?? "Destination", demo: demo, steps: plan.stepsPayload)
                             starting = false
                             onClose()
                         }
@@ -310,7 +429,7 @@ private struct TripSheet: View {
     let name: String
     let address: String?
     @ObservedObject var plan: PlanModel
-    let route: MKRoute?
+    let route: PlannedRoute?
     let routing: Bool
     @Binding var demo: Bool
     let starting: Bool
@@ -333,7 +452,7 @@ private struct TripSheet: View {
             if plan.routes.isEmpty {
                 HStack(spacing: 10) {
                     ProgressView().tint(Palette.gold)
-                    Text(routing ? "Finding walking routes..." : "No route yet").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                    Text(routing ? (plan.detouring ? "Finding a detour around a flag..." : "Finding walking routes...") : "No route yet").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
             } else if plan.sameRoute, let r = plan.route {
                 RouteOption(kind: .safe, route: r, selected: true, note: plan.reason(for: r) ?? "Quickest route is also the safer one") {}
@@ -351,11 +470,16 @@ private struct TripSheet: View {
                     }
                 }
             }
+            if let r = route, !flagsOn(r, plan.flags).isEmpty {
+                let fl = flagsOn(r, plan.flags)
+                Banner(text: "This route passes \(fl.count) flagged spot\(fl.count == 1 ? "" : "s"): " + fl.map { "\($0.reason.lowercased()) (\($0.byName))" }.joined(separator: ", "),
+                       alert: fl.contains { $0.status == "avoid" })
+            }
             if let a = plan.assessment, !plan.routes.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: a.source == "gemini" ? "sparkles" : "ruler").font(.system(size: 11, weight: .bold))
-                    Text(a.source == "gemini" ? "Safety notes by Gemini, from street names. A guide, not a guarantee."
-                                              : "Safety picked by street type. A guide, not a guarantee.")
+                    Text(a.source == "gemini" ? "Safety notes by Gemini, from street names and your circle's flags. A guide, not a guarantee."
+                                              : "Safety picked by street type and your circle's flags. A guide, not a guarantee.")
                 }
                 .font(Typeface.body(11.5)).foregroundStyle(Palette.muted)
             }
@@ -389,7 +513,7 @@ func formatDistance(_ m: Double) -> String { m >= 1000 ? String(format: "%.1f km
 
 private struct RouteOption: View {
     let kind: RouteChoice
-    let route: MKRoute
+    let route: PlannedRoute
     let selected: Bool
     let note: String
     let pick: () -> Void
@@ -401,7 +525,10 @@ private struct RouteOption: View {
                     .font(.system(size: 17, weight: .bold)).foregroundStyle(kind == .safe ? Color(hex: 0x032417) : Palette.ink)
                     .frame(width: 40, height: 40).background(Circle().fill(tint))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(kind == .safe ? "Safer route" : "Quickest route").font(Typeface.displayBold(17)).foregroundStyle(Palette.text)
+                    HStack(spacing: 6) {
+                        Text(kind == .safe ? "Safer route" : "Quickest route").font(Typeface.displayBold(17)).foregroundStyle(Palette.text)
+                        if route.detour { Pill(text: "Detour", tint: Palette.ok) }
+                    }
                     Text(note).font(Typeface.body(13)).foregroundStyle(Palette.muted).lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
                 }

@@ -9,7 +9,32 @@ struct EngineSnap: Codable, Equatable {
     var ignorePets: Bool?
 }
 
-struct WalkEvent: Codable, Equatable { var type: String; var xp: Int?; var evolved: String?; var kind: String?; var reason: String?; var state: String?; var late: Bool?; var afterAlert: Bool?; var realAt: String? }
+struct WalkEvent: Codable, Equatable {
+    var type: String; var xp: Int?; var evolved: String?; var kind: String?; var reason: String?; var state: String?
+    var late: Bool?; var afterAlert: Bool?; var realAt: String?
+    var pattern: String?; var why: String?; var checkIn: Bool?; var source: String?; var text: String?; var flag: FlagBrief?
+}
+
+/// The next maneuver on the route (server works it out from the walker's position).
+struct NextTurn: Codable, Equatable { var index: Int; var text: String; var inM: Int; var maneuver: String; var near: Bool }
+
+/// Pace watch: speed, mode (walking / running / vehicle) and Gemini's read on it.
+struct PaceInfo: Codable, Equatable {
+    var mps: Double?; var kmh: Double?; var mode: String?; var baseline: Double?
+    var pattern: String; var note: String?; var source: String?; var judging: Bool; var samples: [Double]
+}
+
+struct FlagBrief: Codable, Equatable { var id: String; var reason: String; var status: String; var byName: String; var note: String?; var inM: Int?; var inside: Bool? }
+
+struct Notice: Codable, Equatable { var kind: String; var text: String }
+
+/// A spot someone in your circle flagged: avoid, caution or ok.
+struct FlagInfo: Codable, Equatable, Identifiable {
+    var id: String; var lat: Double; var lng: Double; var radiusM: Double; var reason: String; var note: String
+    var status: String; var by: String; var byName: String; var updatedAt: Double; var updatedBy: String?
+}
+
+struct SettingsCheck: Codable { var escalationS: Double; var warnings: [Notice] }
 
 struct AlertInfo: Codable, Equatable, Identifiable {
     var id: String
@@ -26,6 +51,7 @@ struct AlertInfo: Codable, Equatable, Identifiable {
     var closedBy: String?
     var summary: String?
     var summarySource: String?
+    var context: String?
 }
 
 struct FriendInfo: Codable, Equatable, Identifiable { var id: String; var name: String; var phone: String }
@@ -49,6 +75,12 @@ struct Walk: Codable, Equatable, Identifiable {
     var offRoute: Bool
     var buddyLine: String?
     var buddyLineSource: String?
+    var nextTurn: NextTurn?
+    var pace: PaceInfo?
+    var flagAhead: FlagBrief?
+    var notices: [Notice]?
+    var checkinsOff: Bool?
+    var escalationS: Double?
 }
 
 struct RouteInfo: Codable, Equatable, Identifiable {
@@ -59,7 +91,7 @@ struct UserInfo: Codable, Equatable { var id: String; var name: String; var budd
 
 struct Feed: Codable, Equatable { var walks: [Walk]; var openAlerts: [AlertInfo]; var recentAlerts: [AlertInfo] }
 
-struct RouteAssessment: Codable { var saferId: String?; var reasons: [String: String]; var source: String }
+struct RouteAssessment: Codable { var saferId: String?; var reasons: [String: String]; var source: String; var flags: [String: [FlagBrief]]? }
 
 struct PetResponse: Codable { var events: [WalkEvent]; var walk: Walk }
 struct DuressResponse: Codable { var ok: Bool; var walk: Walk }
@@ -148,16 +180,40 @@ final class API {
             "checkin_every_s": every > 0 ? every : NSNull(),
             "watch_route": d.object(forKey: "wb.watchRoute") as? Bool ?? true,
             "watch_speed": d.object(forKey: "wb.watchSpeed") as? Bool ?? true,
+            "checkin_s": stage("checkin"), "nudge_s": stage("nudge"),
+            "final_s": stage("final"), "countdown_s": stage("countdown"),
+            "checkins_off": d.bool(forKey: "wb.checkinsOff"),
         ]
     }
 
-    func startPlanned(_ walker: String, points: [[Double]], from: String, to: String, demo: Bool) async throws -> Walk {
-        var body: [String: Any] = ["walker_id": walker, "points": points, "from_name": from, "to_name": to, "demo": demo]
+    /// Seconds for one stage of the alert ladder (Settings > Alert timing).
+    static func stage(_ name: String) -> Int {
+        UserDefaults.standard.object(forKey: "wb.stage.\(name)") as? Int ?? STAGE_DEFAULTS[name] ?? 30
+    }
+    static let STAGE_DEFAULTS = ["checkin": 30, "nudge": 30, "final": 30, "countdown": 20]
+
+    func startPlanned(_ walker: String, points: [[Double]], from: String, to: String, demo: Bool, steps: [[String: Any]] = []) async throws -> Walk {
+        var body: [String: Any] = ["walker_id": walker, "points": points, "from_name": from, "to_name": to, "demo": demo, "steps": steps]
         body.merge(API.walkSettings) { a, _ in a }
         return try await post("/walks", body)
     }
     func assessRoutes(_ routes: [[String: Any]], hour: Int) async throws -> RouteAssessment {
-        try await post("/routes/assess", ["routes": routes, "hour": hour])
+        try await post("/routes/assess", ["routes": routes, "hour": hour, "walker_id": "jordan"])
+    }
+    func flags(viewer: String) async throws -> [FlagInfo] { try await get("/flags?viewer=\(viewer)") }
+    func addFlag(by: String, lat: Double, lng: Double, reason: String, status: String, radius: Double, note: String) async throws -> FlagInfo {
+        try await post("/flags", ["by": by, "lat": lat, "lng": lng, "reason": reason, "status": status, "radius_m": radius, "note": note])
+    }
+    func setFlag(_ id: String, by: String, status: String) async throws -> FlagInfo {
+        try await post("/flags/\(id)", ["by": by, "status": status])
+    }
+    func deleteFlag(_ id: String, by: String) async throws {
+        let _: AnyCodable = try await send("/flags/\(id)?by=\(by)", method: "DELETE", body: nil)
+    }
+    func checkSettings() async throws -> SettingsCheck {
+        var b = API.walkSettings
+        b.removeValue(forKey: "watch_route"); b.removeValue(forKey: "watch_speed")
+        return try await post("/settings/check", b)
     }
     func tick(_ wid: String, lat: Double? = nil, lng: Double? = nil, accuracy: Double? = nil) async throws {
         var b: [String: Any] = [:]

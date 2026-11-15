@@ -11,6 +11,7 @@ struct LiveMapView: View {
     var offRoute = false
     var alert = false
     var follow = true
+    var flags: [FlagInfo] = []
     @State private var camera: MapCameraPosition = .automatic
     @AppStorage("wb.satellite") private var satellite = true
     @State private var pulse = false
@@ -20,6 +21,7 @@ struct LiveMapView: View {
     var body: some View {
         let dot = alert ? Palette.alert : offRoute ? Palette.warn : Palette.gold
         Map(position: $camera, interactionModes: [.pan, .zoom, .rotate, .pitch]) {
+            FlagMarks(flags: flags)
             if let route, route.count > 1 {
                 // Dark outline under a bright line so the route reads on satellite imagery.
                 MapPolyline(coordinates: route.map(c))

@@ -13,6 +13,9 @@ struct WalkActivityAttributes: ActivityAttributes {
         var xp: Int
         var progress: Double       // 0...1 along the route
         var metersLeft: Int
+        var turnText: String? = nil     // next turn-by-turn instruction
+        var turnSymbol: String? = nil   // SF Symbol for the maneuver
+        var turnMeters: Int? = nil
     }
 
     var walkerName: String

@@ -21,6 +21,13 @@ struct SettingsView: View {
     @AppStorage("wb.checkinEvery") private var checkinEvery = 0
     @AppStorage("wb.watchRoute") private var watchRoute = true
     @AppStorage("wb.watchSpeed") private var watchSpeed = true
+    @AppStorage("wb.checkinsOff") private var checkinsOff = false
+    @AppStorage("wb.stage.checkin") private var stCheckin = 30
+    @AppStorage("wb.stage.nudge") private var stNudge = 30
+    @AppStorage("wb.stage.final") private var stFinal = 30
+    @AppStorage("wb.stage.countdown") private var stCountdown = 20
+    @State private var confirmOff = false
+    @State private var warnings: [Notice] = []
     @State private var server = API.shared.base
     @State private var status: String?
     @State private var busy = false
@@ -52,26 +59,64 @@ struct SettingsView: View {
                     }
 
                     group("Check-ins") {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Levin checks in").font(Typeface.semi(15)).foregroundStyle(Palette.text)
-                            HStack(spacing: 6) {
-                                ForEach([(0, "Only if off"), (300, "5 min"), (600, "10 min"), (900, "15 min")], id: \.0) { v, label in
-                                    choice(label, icon: v == 0 ? "exclamationmark.triangle.fill" : "clock.fill", on: checkinEvery == v, tint: Palette.gold) { checkinEvery = v }
-                                }
+                        Toggle(isOn: Binding(get: { !checkinsOff }, set: { on in if on { checkinsOff = false } else { confirmOff = true } })) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Check-ins").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                                Text(checkinsOff ? "Off: only the silent alert, lost contact and car speed still alert friends"
+                                                 : "Levin checks in and alerts your circle if you don't answer")
+                                    .font(Typeface.body(12.5)).foregroundStyle(checkinsOff ? Palette.alert : Palette.muted)
                             }
-                            Text(checkinEvery == 0 ? "Levin only checks in when something looks off." : "Every \(checkinEvery / 60) minutes, plus whenever something looks off.")
-                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
                         }
-                        divider
-                        toggle("Leaving your route", "Check in if you're more than 60 m off your route for a minute", $watchRoute)
-                        divider
-                        toggle("Odd speed", "Check in if you move at car speed or stop for 5 minutes", $watchSpeed)
-                        divider
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("If you don't answer").font(Typeface.semi(15)).foregroundStyle(Palette.text)
-                            Text("Check-in 30 s, nudge 30 s, last chance 30 s, countdown 20 s, then Maya and Sam get an alert. No phone check-in for 90 s also alerts them.")
-                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        .tint(Palette.gold)
+                        .accessibilityIdentifier("checkins-toggle")
+                        if !checkinsOff {
+                            divider
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Levin checks in").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                                HStack(spacing: 6) {
+                                    ForEach([(0, "Only if off"), (300, "5 min"), (600, "10 min"), (900, "15 min")], id: \.0) { v, label in
+                                        choice(label, icon: v == 0 ? "exclamationmark.triangle.fill" : "clock.fill", on: checkinEvery == v, tint: Palette.gold) { checkinEvery = v }
+                                    }
+                                }
+                                HStack(spacing: 6) {
+                                    ForEach([(1800, "30 min"), (3600, "1 hour")], id: \.0) { v, label in
+                                        choice(label, icon: "clock.badge.exclamationmark", on: checkinEvery == v, tint: Palette.warn) { checkinEvery = v }
+                                    }
+                                }
+                                Text(checkinEvery == 0 ? "Levin only checks in when something looks off." : "Every \(checkinEvery / 60) minutes, plus whenever something looks off.")
+                                    .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                            }
+                            divider
+                            toggle("Leaving your route", "Check in if you're more than 60 m off your route for a minute", $watchRoute)
+                            divider
+                            toggle("Watch my pace", "Running, stop-and-go, turning back, sudden stops and car speed. Gemini decides when to check in", $watchSpeed)
                         }
+                        ForEach(Array(warnings.enumerated()), id: \.offset) { _, w in
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Palette.warn)
+                                Text(w.text + " Your circle will be told when you start a walk.").font(Typeface.body(12.5)).foregroundStyle(Palette.text)
+                            }
+                            .padding(10)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Palette.warn.opacity(0.12)))
+                            .accessibilityIdentifier("timing-warning")
+                        }
+                    }
+
+                    group("Alert timing") {
+                        stagePicker("Time to answer a check-in", $stCheckin, [15, 30, 60, 120, 300])
+                        divider
+                        stagePicker("Nudge", $stNudge, [15, 30, 60, 120])
+                        divider
+                        stagePicker("Last chance", $stFinal, [15, 30, 60, 120])
+                        divider
+                        stagePicker("Countdown", $stCountdown, [10, 20, 30, 60])
+                        divider
+                        let total = stCheckin + stNudge + stFinal + stCountdown
+                        Text("If you don't answer, \(friends.map(\.name).joined(separator: " and ").isEmpty ? "your circle" : friends.map(\.name).joined(separator: " and ")) get an alert after \(total / 60) min \(String(format: "%02d", total % 60)) s. No phone check-in for 90 s also alerts them.")
+                            .font(Typeface.body(12.5)).foregroundStyle(total > 300 ? Palette.warn : Palette.muted)
+                            .accessibilityIdentifier("alert-total")
+                        Button("Back to defaults") { stCheckin = 30; stNudge = 30; stFinal = 30; stCountdown = 20 }
+                            .font(Typeface.bold(13)).foregroundStyle(Palette.gold)
                     }
 
                     group("Walking") {
@@ -228,9 +273,40 @@ struct SettingsView: View {
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
         }
-        .task { await loadFriends() }
+        .task { await loadFriends(); await refreshWarnings() }
+        .onChange(of: checkinEvery) { _, _ in Task { await refreshWarnings() } }
+        .onChange(of: checkinsOff) { _, _ in Task { await refreshWarnings() } }
+        .onChange(of: stCheckin + stNudge + stFinal + stCountdown) { _, _ in Task { await refreshWarnings() } }
+        .alert("Turn check-ins off?", isPresented: $confirmOff) {
+            Button("Turn off", role: .destructive) { checkinsOff = true }
+            Button("Keep them on", role: .cancel) {}
+        } message: {
+            Text("Levin won't check in, so nobody is alerted if you stop answering. The silent alert, lost contact and car speed still work. Your circle is told check-ins are off.")
+        }
         .sheet(isPresented: $customizing) {
             CustomizeView { _ in customizing = false }.presentationBackground(Palette.bg)
+        }
+    }
+
+    private func refreshWarnings() async {
+        if let r = try? await API.shared.checkSettings() { warnings = r.warnings } else {
+            // Offline: the same rules locally.
+            var w: [Notice] = []
+            if checkinsOff { w.append(Notice(kind: "checkins_off", text: "Check-ins are off.")) }
+            else if checkinEvery > 900 { w.append(Notice(kind: "long_checkins", text: "Check-ins every \(checkinEvery / 60) min is a long gap.")) }
+            if stCheckin + stNudge + stFinal + stCountdown > 300 { w.append(Notice(kind: "slow_alerts", text: "Friends would hear about it over 5 minutes late.")) }
+            warnings = w
+        }
+    }
+
+    private func stagePicker(_ title: String, _ value: Binding<Int>, _ options: [Int]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(Typeface.semi(15)).foregroundStyle(Palette.text)
+            HStack(spacing: 6) {
+                ForEach(options, id: \.self) { v in
+                    choice(v >= 60 ? "\(v / 60) min" : "\(v) s", icon: "timer", on: value.wrappedValue == v, tint: v >= 120 ? Palette.warn : Palette.gold) { value.wrappedValue = v }
+                }
+            }
         }
     }
 
@@ -314,9 +390,10 @@ struct SettingsButton: View {
 /// Which full-screen panel a screen is showing. Exactly one presenter per screen, driven by one
 /// value, so a re-render can never make two presentation modifiers fight and dismiss each other.
 enum ScreenPanel: Identifiable, Equatable {
-    case settings, customize, plan(String?)
+    case settings, customize, plan(String?), flags
     var id: String {
         switch self {
+        case .flags: return "flags"
         case .settings: return "settings"
         case .customize: return "customize"
         case .plan(let p): return "plan-\(p ?? "")"

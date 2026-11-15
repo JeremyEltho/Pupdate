@@ -1,3 +1,4 @@
+import CoreLocation
 import SwiftUI
 
 struct WalkerView: View {
@@ -22,6 +23,8 @@ struct WalkerView: View {
 struct WalkScreen: View {
     @ObservedObject var store: WalkerStore
     let onExit: () -> Void
+    @StateObject private var flagStore = FlagStore(me: "jordan")
+    @State private var newFlagAt: CLLocationCoordinate2D?
 
     var body: some View {
         let walk = store.walk
@@ -54,6 +57,10 @@ struct WalkScreen: View {
                     if store.error != nil && walk == nil {
                         Banner(text: "Can't reach the server. Go back and check the address.", alert: true)
                     }
+                    if let t = walk?.nextTurn, state == "calm" || state == "checkin" {
+                        NextTurnCard(turn: t, buddyName: buddy?.name ?? "Levin", species: buddy?.species, form: buddy?.form ?? "sprout")
+                    }
+                    if let f = walk?.flagAhead { FlagAheadBanner(flag: f) }
 
                     // Speech bubble from the buddy.
                     VStack(spacing: 0) {
@@ -121,10 +128,20 @@ struct WalkScreen: View {
                             }
                         }
                         SafetyStatusRow(walk: w, watching: store.circle.count)
+                        if let n = w.notices, !n.isEmpty { GameCard { NoticeList(notices: n) } }
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert")
+                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert", flags: flagStore.flags)
                                     .frame(height: 280)
+                                    .overlay(alignment: .topTrailing) {
+                                        Button { flagHere(w) } label: {
+                                            Label("Flag spot", systemImage: "flag.fill").font(Typeface.bold(13)).foregroundStyle(.white)
+                                                .padding(.horizontal, 12).padding(.vertical, 8)
+                                                .background(Capsule().fill(Palette.alert.opacity(0.9)))
+                                        }
+                                        .padding(10)
+                                        .accessibilityLabel("Flag this spot for your circle")
+                                    }
                                 HStack {
                                     Sprite.pin.image.resizable().scaledToFit().frame(width: 22, height: 22)
                                     Text(route.map { r in
@@ -139,6 +156,8 @@ struct WalkScreen: View {
                                 .padding(14)
                             }
                         }
+                        if let p = w.pace { GameCard { PaceCard(pace: p) } }
+                        if w.demo { GameCard { TestToolsCard(walk: w) { flagHere(w) } } }
                         GameButton(title: w.demo ? "End demo walk" : "I'm home, end walk", kind: .ghost) { Task { await store.end() } }
                         GameCard { WalkLog(events: w.events, species: w.buddy.species) }
                     }
@@ -146,12 +165,32 @@ struct WalkScreen: View {
                 .padding(.horizontal, 20).padding(.bottom, 40)
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
+            if let c = newFlagAt {
+                VStack {
+                    Spacer()
+                    NewFlagCard(coordinate: c, onSave: { reason, status, radius, note in
+                        Task { await flagStore.add(c, reason: reason, status: status, radius: radius, note: note); newFlagAt = nil }
+                    }, onCancel: { newFlagAt = nil })
+                    .padding(16)
+                }
+                .background(Color.black.opacity(0.45).ignoresSafeArea().onTapGesture { newFlagAt = nil })
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             if let evo = store.evolvedTo, let b = buddy {
                 EvolutionOverlay(name: b.name, form: evo, species: b.species) { withAnimation { store.evolvedTo = nil } }
                     .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: urgent)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: newFlagAt?.latitude)
+        .onAppear { flagStore.start() }
+        .onDisappear { flagStore.stop() }
+    }
+
+    private func flagHere(_ w: Walk) {
+        guard let p = w.pos, p.count == 2 else { return }
+        Haptics.tap()
+        newFlagAt = CLLocationCoordinate2D(latitude: p[0], longitude: p[1])
     }
 }
 

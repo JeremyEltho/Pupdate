@@ -38,6 +38,7 @@
 		5C5F4C0B5E840EAC1C8E00F5 /* WalkActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5715CC6C74E6CC5A9D871D /* WalkActivity.swift */; };
 		5C816CDC9D6A987C0D093125 /* pet_chipmunk.png in Resources */ = {isa = PBXBuildFile; fileRef = 6CD7F89AEC56B7D35278C0C3 /* pet_chipmunk.png */; };
 		6051B2078FEBA93A8F840BF7 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1DEBC73B17D7B2BD511B8B /* Stores.swift */; };
+		60D21CA3986FB76B2E5D299C /* WalkExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC51102D8938F13553D08AA7 /* WalkExtras.swift */; };
 		6499108F8D319FD461CA1D5E /* Figtree_500Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F980DF873ED18C254C5C285 /* Figtree_500Medium.ttf */; };
 		74946AC7C61C0713C2827F05 /* hatching_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = 984167E13DA97FAC2B41FCBB /* hatching_chick.png */; };
 		765AEBD4EBC66A758CBFEA52 /* pet_chipmunk.png in Resources */ = {isa = PBXBuildFile; fileRef = 169E39A5629EF38715BFFA01 /* pet_chipmunk.png */; };
@@ -62,6 +63,7 @@
 		B98F868DE740A821169AC382 /* pet_seal.png in Resources */ = {isa = PBXBuildFile; fileRef = 847A8FFDEDF2AA284D66F99F /* pet_seal.png */; };
 		BB64559868D9FE36C2FE53C4 /* pet_dog.png in Resources */ = {isa = PBXBuildFile; fileRef = BE3A4DF59408ADCB12BCC1BF /* pet_dog.png */; };
 		C0C0139E5A6C58B30DEE7162 /* BricolageGrotesque_800ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4ECDDECC179C1627AFF8B01 /* BricolageGrotesque_800ExtraBold.ttf */; };
+		C1E20183A8FFEA695F295EE3 /* FlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FAFBE6415B18123D1688D47 /* FlagsView.swift */; };
 		C39ADB1DF9C8E416429F60BC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE093A2BCEBF0528CEE05998 /* SettingsView.swift */; };
 		C4C159996313C934DF8CEC0C /* pet_otter.png in Resources */ = {isa = PBXBuildFile; fileRef = 7098F73BA912A61CD62D8BA0 /* pet_otter.png */; };
 		D036C0139F21829407686072 /* pet_turtle.png in Resources */ = {isa = PBXBuildFile; fileRef = A01C1BCD328CCEC1621F60F6 /* pet_turtle.png */; };
@@ -135,6 +137,7 @@
 		3226F77E2337CA747503E715 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		3401831157CE8BCF65E08C54 /* bell.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = bell.png; sourceTree = "<group>"; };
 		3B70066026A44DB654CDFD71 /* sweat_droplets.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sweat_droplets.png; sourceTree = "<group>"; };
+		3FAFBE6415B18123D1688D47 /* FlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlagsView.swift; sourceTree = "<group>"; };
 		42E2C6870F6AF3A7FE83C98D /* house.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = house.png; sourceTree = "<group>"; };
 		43F99D3464223EE3F499EAC2 /* red_question_mark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red_question_mark.png; sourceTree = "<group>"; };
 		448BC62EE5A97EE9F02AAF55 /* red_exclamation_mark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red_exclamation_mark.png; sourceTree = "<group>"; };
@@ -180,6 +183,7 @@
 		BE3A4DF59408ADCB12BCC1BF /* pet_dog.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_dog.png; sourceTree = "<group>"; };
 		BF622D493F193764674DE903 /* penguin.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = penguin.png; sourceTree = "<group>"; };
 		C0FCA70A90BB18E198938DF6 /* front-facing_baby_chick.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "front-facing_baby_chick.png"; sourceTree = "<group>"; };
+		CC51102D8938F13553D08AA7 /* WalkExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkExtras.swift; sourceTree = "<group>"; };
 		D2E7CFFD4734434E62DA686D /* BuddyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuddyView.swift; sourceTree = "<group>"; };
 		D397B560408C78936BB58BBE /* CustomizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomizeView.swift; sourceTree = "<group>"; };
 		D5C07E959D03CED82A9F8741 /* pet_hedgehog.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_hedgehog.png; sourceTree = "<group>"; };
@@ -234,6 +238,7 @@
 				D397B560408C78936BB58BBE /* CustomizeView.swift */,
 				04FE03BF453D467FF8C4C835 /* Features.swift */,
 				817D82ED2DFE35FF7C2DC11A /* Feedback.swift */,
+				3FAFBE6415B18123D1688D47 /* FlagsView.swift */,
 				98D2B9A27F422E49CCC151A3 /* FriendView.swift */,
 				0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */,
 				0AEE91B97020907042DBA94E /* LiveActivityManager.swift */,
@@ -243,6 +248,7 @@
 				5C1DEBC73B17D7B2BD511B8B /* Stores.swift */,
 				3226F77E2337CA747503E715 /* Theme.swift */,
 				977D67226CE589C63C91BDEB /* WalkerView.swift */,
+				CC51102D8938F13553D08AA7 /* WalkExtras.swift */,
 			);
 			name = Sources;
 			path = WalkBuddy/Sources;
@@ -552,6 +558,7 @@
 				F72EDCD45207A6B8C6B575D5 /* CustomizeView.swift in Sources */,
 				44BB996D745E0B45BBC3CD7F /* Features.swift in Sources */,
 				792737B1466C90F554F17DD9 /* Feedback.swift in Sources */,
+				C1E20183A8FFEA695F295EE3 /* FlagsView.swift in Sources */,
 				3CA0FD335ACD82E8AEF6D26D /* FriendView.swift in Sources */,
 				012E90982DCDAF81341E14D4 /* HomeView.swift in Sources */,
 				578017CBF37AB99BA711A2D3 /* LiveActivityManager.swift in Sources */,
@@ -561,6 +568,7 @@
 				6051B2078FEBA93A8F840BF7 /* Stores.swift in Sources */,
 				D3E8797405187EED74FC55FD /* Theme.swift in Sources */,
 				253B102BDAB044C94255C881 /* WalkActivity.swift in Sources */,
+				60D21CA3986FB76B2E5D299C /* WalkExtras.swift in Sources */,
 				DED6D8E067B3BC3AE52F4E8F /* WalkerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

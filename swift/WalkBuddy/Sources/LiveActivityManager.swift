@@ -49,6 +49,8 @@ final class LiveActivityManager {
         guard let l = last else { return true }
         if l.state != c.state || l.form != c.form || l.xp != c.xp { return true }
         if abs(l.progress - c.progress) > 0.01 { return true }
+        if l.turnText != c.turnText { return true }
+        if let a = l.turnMeters, let b = c.turnMeters, abs(a - b) >= 10 { return true }
         if let a = l.deadline, let b = c.deadline, abs(a.timeIntervalSince(b)) > 2 { return true }
         return (l.deadline == nil) != (c.deadline == nil)
     }
@@ -63,7 +65,8 @@ final class LiveActivityManager {
         let (progress, left) = routeProgress(route?.points, w.pos)
         return .init(state: st, title: copy.title, subtitle: copy.sub, deadline: deadline, form: w.buddy.form,
                      species: w.buddy.species ?? "chick",
-                     xp: w.buddy.xp, progress: progress, metersLeft: left)
+                     xp: w.buddy.xp, progress: progress, metersLeft: left,
+                     turnText: w.nextTurn?.text, turnSymbol: w.nextTurn.map { turnSymbol($0.maneuver) }, turnMeters: w.nextTurn?.inM)
     }
 }
 

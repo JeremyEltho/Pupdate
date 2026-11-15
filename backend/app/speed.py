@@ -84,9 +84,13 @@ def ingest(w, lat, lng, accuracy, ts=None):
                 flagged = [f for f in flagged if f not in ("moving_fast", "stopped")]
             for name in flagged:
                 events += e.request_checkin(now, name)
+            events += walks.on_position(w, now, pos)
             if not w["demo"] and w["dest"] and dist_m(pos, w["dest"]) <= ARRIVE_M:
                 walks.finish_walk(w)
                 events.append({"type": "arrived", "at": now})
+        elif lat is None and e.last_pos:
+            # A heartbeat with no new fix: iOS only reports movement, so the walker is standing still.
+            events += walks.on_position(w, now, e.last_pos)
         logged = walks.handle(w, events)
         return {"accepted_fix": good, "speed_mps": st.get("speed_mps"), "flagged": flagged,
                 "events": logged, "walk": walks.walk_view(w)}

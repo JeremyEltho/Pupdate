@@ -20,6 +20,7 @@ struct FriendView: View {
     @StateObject private var store = FriendStore()
     @State private var routeId = "library-to-tooker"
     @State private var panel: ScreenPanel?
+    @StateObject private var flagStore = FlagStore(me: "maya")
 
     var body: some View {
         let walk = store.feed?.walks.first
@@ -30,6 +31,11 @@ struct FriendView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     TopBar(onBack: onExit) {
                         HStack(spacing: 8) {
+                            Button { panel = .flags } label: {
+                                Image(systemName: "flag.fill").font(.system(size: 15, weight: .bold)).foregroundStyle(Palette.alert)
+                                    .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
+                            }
+                            .accessibilityLabel("Flagged spots")
                             SettingsButton { panel = .settings }
                             StatChip(sprite: .shield, value: "Guardian")
                         }
@@ -53,10 +59,23 @@ struct FriendView: View {
                                     Spacer()
                                     Pill(text: friendState(w.engine.state, w.walkerName), tint: tone(w.engine.state)).fixedSize()
                                 }
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: w.engine.state == "alert")
+                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: w.engine.state == "alert", flags: flagStore.flags)
                                     .frame(height: 240)
                                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 EscalationLadder(state: w.engine.state)
+                                if let n = w.notices, !n.isEmpty { NoticeList(notices: n, friendView: true) }
+                                if let p = w.pace {
+                                    let (label, icon, tint) = paceModeText(p.mode)
+                                    HStack(spacing: 8) {
+                                        Image(systemName: icon).foregroundStyle(tint)
+                                        Text(label + (p.kmh.map { String(format: " · %.0f km/h", $0) } ?? "")).font(Typeface.semi(14)).foregroundStyle(Palette.text)
+                                        Spacer()
+                                        if let t = w.nextTurn { Text("Next: \(t.text)").font(Typeface.body(12)).foregroundStyle(Palette.muted).lineLimit(1) }
+                                    }
+                                    if let note = p.note, p.pattern != "steady" {
+                                        Text(note).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                                    }
+                                }
                             } else {
                                 HStack(spacing: 12) {
                                     Sprite.house.image.resizable().scaledToFit().frame(width: 44)
@@ -110,6 +129,12 @@ struct FriendView: View {
                                 }
                                 .disabled(walk == nil)
                             }
+                            HStack(spacing: 10) {
+                                GameButton(title: "Run", kind: .ghost, busy: store.busy == "run") { Task { await store.act("run") { try await API.shared.demo("pace", ["mode": "run"]) } } }
+                                    .disabled(walk == nil)
+                                GameButton(title: "Car speed", kind: .ghost, busy: store.busy == "car") { Task { await store.act("car") { try await API.shared.demo("pace", ["mode": "car"]) } } }
+                                    .disabled(walk == nil)
+                            }
                             if let err = store.error, store.feed != nil { Banner(text: err, alert: true) }
                         }
                     }
@@ -144,9 +169,11 @@ struct FriendView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.alert?.id)
         .onAppear { store.start() }
         .onDisappear { store.stop() }
-        .fullScreenCover(item: $panel) { _ in
-            SettingsView(onClose: { panel = nil })
+        .fullScreenCover(item: $panel) { p in
+            if p == .flags { FlagsView(me: "maya", onClose: { panel = nil }) } else { SettingsView(onClose: { panel = nil }) }
         }
+        .onAppear { flagStore.start() }
+        .onDisappear { flagStore.stop() }
     }
 
     private func friendState(_ s: String, _ name: String) -> String {

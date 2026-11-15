@@ -89,11 +89,32 @@ class StartWalk(BaseModel):
     points: Optional[List[List[float]]] = None
     from_name: Optional[str] = None
     to_name: Optional[str] = None
+    # Turn-by-turn steps from Apple Maps: [{"text", "lat", "lng", "distance_m"}]
+    steps: Optional[List[dict]] = None
     # Walker settings: seconds between scheduled check-ins (None = only when something is off),
     # and whether leaving the route or odd speed should trigger a check-in.
     checkin_every_s: Optional[float] = None  # default: only check in when something looks off
     watch_route: bool = True
     watch_speed: bool = True
+    # Alert timing: seconds for each stage of the ladder (10-600 s each; missing = default).
+    checkin_s: Optional[float] = None
+    nudge_s: Optional[float] = None
+    final_s: Optional[float] = None
+    countdown_s: Optional[float] = None
+    checkins_off: bool = False
+
+
+def _stages(req):
+    return {"checkin": req.checkin_s, "nudge": req.nudge_s, "final": req.final_s, "countdown": req.countdown_s}
+
+
+class TimingCheck(BaseModel):
+    checkin_every_s: Optional[float] = None
+    checkin_s: Optional[float] = None
+    nudge_s: Optional[float] = None
+    final_s: Optional[float] = None
+    countdown_s: Optional[float] = None
+    checkins_off: bool = False
 
 
 def _register_custom(req):
@@ -104,7 +125,7 @@ def _register_custom(req):
     to = req.to_name or "Destination"
     frm = req.from_name or "Current location"
     from .routes import register
-    register(rid, f"{frm} to {to}", frm, to, req.points)
+    register(rid, f"{frm} to {to}", frm, to, req.points, req.steps)
     return rid
 
 
@@ -120,11 +141,33 @@ class RouteCandidate(BaseModel):
     distance_m: float = 0
     minutes: float = 0
     steps: List[str] = []
+    points: List[List[float]] = []  # thinned polyline, to check flagged areas
 
 
 class AssessRoutes(BaseModel):
     routes: List[RouteCandidate]
     hour: int = 21
+    walker_id: str = "jordan"
+
+
+class FlagIn(BaseModel):
+    by: str
+    lat: float
+    lng: float
+    reason: str = "Felt unsafe"
+    status: str = "avoid"
+    radius_m: float = 60
+    note: str = ""
+
+
+class FlagEdit(BaseModel):
+    by: str
+    status: Optional[str] = None
+    note: Optional[str] = None
+
+
+class DemoPace(BaseModel):
+    mode: str = "run"  # run | stop_go | backtrack | stop
 
 
 class FriendAdd(BaseModel):
@@ -177,8 +220,66 @@ def routes():
 @app.post("/routes/assess")
 def assess_routes(req: AssessRoutes):
     """Which walking route is safer at night, and why (Gemini, with a street-based fallback)."""
+    from . import flags
     from .route_ai import assess
-    return assess([r.model_dump() for r in req.routes][:4], req.hour)
+    with walks.LOCK:
+        visible = flags.visible(req.walker_id if req.walker_id in walks.STATE["users"] else None)
+    return assess([r.model_dump() for r in req.routes][:5], req.hour, visible)
+
+
+@app.post("/settings/check")
+def check_settings(req: TimingCheck):
+    """The warnings a walk with these settings would send (the Settings screen shows them live)."""
+    from .engine import make_stages
+    total = sum(v for _, v in make_stages(_stages(req)))
+    return {"escalation_s": total,
+            "warnings": [{"kind": k, "text": t} for k, t in walks.timing_warnings(
+                req.checkin_every_s, total, req.checkins_off, "You")]}
+
+
+@app.get("/flags")
+def list_flags(viewer: Optional[str] = None):
+    from . import flags
+    with walks.LOCK:
+        return flags.visible(viewer if viewer in walks.STATE["users"] else None)
+
+
+@app.post("/flags")
+def add_flag(req: FlagIn):
+    from . import flags
+    try:
+        with walks.LOCK:
+            return flags.add(req.by, req.lat, req.lng, req.reason, req.status, req.radius_m, req.note)
+    except KeyError:
+        raise HTTPException(404, "unknown user")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/flags/{fid}")
+def edit_flag(fid: str, req: FlagEdit):
+    from . import flags
+    try:
+        with walks.LOCK:
+            return flags.update(fid, req.by, req.status, req.note)
+    except KeyError:
+        raise HTTPException(404, "unknown flag")
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/flags/{fid}")
+def delete_flag(fid: str, by: str):
+    from . import flags
+    try:
+        with walks.LOCK:
+            return flags.remove(fid, by)
+    except KeyError:
+        raise HTTPException(404, "unknown flag")
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
 
 
 @app.get("/users/{uid}")
@@ -238,10 +339,10 @@ def start_walk(req: StartWalk):
     route_id = _register_custom(req)
     try:
         if req.demo:
-            w = demo.start(route_id, req.walker_id, req.watch_route, req.watch_speed)
+            w = demo.start(route_id, req.walker_id, req.watch_route, req.watch_speed, _stages(req), req.checkins_off)
         else:
             w = walks.start_walk(req.walker_id, route_id, req.dest, False, req.checkin_every_s,
-                                 req.watch_route, req.watch_speed)
+                                 req.watch_route, req.watch_speed, _stages(req), req.checkins_off)
     except KeyError:
         raise HTTPException(404, "unknown walker")
     with walks.LOCK:
@@ -338,6 +439,16 @@ def demo_deviate():
     w = _demo_walk()
     demo.deviate(w)
     return {"ok": True}
+
+
+@app.post("/demo/pace")
+def demo_pace(req: DemoPace):
+    w = _demo_walk()
+    try:
+        demo.pace(w, req.mode)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    return {"ok": True, "mode": req.mode}
 
 
 @app.post("/demo/speed")

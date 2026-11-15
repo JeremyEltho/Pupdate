@@ -15,12 +15,30 @@ PET_XP = 10
 ESCALATING = {name for name, _ in STAGES}
 
 
+STAGE_MIN_S, STAGE_MAX_S = 10.0, 600.0
+# Check-ins the walker can't switch off: the demo's own controls.
+FORCED_REASONS = {"stop_answering", "demo"}
+
+
+def make_stages(custom=None):
+    """custom: {"checkin": s, "nudge": s, ...} from the walker's settings; missing keys keep defaults."""
+    custom = custom or {}
+    out = []
+    for name, default in STAGES:
+        v = custom.get(name)
+        v = default if v is None else max(STAGE_MIN_S, min(STAGE_MAX_S, float(v)))
+        out.append([name, v])
+    return out
+
+
 class Engine:
-    def __init__(self, now, demo=False, every=DEFAULT_EVERY_S):
+    def __init__(self, now, demo=False, every=DEFAULT_EVERY_S, stages=None, checkins_off=False):
         """every: seconds between scheduled check-ins, or None for "only when something is off"
         (speed or route triggers). Demo walks have no schedule; the demo drives check-ins."""
         self.demo = demo
-        self.every = None if demo else every
+        self.stages = make_stages(stages)
+        self.checkins_off = bool(checkins_off)
+        self.every = None if demo or checkins_off else every
         self.state = "calm"
         self.stage_started = now
         self.last_tick = now
@@ -32,6 +50,15 @@ class Engine:
         self.next_checkin = self._next(now)
 
     # -- helpers ---------------------------------------------------------
+    def _stages(self):
+        return getattr(self, "stages", None) or [list(x) for x in STAGES]  # old snapshots have no stages
+
+    def _len(self, name):
+        return dict(self._stages())[name]
+
+    def escalation_total(self):
+        return sum(v for _, v in self._stages())
+
     def _next(self, now):
         return None if self.every is None else now + self.every
 
@@ -45,7 +72,7 @@ class Engine:
     def snapshot(self, now):
         left = None
         if self.state in ESCALATING:
-            left = max(0.0, STAGE_LEN[self.state] - (now - self.stage_started))
+            left = max(0.0, self._len(self.state) - (now - self.stage_started))
         return {
             "state": self.state,
             "seconds_left": None if left is None else round(left, 1),
@@ -54,6 +81,7 @@ class Engine:
             "lost_contact": self.lost_contact,
             "ignore_pets": self.ignore_pets,
             "last_pos": self.last_pos,
+            "stage_s": None if self.state not in ESCALATING else self._len(self.state),
         }
 
     # -- time ------------------------------------------------------------
@@ -67,10 +95,10 @@ class Engine:
             ev += self._start_checkin(self.next_checkin, "scheduled")
         # Walk stage timeouts forward, possibly several stages in one call.
         while self.state in ESCALATING:
-            end = self.stage_started + STAGE_LEN[self.state]
+            end = self.stage_started + self._len(self.state)
             if now < end:
                 break
-            names = [n for n, _ in STAGES]
+            names = [n for n, _ in self._stages()]
             i = names.index(self.state)
             if i + 1 < len(names):
                 self.state = names[i + 1]
@@ -107,6 +135,8 @@ class Engine:
 
     def request_checkin(self, now, reason, ignore_pets=False):
         ev = self.advance(now)
+        if getattr(self, "checkins_off", False) and reason not in FORCED_REASONS:
+            return ev  # the walker switched check-ins off for this walk
         if self.state == "calm":
             ev += self._start_checkin(now, reason)
         if ignore_pets and self.state in ESCALATING:

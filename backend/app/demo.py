@@ -62,7 +62,24 @@ def _step_to(w, now, route):
         return walks.handle(w, e.tick(now, e.last_pos))
     # Move along the route, bouncing at the ends (arrival is blocked in demo mode).
     L = route["length_m"]
-    sim["dist_m"] += sim["dir"] * WALK_SPEED * dt
+    mode = sim.get("pace_mode")
+    if mode and sim.get("pace_until") is not None and now >= sim["pace_until"]:
+        if sim.get("pace_dir") is not None:
+            sim["dir"] = sim.pop("pace_dir")
+        sim["pace_mode"] = mode = None
+        sim["pace_until"] = None
+    speed = WALK_SPEED
+    if mode == "run":
+        speed = RUN_SPEED
+    elif mode == "car":
+        speed = CAR_SPEED
+    elif mode == "stop_go":
+        speed = 0.0 if int(now / STOP_GO_PERIOD_S) % 2 == 0 else 1.8
+    elif mode == "stop":
+        speed = 0.0
+    elif mode == "backtrack":
+        sim["dir"] = -1
+    sim["dist_m"] += sim["dir"] * speed * dt
     if sim["dist_m"] >= L:
         sim["dist_m"], sim["dir"] = L - (sim["dist_m"] - L), -1
     elif sim["dist_m"] <= 0:
@@ -82,6 +99,9 @@ def _step_to(w, now, route):
         else:
             sim["deviate_until"] = None
     events = e.tick(now, pos)
+    # Pace and flags. In the demo the sim bounces at the route ends, which would look like turning
+    # back, so pace check-ins only come from the injected patterns ("Irregular pace" controls).
+    events += walks.on_position(w, now, pos, pace_trigger=bool(mode) or sim.get("pace_grace", 0) > now)
     off = w.get("watch_route", True) and off_route_m(pos, route) > OFF_ROUTE_M
     if off:
         sim.setdefault("off_since", now)
@@ -140,10 +160,13 @@ def stop_loop():
 FIRST_CHECKIN_SIM_S = 30.0  # demo walks ask "Still good?" once, 15 s real after start
 
 
-def start(route_id="library-to-tooker", walker_id="jordan", watch_route=True, watch_speed=True):
-    w = walks.start_walk(walker_id, route_id=route_id, demo=True, watch_route=watch_route, watch_speed=watch_speed)
+def start(route_id="library-to-tooker", walker_id="jordan", watch_route=True, watch_speed=True, stages=None,
+          checkins_off=False):
+    w = walks.start_walk(walker_id, route_id=route_id, demo=True, watch_route=watch_route, watch_speed=watch_speed,
+                         stages=stages, checkins_off=checkins_off)
     with walks.LOCK:
-        w["engine"].next_checkin = w["clock"].now() + FIRST_CHECKIN_SIM_S
+        if not checkins_off:
+            w["engine"].next_checkin = w["clock"].now() + FIRST_CHECKIN_SIM_S
         step(w)
     return w
 
@@ -160,6 +183,33 @@ def stop_answering(w):
 def deviate(w):
     with walks.LOCK:
         w["sim"]["deviate_until"] = w["clock"].now() + DEVIATE_SIM_S
+        return True
+
+
+RUN_SPEED = 3.6  # m/s, a run
+STOP_GO_PERIOD_S = 6.0
+CAR_SPEED = 13.0  # m/s, about 47 km/h
+PACE_MODES = {"car": 45.0, "run": 50.0, "stop_go": 70.0, "backtrack": 60.0, "stop": 100.0}
+
+
+def pace(w, mode):
+    """Make the sim walker move irregularly so the pace watch (and Gemini) can be shown."""
+    if mode not in PACE_MODES:
+        raise ValueError("mode must be one of " + ", ".join(PACE_MODES))
+    with walks.LOCK:
+        now = w["clock"].now()
+        sim = w["sim"]
+        if sim.get("pace_dir") is not None:
+            sim["dir"] = sim.pop("pace_dir")
+        if mode == "backtrack":
+            sim["pace_dir"] = sim["dir"]
+        sim["pace_mode"] = mode
+        sim["pace_until"] = now + PACE_MODES[mode]
+        sim["pace_grace"] = now + PACE_MODES[mode] + 20
+        p = w.get("pace")
+        if p:  # a fresh episode: forget the last cooldown so the demo always reacts
+            p["cooldown_until"] = None
+            p["episode"] = None
         return True
 
 

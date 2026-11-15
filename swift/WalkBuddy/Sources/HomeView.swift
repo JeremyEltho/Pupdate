@@ -86,6 +86,25 @@ struct HomeView: View {
                         QuickPlace(title: "Library", sub: "Hayden Library", sprite: .books) { panel = .plan("Hayden Library") }
                     }
 
+
+                    Button { panel = .flags } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "flag.fill").font(.system(size: 18, weight: .heavy)).foregroundStyle(.white)
+                                .frame(width: 46, height: 46).background(Circle().fill(Palette.alert))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Flagged spots").font(Typeface.displayBold(18)).foregroundStyle(Palette.text)
+                                Text("Spots your circle marked Avoid or Caution. Routes steer around them").font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
+                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.lineTop))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("open-flags")
+
                     // Stats.
                     HStack(spacing: 10) {
                         StatCard(sprite: .fire, value: "\(streak)", label: "safe walks in a row")
@@ -121,6 +140,8 @@ struct HomeView: View {
                     }
                 case .plan(let preset):
                     PlanView(store: store, onClose: { panel = nil }, preset: preset)
+                case .flags:
+                    FlagsView(me: "jordan", onClose: { panel = nil })
                 }
             }
         }

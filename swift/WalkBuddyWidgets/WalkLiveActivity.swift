@@ -64,6 +64,26 @@ struct ProgressTrack: View {
     }
 }
 
+struct TurnRow: View {
+    let state: WalkActivityAttributes.ContentState
+    let text: String
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: state.turnSymbol ?? "arrow.up").font(.system(size: 16, weight: .heavy))
+                .foregroundStyle(night).frame(width: 30, height: 30)
+                .background(RoundedRectangle(cornerRadius: 8).fill(gold))
+            VStack(alignment: .leading, spacing: 0) {
+                if let m = state.turnMeters {
+                    Text(m <= 25 ? "Now" : (m >= 1000 ? String(format: "In %.1f km", Double(m) / 1000) : "In \(m) m"))
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(gold)
+                }
+                Text(text).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 struct WalkLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WalkActivityAttributes.self) { ctx in
@@ -78,6 +98,9 @@ struct WalkLiveActivity: Widget {
                     }
                     Spacer(minLength: 4)
                     Countdown(state: s)
+                }
+                if let t = s.turnText, s.state == "calm" {
+                    TurnRow(state: s, text: t)
                 }
                 ProgressTrack(state: s)
                 HStack {
@@ -107,7 +130,11 @@ struct WalkLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    ProgressTrack(state: s).padding(.horizontal, 8).padding(.top, 6)
+                    VStack(spacing: 6) {
+                        if let t = s.turnText, s.state == "calm" { TurnRow(state: s, text: t) }
+                        ProgressTrack(state: s)
+                    }
+                    .padding(.horizontal, 8).padding(.top, 6)
                 }
             } compactLeading: {
                 BuddyBadge(state: s, size: 22)
@@ -117,7 +144,7 @@ struct WalkLiveActivity: Widget {
                         .font(.system(size: 14, weight: .bold, design: .rounded)).monospacedDigit()
                         .foregroundStyle(stateTint(s.state)).frame(width: 38)
                 } else {
-                    Image(systemName: s.state == "alert" ? "exclamationmark.triangle.fill" : "figure.walk")
+                    Image(systemName: s.state == "alert" ? "exclamationmark.triangle.fill" : (s.turnSymbol ?? "figure.walk"))
                         .foregroundStyle(stateTint(s.state))
                 }
             } minimal: {

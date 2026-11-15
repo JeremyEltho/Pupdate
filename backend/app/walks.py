@@ -85,6 +85,9 @@ def reset():
         STATE["walks"] = {}
         STATE["alerts"] = {}
         STATE.setdefault("seq", 0)
+        STATE.setdefault("flags", {})
+        from . import flags as flags_mod
+        flags_mod.seed()  # demo flags come back fresh; flags people added stay
 
 
 reset()
@@ -162,7 +165,37 @@ def friends_watching(walker_id):
     return [u["id"] for u in STATE["users"].values() if walker_id in u["friends"]]
 
 
-def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, watch_route=True, watch_speed=True):
+LONG_GAP_S = 900.0  # check-ins further apart than 15 minutes get a warning
+SLOW_ALERT_S = 300.0  # friends hearing about it more than 5 minutes after a missed check-in
+
+
+def timing_warnings(every, stages_total, checkins_off, first="You"):
+    """Plain warnings about risky settings. Shown to the walker and sent to friends as notices."""
+    out = []
+    if checkins_off:
+        out.append(("checkins_off", f"{first} turned check-ins off for this walk. Only the silent alert, "
+                                    "lost contact and car-speed alerts still work."))
+    elif every and every > LONG_GAP_S:
+        out.append(("long_checkins", f"{first} set check-ins to every {round(every / 60)} min. "
+                                     "If something happens, it could take that long to notice."))
+    if stages_total > SLOW_ALERT_S:
+        m, s_ = divmod(int(stages_total), 60)
+        out.append(("slow_alerts", f"{first}'s buddy waits {m} min {s_:02d} s after a missed check-in before alerting friends."))
+    return out
+
+
+def add_notice(w, kind, text):
+    notices = w.setdefault("notices", [])
+    if any(n["kind"] == kind for n in notices):
+        return None
+    n = {"kind": kind, "text": text, "at": iso()}
+    notices.append(n)
+    _log(w, {"type": "notice", "kind": kind, "text": text})
+    return n
+
+
+def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, watch_route=True, watch_speed=True,
+               stages=None, checkins_off=False):
     with LOCK:
         user(walker_id)
         for w in STATE["walks"].values():
@@ -176,12 +209,17 @@ def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, wat
         w = {
             "id": wid, "walker_id": walker_id, "demo": demo, "status": "active",
             "route_id": route["id"] if route else None, "dest": dest or (route["points"][-1] if route else None),
-            "started_at": iso(), "clock": clock, "engine": Engine(clock.now(), demo=demo, every=every),
-            "watch_route": watch_route, "watch_speed": watch_speed,
+            "started_at": iso(), "clock": clock,
+            "engine": Engine(clock.now(), demo=demo, every=every, stages=stages, checkins_off=checkins_off),
+            "watch_route": watch_route and not checkins_off, "watch_speed": watch_speed and not checkins_off,
+            "checkins_off": bool(checkins_off), "notices": [],
             "events": [], "trail": [], "sim": {"dist_m": 0.0, "dir": 1, "deviate_until": None,
                                                 "speed_override": None, "last_now": clock.now()},
         }
         STATE["walks"][wid] = w
+        first = user(walker_id)["name"].split(" ")[0]
+        for kind, text in timing_warnings(every, w["engine"].escalation_total(), checkins_off, first):
+            add_notice(w, kind, text)
         return w
 
 
@@ -249,10 +287,13 @@ def handle(w, events):
             from . import buddy_ai
             u = user(w["walker_id"])
             b = u["buddy"]
-            w["buddy_line"] = buddy_ai.fallback_line(ev.get("reason"), u["name"])
-            w["buddy_line_source"] = "fallback"
-            buddy_ai.fill_async(w, "buddy_line", buddy_ai.checkin_prompt(
-                b["name"], b.get("species", "chick"), u["name"], ev.get("reason"), place_of(w)), 80)
+            if ev.get("line"):  # written by Gemini already (pace judge)
+                w["buddy_line"], w["buddy_line_source"] = ev["line"], "gemini"
+            else:
+                w["buddy_line"] = buddy_ai.fallback_line(ev.get("reason"), u["name"])
+                w["buddy_line_source"] = "fallback"
+                buddy_ai.fill_async(w, "buddy_line", buddy_ai.checkin_prompt(
+                    b["name"], b.get("species", "chick"), u["name"], ev.get("reason"), place_of(w)), 80)
         elif t == "contact_restored":
             for a in open_alerts(w["id"]):
                 if a["kind"] == "lost_contact":
@@ -295,15 +336,68 @@ def open_alert(w, kind):
     last = next((e.get("real_at") for e in reversed(w["events"]) if e["type"] == "pet_ok"), None)
     last_txt = "none yet" if not last else last[11:16] + " UTC"
     first = walker["name"].split(" ")[0]
+    context = alert_context(w)
+    a["context"] = context
     a["summary"] = {
         "no_answer": f"{first} stopped answering {place}, {mins} min into the walk. Call them first.",
         "duress": f"{first} sent a silent alert {place}. Don't call. Text, or go there with someone.",
         "lost_contact": f"{first}'s phone went quiet {place}, {mins} min into the walk. Try calling.",
     }.get(kind, f"Alert for {first} {place}.")
+    if context and kind != "duress":
+        a["summary"] += " " + context
     a["summary_source"] = "fallback"
     STATE["alerts"][aid] = a
-    buddy_ai.fill_async(a, "summary", buddy_ai.alert_prompt(first, kind, place, mins, last_txt, walker["buddy"]["name"]), 220)
+    buddy_ai.fill_async(a, "summary", buddy_ai.alert_prompt(first, kind, place, mins, last_txt, walker["buddy"]["name"], context), 240)
     return a
+
+
+def alert_context(w):
+    """What led up to the alert, for the friend: an irregular pace, a flagged area."""
+    bits = []
+    e = w["engine"]
+    p = w.get("pace") or {}
+    if (e.reason == "irregular_pace" or p.get("pattern") not in (None, "steady")) and p.get("note"):
+        bits.append("Pace: " + p["note"].rstrip(".") + ".")
+    if e.reason == "flagged_area" and w.get("flags_entered"):
+        from . import flags as flags_mod
+        f = flags_mod._state().get(w["flags_entered"][-1])
+        if f:
+            bits.append(f"They were inside an area {f['by_name']} flagged: {f['reason'].lower()}.")
+    if e.reason == "off_route":
+        bits.append("They had left their planned route.")
+    return " ".join(bits)
+
+
+def on_position(w, now, pos, pace_trigger=True):
+    """Everything that watches the walker's position: pace and flagged areas. Caller holds LOCK."""
+    from . import flags as flags_mod
+    from . import pace
+    ev = pace.sample(w, now, pos, allow_trigger=pace_trigger)
+    entered = w.setdefault("flags_entered", [])
+    seen = w.setdefault("flags_seen", [])
+    for f in flags_mod.visible(w["walker_id"]):
+        if f["status"] == "avoid" and flags_mod.inside(pos, f) and f["id"] not in entered:
+            entered.append(f["id"])
+            ev.append({"type": "flag_entered", "flag": flags_mod.brief(f), "at": now})
+            ev += w["engine"].request_checkin(now, "flagged_area")
+        elif f["status"] in ("avoid", "caution") and flags_mod.inside(pos, f, flags_mod.NEAR_EXTRA_M) and f["id"] not in seen:
+            seen.append(f["id"])
+            ev.append({"type": "flag_nearby", "flag": flags_mod.brief(f), "at": now})
+    return ev
+
+
+def flag_ahead(w):
+    from . import flags as flags_mod
+    pos = w["engine"].last_pos
+    if not pos:
+        return None
+    from .geo import dist_m
+    near = [(dist_m(pos, [f["lat"], f["lng"]]) - f["radius_m"], f) for f in flags_mod.visible(w["walker_id"])
+            if f["status"] != "ok" and flags_mod.inside(pos, f, flags_mod.NEAR_EXTRA_M)]
+    if not near:
+        return None
+    d, f = min(near, key=lambda x: x[0])
+    return dict(flags_mod.brief(f), in_m=max(0, round(d)), inside=d <= 0)
 
 
 def close_alert(alert_id, friend_id):
@@ -338,6 +432,8 @@ def walk_view(w, viewer="walker"):
         if snap["alert_kind"] == "duress":
             snap["alert_kind"] = None
     u = user(w["walker_id"])
+    from . import nav, pace
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
     return {
         "id": w["id"], "walker_id": w["walker_id"], "walker_name": u["name"], "demo": w["demo"], "streak": u.get("streak", 0),
         "status": w["status"], "route_id": w["route_id"], "dest": w["dest"], "started_at": w["started_at"],
@@ -349,6 +445,11 @@ def walk_view(w, viewer="walker"):
         "buddy_line": w.get("buddy_line") if snap["state"] != "calm" else None,
         "buddy_line_source": w.get("buddy_line_source"),
         "checkin_every_s": w["engine"].every, "watch_route": w.get("watch_route", True), "watch_speed": w.get("watch_speed", True),
+        "next_turn": nav.next_turn(w, route) if w["status"] == "active" else None,
+        "pace": pace.view(w), "flag_ahead": flag_ahead(w),
+        "notices": w.get("notices", []), "checkins_off": w.get("checkins_off", False),
+        "escalation_s": w["engine"].escalation_total(),
+        "stages": {n: v for n, v in w["engine"]._stages()},
     }
 
 
@@ -393,7 +494,7 @@ def dump():
     live_alert_walks = set(walks_out)
     alerts = {k: a for k, a in STATE["alerts"].items() if a["status"] == "open" or a["walk_id"] in live_alert_walks}
     return {"users": STATE["users"], "walks": walks_out, "alerts": alerts, "seq": STATE.get("seq", 0),
-            "custom_routes": routes.CUSTOM}
+            "custom_routes": routes.CUSTOM, "flags": STATE.get("flags", {})}
 
 
 def restore(data):
@@ -413,6 +514,10 @@ def restore(data):
             w["speedstate"] = ss
         walks_in[wid] = w
     STATE.clear()
-    STATE.update({"users": data["users"], "walks": walks_in, "alerts": data.get("alerts", {}), "seq": data.get("seq", 0)})
+    STATE.update({"users": data["users"], "walks": walks_in, "alerts": data.get("alerts", {}), "seq": data.get("seq", 0),
+                  "flags": data.get("flags", {})})
+    if not STATE["flags"]:
+        from . import flags as flags_mod
+        flags_mod.seed()
     routes.CUSTOM.clear()
     routes.CUSTOM.update(data.get("custom_routes", {}))
