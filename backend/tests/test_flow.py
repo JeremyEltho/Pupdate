@@ -137,3 +137,12 @@ def test_route_assess_falls_back_to_rule_without_gemini(monkeypatch):
         {"id": "b", "distance_m": 600, "minutes": 8, "steps": ["Turn left onto a path", "Walk through the parking lot"]},
     ]}).json()
     assert r["source"] == "rule" and r["safer_id"] == "a" and set(r["reasons"]) == {"a", "b"}
+
+
+def test_phone_numbers_come_from_the_environment(monkeypatch):
+    monkeypatch.setenv("PUPDATE_PHONES", "jordan=+15550001111, nobody=+1")
+    c.post("/demo/reset")
+    assert walks.STATE["users"]["jordan"]["phone"] == "+15550001111"
+    monkeypatch.delenv("PUPDATE_PHONES")
+    c.post("/demo/reset")
+    assert walks.STATE["users"]["jordan"]["phone"] == "+15555550100"

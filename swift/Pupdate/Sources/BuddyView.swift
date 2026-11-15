@@ -161,8 +161,14 @@ struct BuddyView: View {
     private var stroke: some Gesture {
         DragGesture(minimumDistance: 6, coordinateSpace: .local)
             .onChanged { v in
+                if hand == nil { Haptics.prepare() }
                 hand = v.location
-                if let last = lastPoint { strokeDist += hypot(v.location.x - last.x, v.location.y - last.y) }
+                if let last = lastPoint {
+                    let before = strokeDist
+                    strokeDist += hypot(v.location.x - last.x, v.location.y - last.y)
+                    // A soft tick every 40 pt of rubbing, so petting feels like petting.
+                    if before >= 0, Int(strokeDist / 40) > Int(before / 40) { Haptics.rubTick() }
+                }
                 lastPoint = v.location
                 withAnimation(.interactiveSpring(response: 0.25, dampingFraction: 0.6)) {
                     lean = Double(max(-12, min(12, v.translation.width / 8)))
@@ -182,6 +188,7 @@ struct BuddyView: View {
     }
 
     private func completePet() {
+        Haptics.success()   // right away, not after the server answers
         if Motion.reduced { onPet?(); return }
         withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) { squash = 0.86 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {

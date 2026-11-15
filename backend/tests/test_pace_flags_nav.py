@@ -465,7 +465,9 @@ def test_plain_end_still_counts_streak():
 def test_trip_history_records_each_ended_walk():
     c.post("/demo/reset")
     seeded = c.get("/users/jordan/trips").json()
-    assert [t["id"] for t in seeded] == ["seed2", "seed1"]          # the same two for every judge
+    assert [t["id"] for t in seeded] == [f"seed{n}" for n in range(9, 0, -1)]   # the same history for every judge
+    assert [t["started_at"] for t in seeded] == sorted((t["started_at"] for t in seeded), reverse=True)  # newest first
+    assert any(t["ended_early"] for t in seeded) and any(t["alerts"] for t in seeded)    # every outcome shows
     v = c.post("/walks", json={"walker_id": "jordan", "route_id": "library-to-tooker"}).json()
     c.post(f"/walks/{v['id']}/end")
     v2 = c.post("/demo/start", json={}).json()
@@ -476,7 +478,7 @@ def test_trip_history_records_each_ended_walk():
     assert trips[1]["ended_early"] is None and trips[1]["to"] == "Tooker House" and trips[1]["distance_m"] > 500
     assert c.get("/users/zed/trips").status_code == 404
     c.post("/demo/reset")
-    assert len(c.get("/users/jordan/trips").json()) == 2
+    assert len(c.get("/users/jordan/trips").json()) == len(walks.SEED_TRIPS)
 
 
 def test_trip_history_never_shows_a_silent_alert():

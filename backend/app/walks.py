@@ -7,6 +7,7 @@ Alert rules:
 - Duress alerts are silent: the walker's own view never shows them.
 """
 import copy
+import os
 import threading
 import time
 from datetime import datetime, timezone
@@ -59,6 +60,47 @@ class Clock:
         self.speed = speed
 
 
+# Past walks for the demo: two weeks of late walks around ASU Tempe, so the history is the same for every
+# judge and shows each outcome (home safe, ended early, friends alerted). Times are Arizona local (UTC-7).
+SEED_TRIPS = [
+    # days ago, start (local hh:mm), from, to, minutes, meters, check-ins, alerts, ended early
+    (1, "23:12", "Hayden Library", "Tooker House", 14, 1100, 2, 0, None),
+    (2, "21:47", "Sun Devil Fitness Complex", "Vista del Sol", 11, 850, 1, 0, None),
+    (3, "00:36", "Memorial Union", "Tooker House", 9, 700, 1, 0, "got a ride"),
+    (4, "22:05", "Noble Library", "Manzanita Hall", 8, 620, 0, 0, None),
+    (6, "01:18", "Mill Avenue", "Tooker House", 19, 1450, 3, 1, None),
+    (7, "20:54", "Brickyard", "Barrett Honors College", 13, 980, 1, 0, None),
+    (9, "23:40", "Tempe Town Lake", "Vista del Sol", 22, 1700, 2, 0, "is with friends now"),
+    (11, "22:28", "Hayden Library", "Tooker House", 15, 1100, 1, 0, None),
+    (13, "00:02", "Gammage Auditorium", "Manzanita Hall", 12, 900, 2, 0, "changed plans"),
+]
+
+
+def apply_phone_overrides():
+    """Real phone numbers for demo users come from the server's environment, never from the repo:
+    PUPDATE_PHONES="jordan=+15551234567,maya=+15557654321" in /etc/walkbuddy.env. The Call button on a
+    friend's alert dials the walker's number."""
+    for pair in os.getenv("PUPDATE_PHONES", "").split(","):
+        uid, _, phone = pair.strip().partition("=")
+        if uid in STATE.get("users", {}) and phone.strip():
+            STATE["users"][uid]["phone"] = phone.strip()
+
+
+def seed_trips(now=None):
+    now = now or time.time()
+    az = -7 * 3600
+    midnight = (now + az) // 86400 * 86400 - az   # today's midnight in Arizona, as epoch seconds
+    out = []
+    for n, (ago, hm, frm, to, mins, meters, checkins, alerts, early) in enumerate(SEED_TRIPS):
+        h, m = map(int, hm.split(":"))
+        # Times after midnight belong to the night that started the previous evening.
+        start = midnight - ago * 86400 + h * 3600 + m * 60 + (86400 if h < 5 else 0)
+        out.append({"id": f"seed{len(SEED_TRIPS) - n}", "started_at": iso(start), "ended_at": iso(start + mins * 60),
+                    "demo": False, "from": frm, "to": to, "minutes": mins, "distance_m": meters,
+                    "checkins": checkins, "alerts": alerts, "ended_early": early})
+    return out
+
+
 def reset():
     """Reseed XP, streaks, walks and alerts. Keeps each buddy's chosen name and species,
     and keeps Jordan's circle (friends added or removed in Settings)."""
@@ -82,16 +124,8 @@ def reset():
                     u["friends"].append("jordan")
                 if uid not in circle and "jordan" in u["friends"]:
                     u["friends"].remove("jordan")
-        # two past walks, so the trip history is the same for every judge
-        day = 86400
-        STATE["users"]["jordan"]["trips"] = [
-            {"id": "seed2", "started_at": iso(time.time() - day), "ended_at": iso(time.time() - day + 840), "demo": False,
-             "from": "Hayden Library", "to": "Tooker House", "minutes": 14, "distance_m": 1100, "checkins": 2, "alerts": 0,
-             "ended_early": None},
-            {"id": "seed1", "started_at": iso(time.time() - 3 * day), "ended_at": iso(time.time() - 3 * day + 540), "demo": False,
-             "from": "Memorial Union", "to": "Tooker House", "minutes": 9, "distance_m": 700, "checkins": 1, "alerts": 0,
-             "ended_early": "got a ride"},
-        ]
+        STATE["users"]["jordan"]["trips"] = seed_trips()
+        apply_phone_overrides()
         STATE["walks"] = {}
         STATE["alerts"] = {}
         STATE["updates"] = []
@@ -615,3 +649,4 @@ def restore(data):
     for u in STATE["users"].values():
         if isinstance(u.get("buddy"), dict) and u["buddy"].get("species", "chick") == "chick":
             u["buddy"]["species"] = "dog"
+    apply_phone_overrides()

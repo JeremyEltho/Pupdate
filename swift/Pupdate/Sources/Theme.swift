@@ -213,9 +213,21 @@ func petGear(_ species: String?, _ form: String) -> Sprite? {
 
 func level(_ xp: Int) -> Int { xp / 25 + 1 }
 
+/// Haptics. The generators are kept and warmed with prepare(): a fresh generator fired at once can
+/// arrive late or not at all while the Taptic Engine is idle. They also need System Haptics on
+/// (iPhone Settings > Sounds & Haptics).
+@MainActor
 enum Haptics {
     private static var on: Bool { UserDefaults.standard.object(forKey: "wb.haptics") as? Bool ?? true }
-    static func tap() { if on { UIImpactFeedbackGenerator(style: .medium).impactOccurred() } }
-    static func success() { if on { UINotificationFeedbackGenerator().notificationOccurred(.success) } }
-    static func warning() { if on { UINotificationFeedbackGenerator().notificationOccurred(.warning) } }
+    private static let medium = UIImpactFeedbackGenerator(style: .medium)
+    private static let soft = UIImpactFeedbackGenerator(style: .soft)
+    private static let notify = UINotificationFeedbackGenerator()
+
+    /// Call when a gesture starts, so the first haptic of it lands on time.
+    static func prepare() { guard on else { return }; soft.prepare(); notify.prepare() }
+    static func tap() { guard on else { return }; medium.impactOccurred(); medium.prepare() }
+    /// A light tick while the finger rubs the pet.
+    static func rubTick() { guard on else { return }; soft.impactOccurred(intensity: 0.7); soft.prepare() }
+    static func success() { guard on else { return }; notify.notificationOccurred(.success); notify.prepare() }
+    static func warning() { guard on else { return }; notify.notificationOccurred(.warning); notify.prepare() }
 }

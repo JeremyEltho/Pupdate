@@ -118,7 +118,6 @@ final class WalkerStore: ObservableObject {
     }
 
     func pet() async {
-        Haptics.tap()
         guard let w = walk else { Feedback.petted(); beHappy(); return }
         do {
             let r = try await API.shared.pet(w.id)

@@ -3,7 +3,8 @@ import AVFoundation
 import UIKit
 import UserNotifications
 
-/// Sound, speech and vibration, each switchable in Settings > Accessibility.
+/// Sound, speech and vibration, each switchable in Settings > Accessibility. Main actor, like Haptics.
+@MainActor
 enum Feedback {
     private static let voice = AVSpeechSynthesizer()
     private static func flag(_ key: String, _ def: Bool) -> Bool { UserDefaults.standard.object(forKey: key) as? Bool ?? def }
@@ -33,9 +34,9 @@ enum Feedback {
         if strongVibration { AudioServicesPlaySystemSound(kSystemSoundID_Vibrate) } else { Haptics.warning() }
     }
 
+    /// The success haptic already fired when the rub finished (BuddyView), so this is sound only.
     static func petted() {
         if soundsOn { AudioServicesPlaySystemSound(1104) }
-        Haptics.success()
     }
 }
 
