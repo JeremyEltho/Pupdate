@@ -443,3 +443,41 @@ def test_plain_end_still_counts_streak():
     c.post(f"/walks/{v['id']}/end")
     assert walks.STATE["users"]["jordan"]["streak"] == streak + 1
     assert c.get("/friends/maya/feed").json()["updates"] == []
+
+
+# -- trip history -----------------------------------------------------------------------
+
+def test_trip_history_records_each_ended_walk():
+    c.post("/demo/reset")
+    seeded = c.get("/users/jordan/trips").json()
+    assert [t["id"] for t in seeded] == ["seed2", "seed1"]          # the same two for every judge
+    v = c.post("/walks", json={"walker_id": "jordan", "route_id": "library-to-tooker"}).json()
+    c.post(f"/walks/{v['id']}/end")
+    v2 = c.post("/demo/start", json={}).json()
+    c.post(f"/walks/{v2['id']}/end", json={"early": True, "reason": "ride"})
+    trips = c.get("/users/jordan/trips").json()
+    assert [t["id"] for t in trips[:2]] == [v2["id"], v["id"]]      # newest first
+    assert trips[0]["ended_early"] == "got a ride" and trips[0]["demo"] is True
+    assert trips[1]["ended_early"] is None and trips[1]["to"] == "Tooker House" and trips[1]["distance_m"] > 500
+    assert c.get("/users/zed/trips").status_code == 404
+    c.post("/demo/reset")
+    assert len(c.get("/users/jordan/trips").json()) == 2
+
+
+def test_trip_history_never_shows_a_silent_alert():
+    c.post("/demo/reset")
+    v = c.post("/demo/start", json={}).json()
+    c.post(f"/walks/{v['id']}/duress")
+    c.post(f"/walks/{v['id']}/end")
+    trip = c.get("/users/jordan/trips").json()[0]
+    assert trip["id"] == v["id"] and trip["alerts"] == 0
+    v = c.post("/demo/start", json={}).json()
+    c.post(f"/walks/{v['id']}/end", json={"early": True, "reason": "help"})
+    assert c.get("/users/jordan/trips").json()[0]["alerts"] == 1
+
+
+def test_starting_a_new_walk_files_the_old_one():
+    c.post("/demo/reset")
+    v = c.post("/demo/start", json={}).json()
+    c.post("/demo/start", json={})
+    assert c.get("/users/jordan/trips").json()[0]["id"] == v["id"]

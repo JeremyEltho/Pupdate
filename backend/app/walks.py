@@ -82,6 +82,16 @@ def reset():
                     u["friends"].append("jordan")
                 if uid not in circle and "jordan" in u["friends"]:
                     u["friends"].remove("jordan")
+        # two past walks, so the trip history is the same for every judge
+        day = 86400
+        STATE["users"]["jordan"]["trips"] = [
+            {"id": "seed2", "started_at": iso(time.time() - day), "ended_at": iso(time.time() - day + 840), "demo": False,
+             "from": "Hayden Library", "to": "Tooker House", "minutes": 14, "distance_m": 1100, "checkins": 2, "alerts": 0,
+             "ended_early": None},
+            {"id": "seed1", "started_at": iso(time.time() - 3 * day), "ended_at": iso(time.time() - 3 * day + 540), "demo": False,
+             "from": "Memorial Union", "to": "Tooker House", "minutes": 9, "distance_m": 700, "checkins": 1, "alerts": 0,
+             "ended_early": "got a ride"},
+        ]
         STATE["walks"] = {}
         STATE["alerts"] = {}
         STATE["updates"] = []
@@ -203,6 +213,7 @@ def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, wat
             if w["walker_id"] == walker_id and w["status"] == "active":
                 w["status"] = "ended"
                 w["ended_at"] = iso()
+                _record_trip(w)
         routes = load_routes()
         route = routes.get(route_id) if route_id else None
         clock = Clock(demo, speed=2.0)
@@ -319,6 +330,34 @@ def meters_left(w):
     return None
 
 
+KEEP_TRIPS = 30
+
+
+def _record_trip(w):
+    """Add one line to the walker's trip history, newest first. Silent (duress) alerts are left out:
+    nothing the walker can open may show them."""
+    u = STATE["users"].get(w["walker_id"])
+    if not u:
+        return
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
+    early = w.get("ended_early")
+    left = (early or {}).get("meters_left") or 0
+    u.setdefault("trips", []).insert(0, {
+        "id": w["id"], "started_at": w["started_at"], "ended_at": w["ended_at"], "demo": w["demo"],
+        "from": (route or {}).get("from"), "to": (route or {}).get("to"),
+        "minutes": max(1, minutes_in(w)),
+        "distance_m": round(max(0, route["length_m"] - left)) if route else None,
+        "checkins": sum(1 for e in w["events"] if e["type"] == "pet_ok" and not e.get("unprompted")),
+        "alerts": sum(1 for a in STATE["alerts"].values() if a["walk_id"] == w["id"] and a["kind"] != "duress"),
+        "ended_early": END_REASONS[early["reason"]] if early else None,
+    })
+    del u["trips"][KEEP_TRIPS:]
+
+
+def trips(uid):
+    return user(uid).get("trips", [])
+
+
 def finish_walk(w, early=False, reason=None):
     """End a walk. A finished walk with no alerts extends the safe-walk streak.
     Ending early tells the circle why and where, and leaves the streak as it was.
@@ -345,6 +384,7 @@ def finish_walk(w, early=False, reason=None):
             open_alert(w, "help")
     w["status"] = "ended"
     w["ended_at"] = iso()
+    _record_trip(w)
     if not early:
         had_alert = any(a["walk_id"] == w["id"] for a in STATE["alerts"].values())
         u["streak"] = 0 if had_alert else u.get("streak", 0) + 1

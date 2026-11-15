@@ -28,6 +28,12 @@ struct FlagBrief: Codable, Equatable { var id: String; var reason: String; var s
 
 struct Notice: Codable, Equatable { var kind: String; var text: String }
 
+/// One past walk in the trip history.
+struct TripInfo: Codable, Equatable, Identifiable {
+    var id: String; var startedAt: String; var demo: Bool; var from: String?; var to: String?
+    var minutes: Int; var distanceM: Int?; var checkins: Int; var alerts: Int; var endedEarly: String?
+}
+
 /// A spot someone in your circle flagged: avoid, caution or ok.
 struct FlagInfo: Codable, Equatable, Identifiable {
     var id: String; var lat: Double; var lng: Double; var radiusM: Double; var reason: String; var note: String
@@ -230,6 +236,7 @@ final class API {
         return try await post("/users/\(uid)/buddy", b)
     }
     func circle(_ uid: String) async throws -> [FriendInfo] { try await get("/users/\(uid)/circle") }
+    func trips(_ uid: String) async throws -> [TripInfo] { try await get("/users/\(uid)/trips") }
     func addFriend(_ uid: String, name: String, phone: String) async throws -> FriendInfo {
         try await post("/users/\(uid)/circle", ["name": name, "phone": phone])
     }

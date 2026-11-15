@@ -399,4 +399,27 @@ final class WalkBuddyE2ETests: XCTestCase {
         let friend = launch(role: "friend")
         XCTAssertTrue(text(friend, "ended the walk early").waitForExistence(timeout: 10), "friend screen missing the update")
     }
+
+    /// Trip history: a walk that just ended is on top of Past walks, above the seeded ones.
+    func testTripHistoryShowsEndedWalk() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker")
+        let endEarly = app.buttons["End walk early"]
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 15))
+        scrollTo(app, endEarly)
+        endEarly.tap()
+        app.buttons["Got a ride"].tap()
+        app.buttons["End walk"].tap()
+        let open = app.buttons["open-trips"]
+        XCTAssertTrue(open.waitForExistence(timeout: 10), "walk didn't end")
+        scrollTo(app, open)
+        open.tap()
+        XCTAssertTrue(text(app, "Past walks").waitForExistence(timeout: 5))
+        XCTAssertTrue(text(app, "Ended early: got a ride").waitForExistence(timeout: 10), "the walk that just ended is missing")
+        let trips = get("/users/jordan/trips") as? [[String: Any]] ?? []
+        XCTAssertEqual(trips.count, 3)
+        XCTAssertEqual(trips.first?["ended_early"] as? String, "got a ride")
+        api("/demo/reset")
+    }
 }

@@ -67,6 +67,77 @@ struct SafetyStatusRow: View {
     }
 }
 
+// MARK: - Trip history
+
+/// Past walks, newest first. Silent alerts never appear here: the server leaves them out.
+struct TripsView: View {
+    let me: String
+    let onClose: () -> Void
+    @State private var trips: [TripInfo]?
+    @State private var failed = false
+
+    private static let iso: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    var body: some View {
+        ZStack {
+            Sky()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    TopBar(onBack: onClose) { EmptyView() }
+                    Text("Past walks").font(Typeface.display(32)).foregroundStyle(Palette.text)
+                    if failed {
+                        Banner(text: "Can't load your walks. Check the connection and try again.", alert: true)
+                    } else if let trips, trips.isEmpty {
+                        Text("No walks yet. Your first one will show up here.").font(Typeface.body(16)).foregroundStyle(Palette.muted)
+                    } else if trips == nil {
+                        ProgressView().tint(Palette.gold).frame(maxWidth: .infinity)
+                    }
+                    ForEach(trips ?? []) { t in
+                        GameCard { row(t) }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier("trip-\(t.id)")
+                    }
+                }
+                .padding(.horizontal, 20).padding(.bottom, 40)
+                .frame(maxWidth: 480).frame(maxWidth: .infinity)
+            }
+        }
+        .task {
+            do { trips = try await API.shared.trips(me) } catch { failed = true }
+        }
+    }
+
+    private func row(_ t: TripInfo) -> some View {
+        let ok = t.alerts == 0
+        let when = Self.iso.date(from: t.startedAt)?.formatted(date: .abbreviated, time: .shortened) ?? ""
+        var facts = ["\(t.minutes) min"]
+        if let d = t.distanceM { facts.append(formatMeters(d)) }
+        facts.append(t.checkins == 1 ? "1 check-in answered" : "\(t.checkins) check-ins answered")
+        return HStack(alignment: .top, spacing: 12) {
+            Image(systemName: ok ? "checkmark" : "exclamationmark").font(.system(size: 13, weight: .bold))
+                .foregroundStyle(ok ? Palette.ok : Palette.alert)
+                .frame(width: 30, height: 30).background(Circle().fill((ok ? Palette.ok : Palette.alert).opacity(0.15)))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(t.to.map { "\(t.from ?? "Start") to \($0)" } ?? "Walk").font(Typeface.semi(16)).foregroundStyle(Palette.text)
+                Text(when + (t.demo ? " · demo" : "")).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                Text(facts.joined(separator: " · ")).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                if let why = t.endedEarly {
+                    Text("Ended early: \(why)").font(Typeface.body(13)).foregroundStyle(Palette.gold)
+                }
+                if !ok {
+                    Text(t.alerts == 1 ? "Your circle was alerted once" : "Your circle was alerted \(t.alerts) times")
+                        .font(Typeface.body(13)).foregroundStyle(Palette.alert)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
 // MARK: - Walk log
 
 /// Everything Levin noticed on this walk, newest first.

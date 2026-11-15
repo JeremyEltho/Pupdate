@@ -9,7 +9,7 @@ Read `README.md` first for what the product does. This file covers how the code 
 - **The demo sim never pets.** Every pet comes from the phone.
 - **Duress is invisible to the walker.** `walk_view(viewer="walker")` strips it. Never leak it into the walker's UI, the Live Activity or the logs shown to the walker.
 - **Only a friend closes an alert.** The walker can't, and a late pet doesn't either.
-- **Run tests before every deploy:** `cd backend && .venv/bin/pytest -q` (83 should pass), plus the UI suite below.
+- **Run tests before every deploy:** `cd backend && .venv/bin/pytest -q` (89 should pass), plus the UI suite below.
 
 ## Layout
 
@@ -50,7 +50,7 @@ swift/
   WalkBuddy/Shared/DogView.swift        the animated vector dog (species "dog"), app + widget. Art: DogArt.swift is GENERATED
                                         from swift/tools/dog_art.py (python3 dog_art.py && python3 gen_dog_swift.py)
   WalkBuddyWidgets/                     Lock Screen + Dynamic Island UI
-  WalkBuddyUITests/                     XCUITest end-to-end against the live server (15 tests)
+  WalkBuddyUITests/                     XCUITest end-to-end against the live server (17 tests)
 deploy/        vultr-deploy.sh, cloud-init.sh (fresh server)
 demo-server.sh laptop fallback (local uvicorn + ngrok)
 app/           old Expo prototype, unused

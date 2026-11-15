@@ -105,6 +105,24 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("open-flags")
 
+                    Button { panel = .trips } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "clock.arrow.circlepath").font(.system(size: 18, weight: .heavy)).foregroundStyle(Palette.ink)
+                                .frame(width: 46, height: 46).background(Circle().fill(Palette.gold))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Past walks").font(Typeface.displayBold(18)).foregroundStyle(Palette.text)
+                                Text("Where you walked, how long it took, and how it ended").font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
+                        }
+                        .padding(14)
+                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
+                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.lineTop))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("open-trips")
+
                     // Stats.
                     HStack(spacing: 10) {
                         StatCard(sprite: .fire, value: "\(streak)", label: "safe walks in a row")
@@ -142,6 +160,8 @@ struct HomeView: View {
                     PlanView(store: store, onClose: { panel = nil }, preset: preset)
                 case .flags:
                     FlagsView(me: "jordan", onClose: { panel = nil })
+                case .trips:
+                    TripsView(me: store.me, onClose: { panel = nil })
                 }
             }
         }

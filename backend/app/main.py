@@ -333,6 +333,15 @@ def remove_from_circle(uid: str, fid: str):
         raise HTTPException(404, "not in the circle")
 
 
+@app.get("/users/{uid}/trips")
+def trips(uid: str):
+    """The walker's past walks, newest first."""
+    try:
+        return walks.trips(uid)
+    except KeyError:
+        raise HTTPException(404, "unknown user")
+
+
 @app.get("/users/{uid}/active")
 def active(uid: str):
     w = walks.active_walk(uid)

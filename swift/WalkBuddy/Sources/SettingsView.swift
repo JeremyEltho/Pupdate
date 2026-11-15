@@ -390,9 +390,10 @@ struct SettingsButton: View {
 /// Which full-screen panel a screen is showing. Exactly one presenter per screen, driven by one
 /// value, so a re-render can never make two presentation modifiers fight and dismiss each other.
 enum ScreenPanel: Identifiable, Equatable {
-    case settings, customize, plan(String?), flags
+    case settings, customize, plan(String?), flags, trips
     var id: String {
         switch self {
+        case .trips: return "trips"
         case .flags: return "flags"
         case .settings: return "settings"
         case .customize: return "customize"

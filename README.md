@@ -55,7 +55,7 @@ so a restart loses nothing. The iPhone app uses that address by default, so the 
 cd backend
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/pytest -q                                   # 83 tests
+.venv/bin/pytest -q                                   # 89 tests
 .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8100
 ```
 
@@ -86,6 +86,7 @@ Each phone chooses a role on first launch: **walker (Jordan)** or **friend (Maya
 ### Screens
 
 - **Home:** the buddy on its pedestal, XP, streak, level, and the evolution track.
+- **Past walks:** every ended walk with its route, time, distance, check-ins answered, and how it ended. A demo reset brings back the same two seeded walks.
 - **Where to tonight?:** Apple Maps destination search and real walking directions. Then "Walk with Levin", as a demo walk or with real GPS.
 - **Walk:** a live 3D map, the buddy's speech bubble with a countdown ring, and mood badges. The walk is mirrored to a Live Activity on the Lock Screen and in the Dynamic Island.
 - **Friend:** a live map of the walk, demo controls, and full-screen alerts.
@@ -119,6 +120,7 @@ The simulator never pets the buddy. Every pet comes from the phone.
 | `POST /routes/assess` | Gemini safer-route pick, counting flags |
 | `POST /settings/check` | Warnings a walk with these timing settings would send |
 | `GET/POST/DELETE /users/{id}/circle` | Manage your circle |
+| `GET /users/{id}/trips` | Past walks, newest first (silent alerts are left out) |
 | `POST /demo/reset`, `/demo/start`, `/demo/stop-answering`, `/demo/checkin`, `/demo/deviate`, `/demo/speed`, `/demo/pace {mode: run, stop_go, backtrack, car, stop}` | Demo controls |
 
 ## Known limits
