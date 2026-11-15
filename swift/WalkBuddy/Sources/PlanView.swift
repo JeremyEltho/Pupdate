@@ -157,6 +157,7 @@ struct PlanView: View {
     var preset: String?
     @StateObject private var plan = PlanModel()
     @State private var camera: MapCameraPosition = .automatic
+    @AppStorage("wb.satellite") private var satellite = true
     @State private var demo = UserDefaults.standard.object(forKey: "wb.demoDefault") as? Bool ?? true
     @State private var starting = false
     @FocusState private var focused: Bool
@@ -189,7 +190,9 @@ struct PlanView: View {
                     }
                 }
             }
-            .mapStyle(.standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll))
+            .mapStyle(satellite
+                      ? .hybrid(elevation: .realistic, pointsOfInterest: .excludingAll)
+                      : .standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll))
             .mapControlVisibility(.hidden)
             .ignoresSafeArea()
             .onAppear { camera = .camera(MapCamera(centerCoordinate: plan.start, distance: 2200, heading: 0, pitch: 50)) }

@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage("wb.demoDefault") private var demoDefault = true
     @AppStorage("wb.liveActivity") private var liveActivity = true
     @AppStorage("wb.haptics") private var haptics = true
+    @AppStorage("wb.satellite") private var satellite = true
     @AppStorage("wb.checkinEvery") private var checkinEvery = 0
     @AppStorage("wb.watchRoute") private var watchRoute = true
     @AppStorage("wb.watchSpeed") private var watchSpeed = true
@@ -81,6 +82,8 @@ struct SettingsView: View {
                         toggle("Lock Screen Live Activity", "Your walk and Levin on the Lock Screen and Dynamic Island", $liveActivity)
                         divider
                         toggle("Haptics", "Buzz when Levin checks in or an alert arrives", $haptics)
+                        divider
+                        toggle("Satellite map", "Real aerial imagery in 3D. Off for the dark map", $satellite)
                     }
 
                     group("Your circle") {

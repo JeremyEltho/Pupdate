@@ -12,6 +12,7 @@ struct LiveMapView: View {
     var alert = false
     var follow = true
     @State private var camera: MapCameraPosition = .automatic
+    @AppStorage("wb.satellite") private var satellite = true
     @State private var pulse = false
 
     private func c(_ p: [Double]) -> CLLocationCoordinate2D { .init(latitude: p[0], longitude: p[1]) }
@@ -20,8 +21,11 @@ struct LiveMapView: View {
         let dot = alert ? Palette.alert : offRoute ? Palette.warn : Palette.gold
         Map(position: $camera, interactionModes: [.pan, .zoom, .rotate, .pitch]) {
             if let route, route.count > 1 {
+                // Dark outline under a bright line so the route reads on satellite imagery.
                 MapPolyline(coordinates: route.map(c))
-                    .stroke(Color(hex: 0x7aa2ff).opacity(0.55), style: StrokeStyle(lineWidth: 9, lineCap: .round, lineJoin: .round))
+                    .stroke(.black.opacity(0.55), style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                MapPolyline(coordinates: route.map(c))
+                    .stroke(Color(hex: 0x9db8ff), style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
             }
             if trail.count > 1 {
                 MapPolyline(coordinates: trail.map(c))
@@ -44,7 +48,9 @@ struct LiveMapView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false))
+        .mapStyle(satellite
+                  ? .hybrid(elevation: .realistic, pointsOfInterest: .excludingAll, showsTraffic: false)
+                  : .standard(elevation: .realistic, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false))
         .mapControlVisibility(.hidden)
         .onAppear {
             withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { pulse = true }

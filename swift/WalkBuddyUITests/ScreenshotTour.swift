@@ -2,7 +2,7 @@ import XCTest
 
 /// Not a pass/fail test: scrolls each screen and attaches screenshots for design review.
 final class ScreenshotTour: XCTestCase {
-    let server = "http://127.0.0.1:8100"
+    let server = "https://45-76-67-21.sslip.io"
 
     private func save(_ name: String) {
         let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -17,6 +17,23 @@ final class ScreenshotTour: XCTestCase {
         let e = expectation(description: path)
         URLSession.shared.dataTask(with: r) { _, _, _ in e.fulfill() }.resume()
         wait(for: [e], timeout: 10)
+    }
+
+    func testSatelliteShots() {
+        post("/demo/reset")
+        post("/demo/start")
+        let app = XCUIApplication()
+        app.launchArguments = ["-wb.role", "walker", "-wb.server", server]
+        app.launch()
+        sleep(6)
+        app.swipeUp(); sleep(1); app.swipeUp(); sleep(6); save("s1-walk-map")
+        let end = app.buttons["End demo walk"]
+        if end.waitForExistence(timeout: 5) { end.tap() }
+        let whereTo = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Where to tonight?")).firstMatch
+        _ = whereTo.waitForExistence(timeout: 10); whereTo.tap()
+        let field = app.textFields.firstMatch
+        _ = field.waitForExistence(timeout: 5); field.tap(); field.typeText("Tooker House\n")
+        sleep(12); save("s2-plan-map")
     }
 
     func testCustomizeShot() {
