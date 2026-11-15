@@ -2,6 +2,25 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+enum RouteChoice: String { case safe, quick }
+
+/// Share of a route's distance on main named streets or campus malls, minus a small cost per turn,
+/// minus a penalty for paths, alleys, trails and parking lots. A heuristic: no crime or lighting data.
+func safetyScore(_ r: MKRoute) -> Double {
+    let main = ["Dr", "Ave", "Blvd", "St", "Rd", "Pkwy", "Way", "Mall", "Street", "Avenue", "Drive", "Road"]
+    let risky = ["path", "trail", "alley", "parking", "lot", "walkway", "footpath", "service"]
+    var mainDist = 0.0, riskyDist = 0.0
+    for step in r.steps {
+        let text = step.instructions
+        let words = text.split(separator: " ").map(String.init)
+        if words.contains(where: { main.contains($0.trimmingCharacters(in: .punctuationCharacters)) }) { mainDist += step.distance }
+        if risky.contains(where: { text.lowercased().contains($0) }) { riskyDist += step.distance }
+    }
+    let total = max(r.distance, 1)
+    let turns = Double(max(0, r.steps.count - 2))
+    return mainDist / total - riskyDist / total - turns * 0.03
+}
+
 /// Destination search + Apple walking directions.
 @MainActor
 final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegate, CLLocationManagerDelegate {
@@ -10,8 +29,16 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
     @Published var start = CLLocationCoordinate2D(latitude: 33.41955, longitude: -111.93455) // Hayden Library fallback
     @Published var startName = "Hayden Library"
     @Published var destination: MKMapItem?
-    @Published var route: MKRoute?
+    @Published var routes: [MKRoute] = []
+    @Published var choice: RouteChoice = RouteChoice(rawValue: UserDefaults.standard.string(forKey: "wb.routePref") ?? "safe") ?? .safe
     @Published var routing = false
+
+    /// Quickest: least walking time.
+    var quickest: MKRoute? { routes.min { $0.expectedTravelTime < $1.expectedTravelTime } }
+    /// Safer (heuristic, no crime data): most of the distance on main named streets, fewest turns.
+    var safest: MKRoute? { routes.max { safetyScore($0) < safetyScore($1) } }
+    var sameRoute: Bool { quickest.map { q in safest.map { $0 === q } ?? true } ?? true }
+    var route: MKRoute? { choice == .safe ? safest : quickest }
     @Published var error: String?
     private let completer = MKLocalSearchCompleter()
     private let loc = CLLocationManager()
@@ -81,11 +108,12 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
         req.source = MKMapItem(placemark: MKPlacemark(coordinate: start))
         req.destination = dest
         req.transportType = .walking
+        req.requestsAlternateRoutes = true
         do {
-            route = try await MKDirections(request: req).calculate().routes.first
-            if route == nil { error = "No walking route found" }
+            routes = try await MKDirections(request: req).calculate().routes
+            if routes.isEmpty { error = "No walking route found" }
         } catch {
-            route = nil
+            routes = []
             self.error = "Couldn't get walking directions."
         }
     }
@@ -108,7 +136,7 @@ struct PlanView: View {
     var preset: String?
     @StateObject private var plan = PlanModel()
     @State private var camera: MapCameraPosition = .automatic
-    @State private var demo = true
+    @State private var demo = UserDefaults.standard.object(forKey: "wb.demoDefault") as? Bool ?? true
     @State private var starting = false
     @FocusState private var focused: Bool
 
@@ -124,9 +152,14 @@ struct PlanView: View {
                     }
                     .shadow(color: .black.opacity(0.35), radius: 4, y: 2)
                 }
+                if !plan.sameRoute, let other = plan.choice == .safe ? plan.quickest : plan.safest {
+                    MapPolyline(other.polyline).stroke((plan.choice == .safe ? Palette.gold : Palette.ok).opacity(0.45),
+                                                       style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round, dash: [2, 9]))
+                }
                 if let r = plan.route {
-                    MapPolyline(r.polyline).stroke(Color(hex: 0x3a2a00).opacity(0.5), style: StrokeStyle(lineWidth: 11, lineCap: .round, lineJoin: .round))
-                    MapPolyline(r.polyline).stroke(Palette.gold, style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
+                    let tint = plan.choice == .safe ? Palette.ok : Palette.gold
+                    MapPolyline(r.polyline).stroke(.black.opacity(0.45), style: StrokeStyle(lineWidth: 12, lineCap: .round, lineJoin: .round))
+                    MapPolyline(r.polyline).stroke(tint, style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
                 }
                 if let d = plan.destination {
                     Annotation(d.name ?? "", coordinate: d.placemark.coordinate, anchor: .bottom) {
@@ -139,8 +172,8 @@ struct PlanView: View {
             .mapControlVisibility(.hidden)
             .ignoresSafeArea()
             .onAppear { camera = .camera(MapCamera(centerCoordinate: plan.start, distance: 2200, heading: 0, pitch: 50)) }
-            .onChange(of: plan.route) { _, r in
-                guard let r else { return }
+            .onChange(of: plan.routes) { _, _ in
+                guard let r = plan.route else { return }
                 // Frame the route in the band between the search bar and the trip sheet.
                 let b = r.polyline.boundingMapRect
                 let w = max(b.width, b.height * 0.6), h = max(b.height, b.width * 0.6)
@@ -165,7 +198,7 @@ struct PlanView: View {
                             .focused($focused).submitLabel(.search)
                             .onSubmit { Task { await plan.pick(name: plan.query) } }
                         if !plan.query.isEmpty {
-                            Button { plan.query = ""; plan.route = nil; plan.destination = nil } label: {
+                            Button { plan.query = ""; plan.routes = []; plan.destination = nil } label: {
                                 Image(systemName: "xmark.circle.fill").foregroundStyle(Palette.muted)
                             }
                         }
@@ -225,7 +258,7 @@ struct PlanView: View {
             VStack {
                 Spacer()
                 if let d = plan.destination {
-                    TripSheet(name: d.name ?? "Destination", address: d.placemark.title, route: plan.route, routing: plan.routing,
+                    TripSheet(name: d.name ?? "Destination", address: d.placemark.title, plan: plan, route: plan.route, routing: plan.routing,
                               demo: $demo, starting: starting, buddyForm: store.user?.buddy.form ?? "sprout",
                               buddyName: store.user?.buddy.name ?? "Levin") {
                         Task {
@@ -252,6 +285,7 @@ struct PlanView: View {
 private struct TripSheet: View {
     let name: String
     let address: String?
+    @ObservedObject var plan: PlanModel
     let route: MKRoute?
     let routing: Bool
     @Binding var demo: Bool
@@ -271,10 +305,26 @@ private struct TripSheet: View {
                     if let address { Text(address).font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(1) }
                 }
             }
-            HStack(spacing: 10) {
-                TripStat(icon: "figure.walk", value: route.map { formatDistance($0.distance) } ?? (routing ? "..." : "--"), label: "distance")
-                TripStat(icon: "clock.fill", value: route.map { "\(Int(($0.expectedTravelTime / 60).rounded())) min" } ?? (routing ? "..." : "--"), label: "walk")
-                TripStat(icon: "shield.lefthalf.filled", value: "2", label: "watching")
+            if plan.routes.isEmpty {
+                HStack(spacing: 10) {
+                    ProgressView().tint(Palette.gold)
+                    Text(routing ? "Finding walking routes..." : "No route yet").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                }
+            } else if plan.sameRoute, let r = plan.route {
+                RouteOption(kind: .safe, route: r, selected: true, note: "Quickest route is also the safer one") {}
+            } else {
+                VStack(spacing: 10) {
+                    if let s = plan.safest {
+                        RouteOption(kind: .safe, route: s, selected: plan.choice == .safe, note: "Main streets, fewer turns") {
+                            withAnimation(.spring(response: 0.35)) { plan.choice = .safe }
+                        }
+                    }
+                    if let q = plan.quickest {
+                        RouteOption(kind: .quick, route: q, selected: plan.choice == .quick, note: "Fastest way there") {
+                            withAnimation(.spring(response: 0.35)) { plan.choice = .quick }
+                        }
+                    }
+                }
             }
             Toggle(isOn: $demo) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -301,20 +351,38 @@ private struct TripSheet: View {
     }
 }
 
-private struct TripStat: View {
-    let icon: String
-    let value: String
-    let label: String
+func formatDistance(_ m: Double) -> String { m >= 1000 ? String(format: "%.1f km", m / 1000) : "\(Int(m)) m" }
+
+
+private struct RouteOption: View {
+    let kind: RouteChoice
+    let route: MKRoute
+    let selected: Bool
+    let note: String
+    let pick: () -> Void
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Image(systemName: icon).font(.system(size: 14, weight: .bold)).foregroundStyle(Palette.gold)
-            Text(value).font(Typeface.display(19)).foregroundStyle(Palette.text).monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(Typeface.body(12)).foregroundStyle(Palette.muted).lineLimit(1)
+        let tint = kind == .safe ? Palette.ok : Palette.gold
+        Button(action: pick) {
+            HStack(spacing: 12) {
+                Image(systemName: kind == .safe ? "shield.lefthalf.filled" : "bolt.fill")
+                    .font(.system(size: 17, weight: .bold)).foregroundStyle(kind == .safe ? Color(hex: 0x032417) : Palette.ink)
+                    .frame(width: 40, height: 40).background(Circle().fill(tint))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(kind == .safe ? "Safer route" : "Quickest route").font(Typeface.displayBold(17)).foregroundStyle(Palette.text)
+                    Text(note).font(Typeface.body(13)).foregroundStyle(Palette.muted).lineLimit(1)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(Int((route.expectedTravelTime / 60).rounded())) min").font(Typeface.display(19)).foregroundStyle(Palette.text).monospacedDigit()
+                    Text(formatDistance(route.distance)).font(Typeface.body(12)).foregroundStyle(Palette.muted)
+                }
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(selected ? tint.opacity(0.12) : Color(hex: 0x0f1433)))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(selected ? tint : Palette.line, lineWidth: selected ? 2 : 1))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color(hex: 0x0f1433)))
+        .buttonStyle(.plain)
+        .accessibilityLabel(kind == .safe ? "Safer route" : "Quickest route")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
-
-func formatDistance(_ m: Double) -> String { m >= 1000 ? String(format: "%.1f km", m / 1000) : "\(Int(m)) m" }
