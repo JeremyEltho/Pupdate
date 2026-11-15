@@ -11,6 +11,7 @@ Built at SunHacks 2026.
 - **Duress.** A 2 second long-press on the buddy sends a silent alert. Your own screen stays calm. Your friends' screens say "Do not call first" and hide the call button.
 - **Lost contact.** If your phone stops checking in for 90 s, your friends get a lost-contact alert.
 - **XP and evolution.** Answering on time earns XP. The chick grows from egg to chick to night owl; every other pet earns a star at 100 XP and a crown at 250 XP. A safe-walk streak grows too.
+- **Safer route.** When you plan a walk, Gemini compares the walking routes from Apple Maps by their street names and says which is safer at night and why. A street-type rule takes over if Gemini is unavailable. It has no crime data, so the app calls it a guide.
 - **Closing alerts.** Only a friend can close an alert. If you pet the buddy late, the friend sees "petted after the alert", and the alert stays open until they confirm.
 
 The safety logic lives in one small, deterministic state machine (`backend/app/engine.py`) with injected time, and it is fully unit-tested.

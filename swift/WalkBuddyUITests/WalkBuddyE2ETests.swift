@@ -125,6 +125,7 @@ final class WalkBuddyE2ETests: XCTestCase {
         let anyOption = options.firstMatch
         XCTAssertTrue(anyOption.waitForExistence(timeout: 20), "no route options")
         if app.buttons["Quickest route"].exists { app.buttons["Quickest route"].tap() }
+        XCTAssertTrue(text(app, "Safety notes by Gemini").waitForExistence(timeout: 15), "no Gemini route notes")
         let go = app.buttons["Walk with Levin"]
         XCTAssertTrue(go.waitForExistence(timeout: 20), "no trip sheet")
         let enabled = NSPredicate(format: "isEnabled == true")
@@ -133,5 +134,37 @@ final class WalkBuddyE2ETests: XCTestCase {
         go.tap()
         XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 15), "walk screen never showed")
         XCTAssertTrue(text(app, "Tooker House").waitForExistence(timeout: 5))
+    }
+
+    /// A real GPS walk (demo off) plus the Live Activity: the shell feeds simulated GPS meanwhile.
+    func testRealGPSWalkAndLiveActivity() {
+        api("/demo/reset")
+        let app = launch(role: "walker")
+        let whereTo = app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Where to tonight?")).firstMatch
+        XCTAssertTrue(whereTo.waitForExistence(timeout: 10))
+        whereTo.tap()
+        let field = app.textFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 5))
+        field.tap(); field.typeText("Tooker House\n")
+        let demo = app.switches.firstMatch
+        XCTAssertTrue(demo.waitForExistence(timeout: 20))
+        if (demo.value as? String) == "1" { demo.switches.firstMatch.tap() }
+        let go = app.buttons["Walk with Levin"]
+        expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: go)
+        waitForExpectations(timeout: 20)
+        go.tap()
+        XCTAssertTrue(app.buttons["I'm home, end walk"].waitForExistence(timeout: 15), "real walk did not start")
+        sleep(25) // the shell moves the simulated GPS now
+        let shot = { (name: String) in
+            let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); a.name = name; a.lifetime = .keepAlways; self.add(a)
+        }
+        shot("la-1-in-app")
+        XCUIDevice.shared.press(.home)
+        sleep(4); shot("la-2-home-dynamic-island")
+        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        sleep(3); XCUIDevice.shared.press(.home); sleep(3); shot("la-3-lock-screen")
+        app.activate()
+        let end = app.buttons["I'm home, end walk"]
+        if end.waitForExistence(timeout: 10) { end.tap() }
     }
 }
