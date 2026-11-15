@@ -1,0 +1,26 @@
+{
+  "_note": "Hand drawn walking routes on ASU Tempe campus (approximate, for the demo). build_graph.py can replace these with OSM shortest paths.",
+  "routes": [
+    {
+      "id": "library-to-tooker",
+      "name": "Hayden Library to Tooker House",
+      "from": "Hayden Library",
+      "to": "Tooker House",
+      "points": [
+        [33.41955, -111.93455], [33.41905, -111.93455], [33.41860, -111.93300],
+        [33.41860, -111.93100], [33.41860, -111.92900], [33.41760, -111.92780],
+        [33.41640, -111.92700], [33.41570, -111.92610]
+      ]
+    },
+    {
+      "id": "mu-to-vista",
+      "name": "Memorial Union to Vista del Sol",
+      "from": "Memorial Union",
+      "to": "Vista del Sol",
+      "points": [
+        [33.41750, -111.93460], [33.41640, -111.93460], [33.41530, -111.93420],
+        [33.41420, -111.93330], [33.41330, -111.93200], [33.41260, -111.93120]
+      ]
+    }
+  ]
+}
