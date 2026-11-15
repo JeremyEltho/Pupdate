@@ -40,6 +40,7 @@
 		6051B2078FEBA93A8F840BF7 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C1DEBC73B17D7B2BD511B8B /* Stores.swift */; };
 		60D21CA3986FB76B2E5D299C /* WalkExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC51102D8938F13553D08AA7 /* WalkExtras.swift */; };
 		6499108F8D319FD461CA1D5E /* Figtree_500Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F980DF873ED18C254C5C285 /* Figtree_500Medium.ttf */; };
+		71EEF19C6607892552A4D18F /* DogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154CC6D897A51D4CEC39A291 /* DogView.swift */; };
 		74946AC7C61C0713C2827F05 /* hatching_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = 984167E13DA97FAC2B41FCBB /* hatching_chick.png */; };
 		765AEBD4EBC66A758CBFEA52 /* pet_chipmunk.png in Resources */ = {isa = PBXBuildFile; fileRef = 169E39A5629EF38715BFFA01 /* pet_chipmunk.png */; };
 		792737B1466C90F554F17DD9 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817D82ED2DFE35FF7C2DC11A /* Feedback.swift */; };
@@ -48,6 +49,7 @@
 		7E7811FA9F3CDA01902B0C7E /* WalkBuddyWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 00B6D76E05787D1231B6551A /* WalkBuddyWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		82BC7EB7E23412B7BCDA73C2 /* crown.png in Resources */ = {isa = PBXBuildFile; fileRef = 65491BC1B266EF215FB5AEB8 /* crown.png */; };
 		853BDA21402F1032D48CA4D0 /* sparkles.png in Resources */ = {isa = PBXBuildFile; fileRef = 0E81B80B738B66DA0487CC46 /* sparkles.png */; };
+		8569C0C28F05BC315759D70B /* DogArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7476A81C89E72051213D2422 /* DogArt.swift */; };
 		8629D809EA6CE21C7D9B378B /* pet_hedgehog.png in Resources */ = {isa = PBXBuildFile; fileRef = D5C07E959D03CED82A9F8741 /* pet_hedgehog.png */; };
 		86BBE621E2EE98D4CADC0839 /* glowing_star.png in Resources */ = {isa = PBXBuildFile; fileRef = D7599797ED8B1972F393A29A /* glowing_star.png */; };
 		8AF29F62DD259F86B6EE19A4 /* pet_dog.png in Resources */ = {isa = PBXBuildFile; fileRef = F641DADE1DB788E110898B15 /* pet_dog.png */; };
@@ -56,6 +58,7 @@
 		98394F17DBC3BC2010F31BA4 /* Figtree_600SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5BD3518946EBAE8B194C60CE /* Figtree_600SemiBold.ttf */; };
 		986A03E90CA0FAB9F072025E /* pet_otter.png in Resources */ = {isa = PBXBuildFile; fileRef = 51B788706A6A2A480E99CF08 /* pet_otter.png */; };
 		A065BE368A737F4928F09981 /* pet_poodle.png in Resources */ = {isa = PBXBuildFile; fileRef = 2551FAAA87B5E51AA8546C64 /* pet_poodle.png */; };
+		A84C46088A970362D40872FA /* DogArt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7476A81C89E72051213D2422 /* DogArt.swift */; };
 		AADB5B7F43DDD5465B0DA040 /* footprints.png in Resources */ = {isa = PBXBuildFile; fileRef = 83A102C515C2D034403E579D /* footprints.png */; };
 		ACB6DF5BDBF2FEE4F963FF02 /* BricolageGrotesque_700Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 10D4AA74FD5F870121B73DD8 /* BricolageGrotesque_700Bold.ttf */; };
 		B369C1686F63B195BD020B03 /* pet_rabbit.png in Resources */ = {isa = PBXBuildFile; fileRef = 59626881C89FF22365A993D8 /* pet_rabbit.png */; };
@@ -87,6 +90,7 @@
 		F871706E0FD814E9DF81D2C5 /* front-facing_baby_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = C0FCA70A90BB18E198938DF6 /* front-facing_baby_chick.png */; };
 		FAABDCD3CA098823545BC951 /* house.png in Resources */ = {isa = PBXBuildFile; fileRef = 42E2C6870F6AF3A7FE83C98D /* house.png */; };
 		FE76F2B8815A0A1B31ABCF93 /* BuddyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E7CFFD4734434E62DA686D /* BuddyView.swift */; };
+		FFD5FCF79C463DE63CF0E186 /* DogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154CC6D897A51D4CEC39A291 /* DogView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +133,7 @@
 		0AEE91B97020907042DBA94E /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		0E81B80B738B66DA0487CC46 /* sparkles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sparkles.png; sourceTree = "<group>"; };
 		10D4AA74FD5F870121B73DD8 /* BricolageGrotesque_700Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BricolageGrotesque_700Bold.ttf; sourceTree = "<group>"; };
+		154CC6D897A51D4CEC39A291 /* DogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DogView.swift; sourceTree = "<group>"; };
 		169E39A5629EF38715BFFA01 /* pet_chipmunk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_chipmunk.png; sourceTree = "<group>"; };
 		17BCECCF077A717EB4C92D16 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		2551FAAA87B5E51AA8546C64 /* pet_poodle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_poodle.png; sourceTree = "<group>"; };
@@ -161,6 +166,7 @@
 		6CD7F89AEC56B7D35278C0C3 /* pet_chipmunk.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_chipmunk.png; sourceTree = "<group>"; };
 		6EA689B3EBDE2623ABB92877 /* Figtree_700Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Figtree_700Bold.ttf; sourceTree = "<group>"; };
 		7098F73BA912A61CD62D8BA0 /* pet_otter.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_otter.png; sourceTree = "<group>"; };
+		7476A81C89E72051213D2422 /* DogArt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DogArt.swift; sourceTree = "<group>"; };
 		796B23329BB175A36B6A98F3 /* pet_sloth.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_sloth.png; sourceTree = "<group>"; };
 		80FCE687106C73BE363BE783 /* pet_cat.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_cat.png; sourceTree = "<group>"; };
 		817D82ED2DFE35FF7C2DC11A /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
@@ -363,6 +369,8 @@
 		F80627A4E47DAB8BC13CC4D1 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				7476A81C89E72051213D2422 /* DogArt.swift */,
+				154CC6D897A51D4CEC39A291 /* DogView.swift */,
 				5D5715CC6C74E6CC5A9D871D /* WalkActivity.swift */,
 			);
 			name = Shared;
@@ -556,6 +564,8 @@
 				FE76F2B8815A0A1B31ABCF93 /* BuddyView.swift in Sources */,
 				49E89CCD85818F573696B42F /* Components.swift in Sources */,
 				F72EDCD45207A6B8C6B575D5 /* CustomizeView.swift in Sources */,
+				A84C46088A970362D40872FA /* DogArt.swift in Sources */,
+				FFD5FCF79C463DE63CF0E186 /* DogView.swift in Sources */,
 				44BB996D745E0B45BBC3CD7F /* Features.swift in Sources */,
 				792737B1466C90F554F17DD9 /* Feedback.swift in Sources */,
 				C1E20183A8FFEA695F295EE3 /* FlagsView.swift in Sources */,
@@ -577,6 +587,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8569C0C28F05BC315759D70B /* DogArt.swift in Sources */,
+				71EEF19C6607892552A4D18F /* DogView.swift in Sources */,
 				5C5F4C0B5E840EAC1C8E00F5 /* WalkActivity.swift in Sources */,
 				F04281B48CEF01216E2364D9 /* WalkLiveActivity.swift in Sources */,
 			);

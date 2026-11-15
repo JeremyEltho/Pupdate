@@ -157,9 +157,16 @@ final class WalkerStore: ObservableObject {
         if let u = try? await API.shared.user(me) { user = u }
     }
 
+    private var happyToken = 0
+
     private func beHappy() {
+        happyToken += 1
+        let token = happyToken
         happy = true
-        Task { try? await Task.sleep(nanoseconds: 1_800_000_000); happy = false }
+        Task {
+            try? await Task.sleep(nanoseconds: 2_400_000_000)
+            if token == happyToken { happy = false }   // a second pet keeps it happy longer
+        }
     }
 }
 

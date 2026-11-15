@@ -10,14 +10,14 @@ final class LiveActivityManager {
     private var walkId: String?
     private var last: WalkActivityAttributes.ContentState?
 
-    func sync(walk: Walk?, route: RouteInfo?) {
+    func sync(walk: Walk?, route: RouteInfo?, happy: Bool = false) {
         let enabled = UserDefaults.standard.object(forKey: "wb.liveActivity") as? Bool ?? true
         guard enabled, let w = walk, w.status == "active" else { end(); return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let content = makeState(w, route)
+        let content = makeState(w, route, happy: happy)
         if activity == nil || walkId != w.id {
             end()
-            let attrs = WalkActivityAttributes(walkerName: w.walkerName, buddyName: w.buddy.name,
+            let attrs = WalkActivityAttributes(walkId: w.id, walkerName: w.walkerName, buddyName: w.buddy.name,
                                                from: route?.from ?? "Here", to: route?.to ?? "home")
             do {
                 activity = try Activity.request(attributes: attrs, content: .init(state: content, staleDate: nil))
@@ -29,8 +29,9 @@ final class LiveActivityManager {
             return
         }
         guard changed(content) else { return }
-        last = content
+        // Compare with the previous state before overwriting it, so urgent changes really play a sound.
         let alerting = WalkStateStyle.isUrgent(content.state) && content.state != last?.state
+        last = content
         Task {
             await activity?.update(.init(state: content, staleDate: nil),
                                    alertConfiguration: alerting ? AlertConfiguration(title: "\(content.title)", body: "\(content.subtitle)", sound: .default) : nil)
@@ -47,7 +48,7 @@ final class LiveActivityManager {
 
     private func changed(_ c: WalkActivityAttributes.ContentState) -> Bool {
         guard let l = last else { return true }
-        if l.state != c.state || l.form != c.form || l.xp != c.xp { return true }
+        if l.state != c.state || l.form != c.form || l.xp != c.xp || l.happy != c.happy { return true }
         if abs(l.progress - c.progress) > 0.01 { return true }
         if l.turnText != c.turnText { return true }
         if let a = l.turnMeters, let b = c.turnMeters, abs(a - b) >= 10 { return true }
@@ -55,7 +56,7 @@ final class LiveActivityManager {
         return (l.deadline == nil) != (c.deadline == nil)
     }
 
-    private func makeState(_ w: Walk, _ route: RouteInfo?) -> WalkActivityAttributes.ContentState {
+    private func makeState(_ w: Walk, _ route: RouteInfo?, happy: Bool) -> WalkActivityAttributes.ContentState {
         let st = w.engine.state
         let copy = stateCopy(st, name: w.buddy.name)
         var deadline: Date?
@@ -63,10 +64,12 @@ final class LiveActivityManager {
             deadline = Date().addingTimeInterval(left / max(w.speed, 1))
         }
         let (progress, left) = routeProgress(route?.points, w.pos)
-        return .init(state: st, title: copy.title, subtitle: copy.sub, deadline: deadline, form: w.buddy.form,
+        let petted = happy && st != "alert"   // a late pet never looks like "all good"
+        return .init(state: st, title: petted ? "Good \(w.buddy.name)!" : copy.title,
+                     subtitle: petted ? "Thanks for checking in." : copy.sub, deadline: petted ? nil : deadline, form: w.buddy.form,
                      species: w.buddy.species ?? "chick",
                      xp: w.buddy.xp, progress: progress, metersLeft: left,
-                     turnText: w.nextTurn?.text, turnSymbol: w.nextTurn.map { turnSymbol($0.maneuver) }, turnMeters: w.nextTurn?.inM)
+                     turnText: w.nextTurn?.text, turnSymbol: w.nextTurn.map { turnSymbol($0.maneuver) }, turnMeters: w.nextTurn?.inM, happy: petted)
     }
 }
 
