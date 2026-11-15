@@ -79,7 +79,9 @@ def ingest(w, lat, lng, accuracy, ts=None):
             w["trail"].append([round(lat, 6), round(lng, 6)])
             del w["trail"][:-400]
             route = load_routes().get(w["route_id"]) if w["route_id"] else None
-            flagged = anomalies(st, t, pos, route)
+            flagged = anomalies(st, t, pos, route if w.get("watch_route", True) else None)
+            if not w.get("watch_speed", True):
+                flagged = [f for f in flagged if f not in ("moving_fast", "stopped")]
             for name in flagged:
                 events += e.request_checkin(now, name)
             if not w["demo"] and w["dest"] and dist_m(pos, w["dest"]) <= ARRIVE_M:

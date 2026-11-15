@@ -8,7 +8,7 @@ def kinds(ev):
 
 def test_escalation_timing_table():
     e = Engine(0, demo=True)
-    assert e.state == "calm" and e.next_checkin is None  # demo: no random check-ins
+    assert e.state == "calm" and e.next_checkin is None  # demo walks have no schedule
     e.request_checkin(0, "demo")
     checkpoints = [(29.9, "checkin"), (30, "nudge"), (59.9, "nudge"), (60, "final"),
                    (90, "countdown"), (109.9, "countdown")]
@@ -92,14 +92,24 @@ def test_tick_without_position_prevents_lost_contact():
     assert not e.lost_contact
 
 
-def test_real_walk_schedules_random_checkins():
-    e = Engine(0, demo=False, seed=1)
-    assert 120 <= e.next_checkin <= 900
-    t = e.next_checkin
-    for s in range(0, int(t), 30):
-        e.tick(s)
-    ev = e.tick(t)
+def test_real_walk_checks_in_on_a_fixed_schedule():
+    e = Engine(0, demo=False, every=300)
+    assert e.next_checkin == 300
+    for t in range(0, 300, 30):
+        e.tick(t)
+    ev = e.tick(300)
     assert kinds(ev) == ["checkin_started"] and e.state == "checkin"
+    e.pet(310)
+    assert e.next_checkin == 610  # rescheduled from the answer
+
+
+def test_triggers_only_mode_never_schedules():
+    e = Engine(0, demo=False, every=None)
+    for t in range(0, 3000, 30):
+        e.tick(t)
+    assert e.state == "calm" and e.next_checkin is None
+    e.request_checkin(3000, "off_route")
+    assert e.state == "checkin"
 
 
 def test_buddy_evolves_at_100():

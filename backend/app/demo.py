@@ -64,7 +64,7 @@ def step(w):
         else:
             sim["deviate_until"] = None
     events = e.tick(now, pos)
-    off = off_route_m(pos, route) > OFF_ROUTE_M
+    off = w.get("watch_route", True) and off_route_m(pos, route) > OFF_ROUTE_M
     if off:
         sim.setdefault("off_since", now)
         if now - sim["off_since"] >= OFF_ROUTE_CHECKIN_S and not sim.get("off_checked"):
@@ -110,8 +110,8 @@ def stop_loop():
 FIRST_CHECKIN_SIM_S = 30.0  # demo walks ask "Still good?" once, 15 s real after start
 
 
-def start(route_id="library-to-tooker", walker_id="jordan"):
-    w = walks.start_walk(walker_id, route_id=route_id, demo=True)
+def start(route_id="library-to-tooker", walker_id="jordan", watch_route=True, watch_speed=True):
+    w = walks.start_walk(walker_id, route_id=route_id, demo=True, watch_route=watch_route, watch_speed=watch_speed)
     with walks.LOCK:
         w["engine"].next_checkin = w["clock"].now() + FIRST_CHECKIN_SIM_S
         step(w)

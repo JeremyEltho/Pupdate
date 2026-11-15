@@ -42,6 +42,11 @@ class StartWalk(BaseModel):
     points: Optional[List[List[float]]] = None
     from_name: Optional[str] = None
     to_name: Optional[str] = None
+    # Walker settings: seconds between scheduled check-ins (None = only when something is off),
+    # and whether leaving the route or odd speed should trigger a check-in.
+    checkin_every_s: Optional[float] = 600.0
+    watch_route: bool = True
+    watch_speed: bool = True
 
 
 def _register_custom(req):
@@ -121,9 +126,10 @@ def start_walk(req: StartWalk):
     route_id = _register_custom(req)
     try:
         if req.demo:
-            w = demo.start(route_id, req.walker_id)
+            w = demo.start(route_id, req.walker_id, req.watch_route, req.watch_speed)
         else:
-            w = walks.start_walk(req.walker_id, route_id, req.dest, False)
+            w = walks.start_walk(req.walker_id, route_id, req.dest, False, req.checkin_every_s,
+                                 req.watch_route, req.watch_speed)
     except KeyError:
         raise HTTPException(404, "unknown walker")
     with walks.LOCK:

@@ -77,7 +77,7 @@ def friends_watching(walker_id):
     return [u["id"] for u in STATE["users"].values() if walker_id in u["friends"]]
 
 
-def start_walk(walker_id, route_id=None, dest=None, demo=False):
+def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, watch_route=True, watch_speed=True):
     with LOCK:
         user(walker_id)
         for w in STATE["walks"].values():
@@ -91,7 +91,8 @@ def start_walk(walker_id, route_id=None, dest=None, demo=False):
         w = {
             "id": wid, "walker_id": walker_id, "demo": demo, "status": "active",
             "route_id": route["id"] if route else None, "dest": dest or (route["points"][-1] if route else None),
-            "started_at": iso(), "clock": clock, "engine": Engine(clock.now(), demo=demo),
+            "started_at": iso(), "clock": clock, "engine": Engine(clock.now(), demo=demo, every=every),
+            "watch_route": watch_route, "watch_speed": watch_speed,
             "events": [], "trail": [], "sim": {"dist_m": 0.0, "dir": 1, "deviate_until": None,
                                                 "speed_override": None, "last_now": clock.now()},
         }
@@ -209,6 +210,7 @@ def walk_view(w, viewer="walker"):
         "next_form_at": buddy_mod.next_form_at(u["buddy"]["xp"]),
         "alerts": alerts, "events": w["events"][-12:],
         "off_route": w["sim"].get("off_route", False),
+        "checkin_every_s": w["engine"].every, "watch_route": w.get("watch_route", True), "watch_speed": w.get("watch_speed", True),
     }
 
 

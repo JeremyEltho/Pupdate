@@ -6,21 +6,21 @@ sim clock that runs faster (see demo.py). The engine never pets by itself.
 States: calm -> checkin (30 s) -> nudge (30 s) -> final (30 s) -> countdown (20 s) -> alert
 A separate lost_contact alert fires after 90 s without any tick.
 """
-import random
-
 STAGES = [("checkin", 30.0), ("nudge", 30.0), ("final", 30.0), ("countdown", 20.0)]
 STAGE_LEN = dict(STAGES)
 ESCALATION_TOTAL = sum(s for _, s in STAGES)  # 110 s
 LOST_CONTACT_S = 90.0
-CHECKIN_GAP = (120.0, 900.0)  # random gap between check-ins on real walks
+DEFAULT_EVERY_S = 600.0  # scheduled check-in every 10 minutes unless the walker picks otherwise
 PET_XP = 10
 ESCALATING = {name for name, _ in STAGES}
 
 
 class Engine:
-    def __init__(self, now, demo=False, seed=None):
+    def __init__(self, now, demo=False, every=DEFAULT_EVERY_S):
+        """every: seconds between scheduled check-ins, or None for "only when something is off"
+        (speed or route triggers). Demo walks have no schedule; the demo drives check-ins."""
         self.demo = demo
-        self.rng = random.Random(seed)
+        self.every = None if demo else every
         self.state = "calm"
         self.stage_started = now
         self.last_tick = now
@@ -29,18 +29,18 @@ class Engine:
         self.alert_kind = None  # "no_answer" | "duress" | "lost_contact"
         self.ignore_pets = False
         self.reason = None
-        self.next_checkin = None if demo else now + self._gap()
+        self.next_checkin = self._next(now)
 
     # -- helpers ---------------------------------------------------------
-    def _gap(self):
-        return self.rng.uniform(*CHECKIN_GAP)
+    def _next(self, now):
+        return None if self.every is None else now + self.every
 
     def _to_calm(self, now):
         self.state = "calm"
         self.stage_started = now
         self.reason = None
         self.ignore_pets = False
-        self.next_checkin = None if self.demo else now + self._gap()
+        self.next_checkin = self._next(now)
 
     def snapshot(self, now):
         left = None

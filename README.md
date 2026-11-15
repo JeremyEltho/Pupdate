@@ -6,7 +6,7 @@ Built at SunHacks 2026.
 
 ## How it works
 
-- **Check-ins.** The buddy checks in at random times, and also when your speed looks wrong or you leave your route. Pet it within 30 s.
+- **Check-ins.** The buddy checks in on a schedule you pick in Settings (every 5, 10 or 15 minutes, or only when something looks off), and when your speed looks wrong or you leave your route. Pet it within 30 s.
 - **Escalation.** If you don't answer: check-in (30 s), nudge (30 s), final warning (30 s), countdown (20 s), then an alert to your friends.
 - **Duress.** A 2 second long-press on the buddy sends a silent alert. Your own screen stays calm. Your friends' screens say "Do not call first" and hide the call button.
 - **Lost contact.** If your phone stops checking in for 90 s, your friends get a lost-contact alert.
