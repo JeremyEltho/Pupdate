@@ -41,7 +41,6 @@ final class WalkBuddyE2ETests: XCTestCase {
     /// Walker answers the first check-in by petting: +10 XP and the evolution celebration.
     func testWalkerPetsAndEvolves() {
         api("/demo/reset")
-        api("/users/jordan/buddy", "{\"name\":\"Levin\",\"species\":\"dog\"}")
         api("/demo/start")
         let app = launch(role: "walker")
         XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30), "check-in never showed")
@@ -55,7 +54,7 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCTAssertTrue(app.buttons["Awesome"].waitForExistence(timeout: 8), "evolution overlay never showed")
         app.buttons["Awesome"].tap()
         XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
-        XCTAssertTrue(text(app, "Scout Pup").waitForExistence(timeout: 5))
+        XCTAssertTrue(text(app, "Chick").waitForExistence(timeout: 5))
     }
 
     /// Friend runs the demo panel: start, stop answering, the alert takeover, close.
@@ -365,5 +364,27 @@ final class WalkBuddyE2ETests: XCTestCase {
         let app = launch(role: "friend")
         XCTAssertTrue(text(app, "every 30 min").waitForExistence(timeout: 15), "friend never saw the notice")
         api("/demo/reset")
+    }
+
+    /// End a walk early: pick a reason, the walk ends, and the friend sees why.
+    func testEndWalkEarly() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker")
+        let endEarly = app.buttons["End walk early"]
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 15))
+        scrollTo(app, endEarly)
+        endEarly.tap()
+        XCTAssertTrue(text(app, "End walk early?").waitForExistence(timeout: 5))
+        app.buttons["Got a ride"].tap()
+        app.buttons["End walk"].tap()
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Where to tonight?")).firstMatch
+            .waitForExistence(timeout: 10), "walk didn't end")
+        let feed = get("/friends/maya/feed") as? [String: Any]
+        let ups = feed?["updates"] as? [[String: Any]] ?? []
+        XCTAssertTrue((ups.first?["text"] as? String ?? "").contains("got a ride"), "friend wasn't told")
+        app.terminate()
+        let friend = launch(role: "friend")
+        XCTAssertTrue(text(friend, "ended the walk early").waitForExistence(timeout: 10), "friend screen missing the update")
     }
 }

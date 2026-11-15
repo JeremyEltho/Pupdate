@@ -45,10 +45,7 @@ swift/
     SettingsView.swift   check-ins on/off (confirm), schedule, alert timing, accessibility, circle, server, demo.
                          ScreenPanel enum
     HomeView, FriendView, BuddyView (rub-to-pet, 2 s duress), Features (ladder, walk log), Theme, Feedback
-  WalkBuddy/Shared/WalkActivity.swift   Live Activity ContentState (shared with the widget; new fields must be optional),
-                                        PetBuddyIntent (Lock Screen Pet button)
-  WalkBuddy/Shared/DogView.swift        the animated vector dog (species "dog"), app + widget. Art: DogArt.swift is GENERATED
-                                        from swift/tools/dog_art.py (python3 dog_art.py && python3 gen_dog_swift.py)
+  WalkBuddy/Shared/WalkActivity.swift   Live Activity ContentState (shared with the widget; new fields must be optional)
   WalkBuddyWidgets/                     Lock Screen + Dynamic Island UI
   WalkBuddyUITests/                     XCUITest end-to-end against the live server (15 tests)
 deploy/        vultr-deploy.sh, cloud-init.sh (fresh server)
@@ -96,7 +93,7 @@ To simulate GPS in the simulator: `xcrun simctl location <SIM_ID> set 33.4195,-1
 
 ## Demo users
 
-- **jordan:** the walker. Buddy Levin, a dog at 90 XP, so it evolves at 100 (Puppy -> Scout Pup -> Guardian Dog). Circle: maya and sam.
+- **jordan:** the walker. Buddy Levin, a chick at 90 XP, so it evolves at 100. Circle: maya and sam.
 - **maya:** the friend role on the phone.
 - **sam:** another circle member.
 - **IDs are hard-coded:** `"jordan"` in WalkerStore and Settings, `"maya"` in FriendStore. There is no auth; that is deliberate for the hackathon.

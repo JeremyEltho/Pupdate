@@ -89,7 +89,9 @@ struct RouteInfo: Codable, Equatable, Identifiable {
 
 struct UserInfo: Codable, Equatable { var id: String; var name: String; var buddy: BuddyInfo; var streak: Int?; var activeWalkId: String? }
 
-struct Feed: Codable, Equatable { var walks: [Walk]; var openAlerts: [AlertInfo]; var recentAlerts: [AlertInfo] }
+struct WalkUpdate: Codable, Equatable { var walkerName: String; var walkId: String; var reason: String; var text: String; var at: String }
+
+struct Feed: Codable, Equatable { var walks: [Walk]; var openAlerts: [AlertInfo]; var recentAlerts: [AlertInfo]; var updates: [WalkUpdate]? }
 
 struct RouteAssessment: Codable { var saferId: String?; var reasons: [String: String]; var source: String; var flags: [String: [FlagBrief]]? }
 
@@ -235,6 +237,9 @@ final class API {
         let _: AnyCodable = try await send("/users/\(uid)/circle/\(fid)", method: "DELETE", body: nil)
     }
     func end(_ wid: String) async throws -> Walk { try await post("/walks/\(wid)/end") }
+    func endEarly(_ wid: String, reason: String) async throws -> Walk {
+        try await post("/walks/\(wid)/end", ["early": true, "reason": reason])
+    }
     func demo(_ action: String, _ body: [String: Any] = [:]) async throws {
         let _: AnyCodable = try await post("/demo/\(action)", body)
     }

@@ -19,7 +19,7 @@ LOCK = threading.RLock()
 
 SEED_USERS = {
     "jordan": {"id": "jordan", "name": "Jordan", "phone": "+15555550100", "friends": ["maya", "sam"], "streak": 6,
-               "buddy": {"name": "Levin", "xp": 90, "form": "sprout", "species": "dog"}},
+               "buddy": {"name": "Levin", "xp": 90, "form": "sprout", "species": "chick"}},
     "maya": {"id": "maya", "name": "Maya", "phone": "+15555550101", "friends": ["jordan"], "streak": 2,
              "buddy": {"name": "Pip", "xp": 40, "form": "sprout", "species": "cat"}},
     "sam": {"id": "sam", "name": "Sam", "phone": "+15555550102", "friends": ["jordan"], "streak": 11,
@@ -84,6 +84,7 @@ def reset():
                     u["friends"].remove("jordan")
         STATE["walks"] = {}
         STATE["alerts"] = {}
+        STATE["updates"] = []
         STATE.setdefault("seq", 0)
         STATE.setdefault("flags", {})
         from . import flags as flags_mod
@@ -302,15 +303,52 @@ def handle(w, events):
     return out
 
 
-def finish_walk(w):
-    """End a walk. A walk with no alerts at all extends the safe-walk streak."""
+END_REASONS = {"ride": "got a ride", "plans": "changed plans", "friends": "is with friends now",
+               "safe": "is somewhere safe", "help": "asked for help"}
+
+
+def meters_left(w):
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
+    pos = w["engine"].last_pos
+    if route and pos:
+        from .geo import along_of
+        return max(0, round(route["length_m"] - along_of(pos, route["points"])))
+    if w.get("dest") and pos:
+        from .geo import dist_m
+        return round(dist_m(pos, w["dest"]))
+    return None
+
+
+def finish_walk(w, early=False, reason=None):
+    """End a walk. A finished walk with no alerts extends the safe-walk streak.
+    Ending early tells the circle why and where, and leaves the streak as it was.
+    Reason "help" also alerts the circle right away."""
     if w["status"] != "active":
-        return
+        return None
+    if early and reason not in END_REASONS:
+        raise ValueError("reason must be one of " + ", ".join(END_REASONS))
+    u = user(w["walker_id"])
+    update = None
+    if early:
+        left = meters_left(w)
+        route = load_routes().get(w["route_id"]) if w["route_id"] else None
+        first = u["name"].split(" ")[0]
+        where = f", {left} m from {route['to'] if route else 'home'}" if left is not None else ""
+        text = f"{first} ended the walk early: {END_REASONS[reason]}{where}."
+        w["ended_early"] = {"reason": reason, "meters_left": left, "at": iso()}
+        _log(w, {"type": "ended_early", "reason": reason, "text": text})
+        update = {"walker_id": u["id"], "walker_name": u["name"], "walk_id": w["id"], "reason": reason,
+                  "text": text, "at": iso(), "ts": time.time(), "notify": friends_watching(u["id"])}
+        STATE.setdefault("updates", []).append(update)
+        del STATE["updates"][:-30]
+        if reason == "help":
+            open_alert(w, "help")
     w["status"] = "ended"
     w["ended_at"] = iso()
-    had_alert = any(a["walk_id"] == w["id"] for a in STATE["alerts"].values())
-    u = user(w["walker_id"])
-    u["streak"] = 0 if had_alert else u.get("streak", 0) + 1
+    if not early:
+        had_alert = any(a["walk_id"] == w["id"] for a in STATE["alerts"].values())
+        u["streak"] = 0 if had_alert else u.get("streak", 0) + 1
+    return update
 
 
 def open_alerts(walk_id=None):
@@ -342,6 +380,7 @@ def open_alert(w, kind):
         "no_answer": f"{first} stopped answering {place}, {mins} min into the walk. Call them first.",
         "duress": f"{first} sent a silent alert {place}. Don't call. Text, or go there with someone.",
         "lost_contact": f"{first}'s phone went quiet {place}, {mins} min into the walk. Try calling.",
+        "help": f"{first} ended their walk early and asked for help {place}, {mins} min in. Call them now.",
     }.get(kind, f"Alert for {first} {place}.")
     if context and kind != "duress":
         a["summary"] += " " + context
@@ -448,6 +487,7 @@ def walk_view(w, viewer="walker"):
         "next_turn": nav.next_turn(w, route) if w["status"] == "active" else None,
         "pace": pace.view(w), "flag_ahead": flag_ahead(w),
         "notices": w.get("notices", []), "checkins_off": w.get("checkins_off", False),
+        "ended_early": w.get("ended_early"),
         "escalation_s": w["engine"].escalation_total(),
         "stages": {n: v for n, v in w["engine"]._stages()},
     }
@@ -462,8 +502,11 @@ def feed(friend_id):
                  if w["status"] == "active" and w["walker_id"] in watched]
         alerts = [a for a in STATE["alerts"].values() if friend_id in a["notify"]]
         alerts.sort(key=lambda a: a["opened_at"], reverse=True)
+        cutoff = time.time() - 3 * 3600
+        updates = [{k: v for k, v in x.items() if k != "notify"} for x in reversed(STATE.get("updates", []))
+                   if friend_id in x["notify"] and x["ts"] > cutoff][:10]
         return {"walks": walks, "open_alerts": [a for a in alerts if a["status"] == "open"],
-                "recent_alerts": alerts[:10]}
+                "recent_alerts": alerts[:10], "updates": updates}
 
 
 # ---------------------------------------------------------------------------
@@ -494,7 +537,7 @@ def dump():
     live_alert_walks = set(walks_out)
     alerts = {k: a for k, a in STATE["alerts"].items() if a["status"] == "open" or a["walk_id"] in live_alert_walks}
     return {"users": STATE["users"], "walks": walks_out, "alerts": alerts, "seq": STATE.get("seq", 0),
-            "custom_routes": routes.CUSTOM, "flags": STATE.get("flags", {})}
+            "custom_routes": routes.CUSTOM, "flags": STATE.get("flags", {}), "updates": STATE.get("updates", [])}
 
 
 def restore(data):
@@ -515,7 +558,7 @@ def restore(data):
         walks_in[wid] = w
     STATE.clear()
     STATE.update({"users": data["users"], "walks": walks_in, "alerts": data.get("alerts", {}), "seq": data.get("seq", 0),
-                  "flags": data.get("flags", {})})
+                  "flags": data.get("flags", {}), "updates": data.get("updates", [])})
     if not STATE["flags"]:
         from . import flags as flags_mod
         flags_mod.seed()

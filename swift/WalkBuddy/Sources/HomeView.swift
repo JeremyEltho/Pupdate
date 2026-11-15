@@ -201,7 +201,7 @@ private struct EvolutionTrack: View {
                     ForEach(Array(stages.enumerated()), id: \.offset) { i, st in
                         let reached = buddy.xp >= st.xp
                         VStack(spacing: 6) {
-                            PetImage(species: buddy.species, form: st.form, size: 62)
+                            petSprite(buddy.species, st.form).image.resizable().scaledToFit().frame(width: 62, height: 62)
                                 .overlay(alignment: .topTrailing) { if let g = petGear(buddy.species, st.form) { g.image.resizable().scaledToFit().frame(width: 24).offset(x: 6, y: -6) } }
                                 .colorMultiply(reached ? .white : .black)
                                 .opacity(reached ? 1 : 0.55)

@@ -180,6 +180,11 @@ class BuddyEdit(BaseModel):
     species: Optional[str] = None
 
 
+class EndWalk(BaseModel):
+    early: bool = False
+    reason: Optional[str] = None  # ride | plans | friends | safe | help
+
+
 class CloseAlert(BaseModel):
     friend_id: str
 
@@ -380,10 +385,14 @@ def duress(wid: str):
 
 
 @app.post("/walks/{wid}/end")
-def end(wid: str):
+def end(wid: str, req: Optional[EndWalk] = None):
     w = _walk(wid)
+    req = req or EndWalk()
     with walks.LOCK:
-        walks.finish_walk(w)
+        try:
+            walks.finish_walk(w, req.early, req.reason)
+        except ValueError as e:
+            raise HTTPException(400, str(e))
         return walks.walk_view(w)
 
 

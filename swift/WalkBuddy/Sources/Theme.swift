@@ -109,37 +109,6 @@ func petSprite(_ species: String?, _ form: String) -> Sprite {
     return SPECIES.first { $0.id == sp }?.sprite ?? .hatchling
 }
 
-/// The dog is drawn as an animated vector (DogView) with its own evolution gear,
-/// so it doesn't use a sprite or the star/crown overlay.
-let VECTOR_SPECIES: Set<String> = ["dog"]
-
-/// A pet picture anywhere in the app: the animated dog for "dog", the sprite for everyone else.
-struct PetImage: View {
-    let species: String?
-    let form: String
-    var mood: Mood = .calm
-    var size: CGFloat
-    var animated = false
-
-    var body: some View {
-        if VECTOR_SPECIES.contains(species ?? "") {
-            DogView(form: form, mood: dogMood(mood), size: size, animated: animated && !Motion.reduced)
-        } else {
-            petSprite(species, form).image.resizable().scaledToFit().frame(width: size, height: size)
-        }
-    }
-}
-
-func dogMood(_ m: Mood) -> DogMood {
-    switch m {
-    case .calm: return .calm
-    case .asking: return .asking
-    case .worried: return .worried
-    case .alarmed: return .alarmed
-    case .happy: return .happy
-    }
-}
-
 /// Old call sites: chick line by form.
 func formSprite(_ form: String) -> Sprite { petSprite("chick", form) }
 
@@ -147,15 +116,12 @@ func formName(_ form: String, species: String? = "chick") -> String {
     if (species ?? "chick") == "chick" {
         switch form { case "strider": return "Chick"; case "guardian": return "Night Owl"; default: return "Hatchling" }
     }
-    if species == "dog" {
-        switch form { case "strider": return "Scout Pup"; case "guardian": return "Guardian Dog"; default: return "Puppy" }
-    }
     switch form { case "strider": return "Explorer"; case "guardian": return "Guardian"; default: return "Baby" }
 }
 
 /// Gear a non-chick pet wears at each stage.
 func petGear(_ species: String?, _ form: String) -> Sprite? {
-    guard (species ?? "chick") != "chick", !VECTOR_SPECIES.contains(species ?? "") else { return nil }
+    guard (species ?? "chick") != "chick" else { return nil }
     switch form { case "strider": return .star; case "guardian": return .crown; default: return nil }
 }
 

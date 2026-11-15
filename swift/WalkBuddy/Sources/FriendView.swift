@@ -13,6 +13,7 @@ private let KIND: [String: (title: (String) -> String, body: (String) -> String,
     "no_answer": ({ "\($0) stopped answering" }, { "\($0) didn't pet their buddy through almost two minutes of check-ins. Call them now." }, "No answer"),
     "duress": ({ "\($0) sent a silent alert" }, { _ in "Do not call first. A ringing phone could put them at risk. Text, or go to their location with someone." }, "Silent alert"),
     "lost_contact": ({ "Lost contact with \($0)" }, { "\($0)'s phone stopped checking in 90 seconds ago." }, "Lost contact"),
+    "help": ({ "\($0) asked for help" }, { "\($0) ended their walk early and tapped I need help. Call them now." }, "Asked for help"),
 ]
 
 struct FriendView: View {
@@ -85,6 +86,25 @@ struct FriendView: View {
                         }
                     }
 
+                    if let ups = store.feed?.updates, !ups.isEmpty {
+                        GameCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SectionTitle(text: "Updates")
+                                ForEach(Array(ups.prefix(4).enumerated()), id: \.offset) { _, u in
+                                    HStack(alignment: .top, spacing: 10) {
+                                        Image(systemName: u.reason == "help" ? "exclamationmark.triangle.fill" : "flag.checkered")
+                                            .font(.system(size: 14, weight: .bold)).foregroundStyle(u.reason == "help" ? Palette.alert : Palette.sky)
+                                            .frame(width: 28, height: 28).background(Circle().fill((u.reason == "help" ? Palette.alert : Palette.sky).opacity(0.15)))
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(u.text).font(Typeface.body(14)).foregroundStyle(Palette.text)
+                                            Text(clock(u.at)).font(Typeface.body(12)).foregroundStyle(Palette.muted)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .accessibilityIdentifier("friend-updates")
+                    }
                     if let w = walk {
                         GameCard { WalkLog(events: w.events, title: "\(w.walkerName)'s walk log", species: w.buddy.species) }
                     }

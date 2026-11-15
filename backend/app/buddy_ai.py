@@ -78,7 +78,8 @@ def checkin_prompt(buddy, species, walker, reason, place):
 def alert_prompt(walker, kind, place, minutes_in, last_checkin, buddy, context=""):
     what = {"no_answer": f"{walker} did not answer their buddy's check-ins for almost two minutes",
             "duress": f"{walker} sent a silent duress signal",
-            "lost_contact": f"{walker}'s phone stopped checking in for 90 seconds"}.get(kind, "an alert fired")
+            "lost_contact": f"{walker}'s phone stopped checking in for 90 seconds",
+            "help": f"{walker} ended their walk early and tapped 'I need help'"}.get(kind, "an alert fired")
     tone = "Tell the friend NOT to call first; suggest texting or going there with someone." if kind == "duress" else \
         "Suggest calling first."
     return (f"Write a calm, factual 1-2 sentence alert for a friend. Facts: {what}. Location: {place}. "

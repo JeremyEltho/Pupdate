@@ -16,13 +16,7 @@ struct WalkerView: View {
         .animation(.easeInOut(duration: 0.35), value: store.walk?.id)
         .onAppear { store.start() }
         .onDisappear { store.stop() }
-        .onChange(of: store.walk) { _, w in
-            LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }, happy: store.happy)
-        }
-        .onChange(of: store.happy) { _, h in   // the Lock Screen pet smiles when you pet it, then goes back
-            let w = store.walk
-            LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }, happy: h)
-        }
+        .onChange(of: store.walk) { _, w in LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }) }
     }
 }
 
@@ -31,6 +25,7 @@ struct WalkScreen: View {
     let onExit: () -> Void
     @StateObject private var flagStore = FlagStore(me: "jordan")
     @State private var newFlagAt: CLLocationCoordinate2D?
+    @State private var endingEarly = false
 
     var body: some View {
         let walk = store.walk
@@ -164,8 +159,12 @@ struct WalkScreen: View {
                         }
                         if let p = w.pace { GameCard { PaceCard(pace: p) } }
                         if w.demo { GameCard { TestToolsCard(walk: w) { flagHere(w) } } }
-                        GameButton(title: w.demo ? "End demo walk" : "I'm home, end walk", kind: .ghost, busy: store.ending) { Task { await store.end() } }
-                            .disabled(store.ending)
+                        HStack(spacing: 10) {
+                            GameButton(title: "End walk early", kind: .ghost) { endingEarly = true }
+                                .disabled(store.ending)
+                            GameButton(title: w.demo ? "End demo walk" : "I'm home", kind: .ghost, busy: store.ending) { Task { await store.end() } }
+                                .disabled(store.ending)
+                        }
                         GameCard { WalkLog(events: w.events, species: w.buddy.species) }
                     }
                 }
@@ -183,6 +182,17 @@ struct WalkScreen: View {
                 .background(Color.black.opacity(0.45).ignoresSafeArea().onTapGesture { newFlagAt = nil })
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+            if endingEarly, let w = walk {
+                VStack {
+                    Spacer()
+                    EndEarlyCard(walk: w, route: route, circle: store.circle.map(\.name), busy: store.ending,
+                                 onEnd: { reason in Task { await store.end(early: reason); endingEarly = false } },
+                                 onCancel: { endingEarly = false })
+                        .padding(16)
+                }
+                .background(Color.black.opacity(0.5).ignoresSafeArea().onTapGesture { endingEarly = false })
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
             if let evo = store.evolvedTo, let b = buddy {
                 EvolutionOverlay(name: b.name, form: evo, species: b.species) { withAnimation { store.evolvedTo = nil } }
                     .transition(.opacity)
@@ -190,6 +200,7 @@ struct WalkScreen: View {
         }
         .animation(.easeInOut(duration: 0.3), value: urgent)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: newFlagAt?.latitude)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: endingEarly)
         .onAppear { flagStore.start() }
         .onDisappear { flagStore.stop() }
     }
@@ -233,7 +244,7 @@ struct EvolutionOverlay: View {
                 Text("Evolution!").font(Typeface.display(20)).foregroundStyle(Palette.gold).textCase(nil)
                 ZStack {
                     Sprite.sparkles.image.resizable().scaledToFit().frame(width: 260).opacity(show ? 0.9 : 0)
-                    PetImage(species: species, form: form, mood: .happy, size: 200, animated: true)
+                    petSprite(species, form).image.resizable().scaledToFit().frame(width: 200)
                         .scaleEffect(show ? 1 : 0.2)
                         .shadow(color: Palette.gold.opacity(0.7), radius: 30)
                 }

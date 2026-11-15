@@ -442,7 +442,7 @@ private struct TripSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Capsule().fill(Palette.line).frame(width: 40, height: 5).frame(maxWidth: .infinity)
             HStack(alignment: .top, spacing: 14) {
-                PetImage(species: buddySpecies, form: buddyForm, mood: .happy, size: 64, animated: true)
+                petSprite(buddySpecies, buddyForm).image.resizable().scaledToFit().frame(width: 64, height: 64)
                     .background(Circle().fill(Palette.gold.opacity(0.14)))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(name).font(Typeface.display(26)).foregroundStyle(Palette.text).lineLimit(2)

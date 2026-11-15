@@ -36,7 +36,7 @@ struct NextTurnCard: View {
                 Text(turn.text).font(Typeface.semi(15)).foregroundStyle(Palette.text).lineLimit(2)
                 if turn.near {
                     HStack(spacing: 5) {
-                        PetImage(species: species, form: form, size: 18)
+                        petSprite(species, form).image.resizable().scaledToFit().frame(width: 18, height: 18)
                         Text(buddyLine).font(Typeface.body(13)).foregroundStyle(Palette.muted)
                     }
                 }
@@ -252,5 +252,66 @@ struct TestToolsCard: View {
         .frame(maxWidth: .infinity, minHeight: 44)
         .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0f1433)))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+    }
+}
+
+let END_REASONS: [(key: String, label: String, icon: String)] = [
+    ("ride", "Got a ride", "car.fill"), ("plans", "Changed plans", "arrow.triangle.2.circlepath"),
+    ("friends", "With friends now", "person.3.fill"), ("safe", "Somewhere safe", "house.fill"),
+    ("help", "I need help", "exclamationmark.triangle.fill"),
+]
+
+/// End a walk before arriving: pick why, the circle is told, "I need help" alerts them at once.
+struct EndEarlyCard: View {
+    let walk: Walk
+    let route: RouteInfo?
+    let circle: [String]
+    let busy: Bool
+    let onEnd: (String) -> Void
+    let onCancel: () -> Void
+    @State private var reason = "ride"
+
+    var body: some View {
+        let who = circle.isEmpty ? "your circle" : circle.joined(separator: " and ")
+        let left = route.map { routeProgress($0.points, walk.pos).1 }
+        VStack(alignment: .leading, spacing: 12) {
+            Text("End walk early?").font(Typeface.display(24)).foregroundStyle(Palette.text)
+            Text(left.map { "You're \(formatMeters($0)) from \(route?.to ?? "home"). Why are you stopping?" } ?? "Why are you stopping?")
+                .font(Typeface.body(14)).foregroundStyle(Palette.muted)
+            VStack(spacing: 8) {
+                ForEach(END_REASONS, id: \.key) { r in
+                    let on = reason == r.key
+                    let tint = r.key == "help" ? Palette.alert : Palette.gold
+                    Button { reason = r.key } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: r.icon).font(.system(size: 14, weight: .bold)).frame(width: 22)
+                            Text(r.label).font(Typeface.semi(15))
+                            Spacer()
+                            if on { Image(systemName: "checkmark.circle.fill") }
+                        }
+                        .foregroundStyle(on ? tint : Palette.text)
+                        .padding(.horizontal, 14).frame(minHeight: 44)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Color(hex: 0x0f1433)))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(on ? tint : Palette.line))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(r.label)
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+            Text(reason == "help" ? "Ends the walk and alerts \(who) right away with your location."
+                                  : "\(who) will see that you ended early and why. Your streak stays as it is.")
+                .font(Typeface.body(12.5)).foregroundStyle(reason == "help" ? Palette.alert : Palette.muted)
+            HStack(spacing: 10) {
+                GameButton(title: "Keep walking", kind: .ghost, action: onCancel)
+                GameButton(title: reason == "help" ? "End and alert" : "End walk", kind: reason == "help" ? .danger : .gold, busy: busy) { onEnd(reason) }
+                    .disabled(busy)
+            }
+        }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Palette.card2))
+        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Palette.lineTop))
+        .shadow(color: .black.opacity(0.5), radius: 20, y: -4)
+        .accessibilityIdentifier("end-early-card")
     }
 }

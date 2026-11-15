@@ -141,12 +141,13 @@ final class WalkerStore: ObservableObject {
         if let w = try? await API.shared.startWalk(me, route: route) { apply(w) }
     }
 
-    func end() async {
+    func end(early reason: String? = nil) async {
         guard let w = walk, !ending else { return }  // one end at a time, however many taps
         ending = true
         defer { ending = false }
         do {
-            let v = try await API.shared.end(w.id)
+            let v: Walk
+            if let reason { v = try await API.shared.endEarly(w.id, reason: reason) } else { v = try await API.shared.end(w.id) }
             apply(v.status == "active" ? v : nil)
         } catch APIError.http(404, _) {
             apply(nil)  // the server already forgot this walk (e.g. a demo reset): just leave it
@@ -156,16 +157,9 @@ final class WalkerStore: ObservableObject {
         if let u = try? await API.shared.user(me) { user = u }
     }
 
-    private var happyToken = 0
-
     private func beHappy() {
-        happyToken += 1
-        let token = happyToken
         happy = true
-        Task {
-            try? await Task.sleep(nanoseconds: 2_400_000_000)
-            if token == happyToken { happy = false }   // a second pet keeps it happy longer
-        }
+        Task { try? await Task.sleep(nanoseconds: 1_800_000_000); happy = false }
     }
 }
 
@@ -207,6 +201,11 @@ final class FriendStore: ObservableObject {
             if feed != nil, let n = fresh.first {
                 Haptics.warning()
                 Feedback.speak(n.text)
+            }
+            let oldUpdates = Set((feed?.updates ?? []).map(\.text))
+            if feed != nil, let u = (f.updates ?? []).first(where: { !oldUpdates.contains($0.text) }) {
+                Haptics.warning()
+                Feedback.speak(u.text)
             }
             if f != feed { feed = f }
             if error != nil { error = nil }

@@ -405,3 +405,41 @@ def test_demo_car_mode():
         demo.step(w)
     v = c.get(f"/walks/{v['id']}").json()
     assert v["engine"]["reason"] == "moving_fast" and v["pace"]["mode"] == "vehicle"
+
+
+# -- ending a walk early ----------------------------------------------------------------
+
+def test_end_early_tells_circle_and_keeps_streak():
+    streak = walks.STATE["users"]["jordan"]["streak"]
+    v = c.post("/demo/start", json={}).json()
+    w = walks.STATE["walks"][v["id"]]
+    w["sim"]["dist_m"] = 300
+    with walks.LOCK:
+        demo.step(w)
+    assert c.post(f"/walks/{v['id']}/end", json={"early": True, "reason": "teleport"}).status_code == 400
+    out = c.post(f"/walks/{v['id']}/end", json={"early": True, "reason": "ride"}).json()
+    assert out["status"] == "ended" and out["ended_early"]["reason"] == "ride"
+    assert walks.STATE["users"]["jordan"]["streak"] == streak  # neither a safe walk nor a failure
+    feed = c.get("/friends/maya/feed").json()
+    assert feed["walks"] == [] and feed["open_alerts"] == []
+    u = feed["updates"][0]
+    assert "ended the walk early: got a ride" in u["text"] and "m from Tooker House" in u["text"]
+    assert "notify" not in u
+    assert c.get("/friends/zed/feed").status_code == 404
+
+
+def test_end_early_help_alerts_circle():
+    v = c.post("/demo/start", json={}).json()
+    c.post(f"/walks/{v['id']}/end", json={"early": True, "reason": "help"})
+    feed = c.get("/friends/sam/feed").json()
+    a = feed["open_alerts"][0]
+    assert a["kind"] == "help" and "asked for help" in a["summary"]
+    assert c.post(f"/alerts/{a['id']}/close", json={"friend_id": "sam"}).json()["status"] == "closed"
+
+
+def test_plain_end_still_counts_streak():
+    streak = walks.STATE["users"]["jordan"]["streak"]
+    v = c.post("/walks", json={"walker_id": "jordan", "route_id": "library-to-tooker"}).json()
+    c.post(f"/walks/{v['id']}/end")
+    assert walks.STATE["users"]["jordan"]["streak"] == streak + 1
+    assert c.get("/friends/maya/feed").json()["updates"] == []
