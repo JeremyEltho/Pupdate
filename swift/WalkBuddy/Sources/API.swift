@@ -24,7 +24,11 @@ struct AlertInfo: Codable, Equatable, Identifiable {
     var pettedAfter: String?
     var contactRestored: String?
     var closedBy: String?
+    var summary: String?
+    var summarySource: String?
 }
+
+struct FriendInfo: Codable, Equatable, Identifiable { var id: String; var name: String; var phone: String }
 
 struct Walk: Codable, Equatable, Identifiable {
     var id: String
@@ -43,6 +47,8 @@ struct Walk: Codable, Equatable, Identifiable {
     var alerts: [AlertInfo]
     var events: [WalkEvent]
     var offRoute: Bool
+    var buddyLine: String?
+    var buddyLineSource: String?
 }
 
 struct RouteInfo: Codable, Equatable, Identifiable {
@@ -103,7 +109,7 @@ final class API {
         try await send(path, method: "POST", body: body)
     }
 
-    private func send<T: Decodable>(_ path: String, method: String, body: [String: Any]?) async throws -> T {
+    func send<T: Decodable>(_ path: String, method: String, body: [String: Any]?) async throws -> T {
         guard let url = URL(string: base + path) else { throw APIError.http(0, "Bad server address") }
         var req = URLRequest(url: url)
         req.httpMethod = method
@@ -164,6 +170,13 @@ final class API {
         if let name { b["name"] = name }
         if let species { b["species"] = species }
         return try await post("/users/\(uid)/buddy", b)
+    }
+    func circle(_ uid: String) async throws -> [FriendInfo] { try await get("/users/\(uid)/circle") }
+    func addFriend(_ uid: String, name: String, phone: String) async throws -> FriendInfo {
+        try await post("/users/\(uid)/circle", ["name": name, "phone": phone])
+    }
+    func removeFriend(_ uid: String, _ fid: String) async throws {
+        let _: AnyCodable = try await send("/users/\(uid)/circle/\(fid)", method: "DELETE", body: nil)
     }
     func end(_ wid: String) async throws -> Walk { try await post("/walks/\(wid)/end") }
     func demo(_ action: String, _ body: [String: Any] = [:]) async throws {

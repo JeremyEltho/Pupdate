@@ -196,7 +196,11 @@ struct TakeoverView: View {
                         Spacer()
                     }
                     Text(k.title(first)).font(Typeface.display(36)).foregroundStyle(.white)
-                    Text(k.body(first)).font(Typeface.body(17)).foregroundStyle(soft).lineSpacing(3)
+                    Text(alert.summary ?? k.body(first)).font(Typeface.body(17)).foregroundStyle(soft).lineSpacing(3)
+                    if alert.summarySource == "gemini" {
+                        Label("Brief written by Gemini from the walk data", systemImage: "sparkles")
+                            .font(Typeface.body(12)).foregroundStyle(soft.opacity(0.8))
+                    }
                     if let t = alert.pettedAfter {
                         Banner(text: "\(first) petted their buddy at \(clock(t)), after the alert. Still check on them.")
                     }

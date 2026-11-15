@@ -46,10 +46,11 @@ struct EscalationLadder: View {
 
 struct SafetyStatusRow: View {
     let walk: Walk
+    var watching: Int = 2
     var body: some View {
         HStack(spacing: 8) {
             status("location.fill", walk.demo ? "Demo GPS" : "Live GPS", Palette.ok)
-            status("person.2.fill", "2 watching", Palette.sky)
+            status("person.2.fill", "\(watching) watching", watching == 0 ? Palette.alert : Palette.sky)
             status("lock.iphone", "Lock Screen", Palette.gold)
         }
     }
@@ -125,7 +126,7 @@ struct WalkLog: View {
             return Row(icon: "arrow.up.right", tint: Palette.alert, title: "Escalated: \(name)", sub: nil, time: t)
         case "alert_raised":
             let k: String = switch e.kind { case "duress": "Silent alert sent"; case "lost_contact": "Lost contact alert"; default: "Friends alerted" }
-            return Row(icon: "bell.badge.fill", tint: Palette.alert, title: k, sub: "Maya and Sam were notified", time: t)
+            return Row(icon: "bell.badge.fill", tint: Palette.alert, title: k, sub: "Your circle was notified", time: t)
         case "contact_restored":
             return Row(icon: "antenna.radiowaves.left.and.right", tint: Palette.ok, title: "Back in contact", sub: nil, time: t)
         case "arrived":
@@ -182,26 +183,30 @@ struct SafetyPowers: View {
 }
 
 struct CircleCard: View {
-    private let people: [(String, String, Color)] = [("Maya", "M", Color(hex: 0xff8fb1)), ("Sam", "S", Color(hex: 0x7ad7ff))]
+    let friends: [FriendInfo]
+    private let colors: [Color] = [Color(hex: 0xff8fb1), Color(hex: 0x7ad7ff), Color(hex: 0xb4f08a), Color(hex: 0xffd27a), Color(hex: 0xc9a7ff)]
     var body: some View {
         GameCard {
             VStack(alignment: .leading, spacing: 14) {
-                SectionTitle(text: "Your circle", sub: "They get your alerts. Only they can close one.")
-                HStack(spacing: 14) {
-                    ForEach(people, id: \.0) { p in
-                        HStack(spacing: 10) {
-                            Text(p.1).font(Typeface.display(18)).foregroundStyle(Palette.ink)
-                                .frame(width: 42, height: 42).background(Circle().fill(p.2))
-                                .overlay(alignment: .bottomTrailing) {
-                                    Circle().fill(Palette.ok).frame(width: 12, height: 12).overlay(Circle().stroke(Palette.card, lineWidth: 2))
+                SectionTitle(text: "Your circle", sub: friends.isEmpty ? "Add friends in Settings so someone gets your alerts."
+                                                                    : "They get your alerts. Only they can close one.")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(Array(friends.enumerated()), id: \.element.id) { i, p in
+                            HStack(spacing: 10) {
+                                Text(String(p.name.prefix(1))).font(Typeface.display(18)).foregroundStyle(Palette.ink)
+                                    .frame(width: 42, height: 42).background(Circle().fill(colors[i % colors.count]))
+                                    .overlay(alignment: .bottomTrailing) {
+                                        Circle().fill(Palette.ok).frame(width: 12, height: 12).overlay(Circle().stroke(Palette.card, lineWidth: 2))
+                                    }
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(p.name).font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                                    Text("Watching").font(Typeface.body(12)).foregroundStyle(Palette.ok)
                                 }
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(p.0).font(Typeface.semi(15)).foregroundStyle(Palette.text)
-                                Text("Watching").font(Typeface.body(12)).foregroundStyle(Palette.ok)
                             }
+                            .accessibilityElement(children: .combine)
                         }
                     }
-                    Spacer(minLength: 0)
                 }
                 HStack(spacing: 8) {
                     Image(systemName: "hand.raised.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.muted)

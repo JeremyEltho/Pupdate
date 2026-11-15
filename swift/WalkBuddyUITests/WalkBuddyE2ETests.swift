@@ -167,4 +167,93 @@ final class WalkBuddyE2ETests: XCTestCase {
         let end = app.buttons["I'm home, end walk"]
         if end.waitForExistence(timeout: 10) { end.tap() }
     }
+
+    private func rub(_ app: XCUIApplication) {
+        let buddy = app.buttons["Your buddy"].firstMatch
+        let from = buddy.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
+        let to = buddy.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+        from.press(forDuration: 0.05, thenDragTo: to)
+    }
+
+    private func launch(role: String, extra: [String]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-wb.role", role, "-wb.server", server] + extra
+        app.launch()
+        return app
+    }
+
+    /// Pet three check-ins in a row, then pet one late: XP 90 -> 100 -> 110 -> 120, late adds nothing.
+    func testPettingAtIntervals() {
+        api("/demo/reset")
+        api("/users/jordan/buddy", "{\"name\":\"Levin\",\"species\":\"chick\"}")
+        api("/demo/start")
+        let app = launch(role: "walker", extra: ["-wb.petStyle", "rub"])
+        for (i, xp) in [100, 110, 120].enumerated() {
+            api("/demo/checkin")
+            XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 15), "check-in \(i + 1) never showed")
+            rub(app)
+            if i == 0 {
+                XCTAssertTrue(app.buttons["Awesome"].waitForExistence(timeout: 8), "no evolution on the first pet")
+                app.buttons["Awesome"].tap()
+            }
+            XCTAssertTrue(text(app, "\(xp) / 250 XP").waitForExistence(timeout: 8), "XP did not reach \(xp)")
+            XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 5))
+        }
+        // Late: wait past the 30 s check-in window (15 s real at 2x), then pet.
+        api("/demo/checkin")
+        XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 15))
+        XCTAssertTrue(text(app, "Hey, you there?").waitForExistence(timeout: 25), "never reached the nudge stage")
+        rub(app)
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
+        XCTAssertTrue(text(app, "120 / 250 XP").exists, "a late pet must not give XP")
+    }
+
+    /// Accessibility: with tap-to-pet on, a tap answers the check-in.
+    func testTapToPetOption() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker", extra: ["-wb.petStyle", "tap"])
+        api("/demo/checkin")
+        XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 15))
+        app.buttons["Your buddy"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Awesome"].waitForExistence(timeout: 8), "tap-to-pet did not pet")
+    }
+
+    /// Circle: add a friend in Settings, see them, remove them.
+    func testAddAndRemoveFriend() {
+        api("/demo/reset")
+        let app = launch(role: "walker")
+        let gear = app.buttons["Settings"]
+        XCTAssertTrue(gear.waitForExistence(timeout: 10)); gear.tap()
+        let name = app.textFields["Name"]
+        var tries = 0
+        while !(name.exists && name.isHittable) && tries < 10 { app.swipeUp(); tries += 1 }
+        name.tap(); name.typeText("Alex Test")
+        let phone = app.textFields["Phone (for the Call button)"]
+        phone.tap(); phone.typeText("4805550199")
+        let add = app.buttons["Add to circle"]
+        if !add.isHittable { app.swipeUp() }
+        add.tap()
+        let remove = app.buttons["Remove Alex Test from your circle"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 10), "added friend not listed")
+        remove.tap()
+        let gone = NSPredicate(format: "exists == false")
+        expectation(for: gone, evaluatedWith: remove)
+        waitForExpectations(timeout: 10)
+        XCTAssertTrue(app.buttons["Remove Maya from your circle"].exists)
+    }
+
+    /// Accessibility settings exist and the largest text size still lays out.
+    func testAccessibilitySettings() {
+        api("/demo/reset")
+        let app = launch(role: "walker", extra: ["-wb.textScale", "1.3"])
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Where to tonight?")).firstMatch.waitForExistence(timeout: 10))
+        app.buttons["Settings"].tap()
+        for label in ["Spoken prompts", "Sounds", "Strong vibration for alerts", "Reduce motion", "Haptics", "Satellite map"] {
+            let sw = app.switches.containing(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+            var tries = 0
+            while !sw.exists && tries < 8 { app.swipeUp(); tries += 1 }
+            XCTAssertTrue(sw.exists, "missing setting: \(label)")
+        }
+    }
 }

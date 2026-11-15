@@ -11,12 +11,16 @@ struct WalkBuddyApp: App {
 
 struct RootView: View {
     @AppStorage("wb.role") private var role = ""
+    @AppStorage("wb.textScale") private var textScale = 1.0
     var body: some View {
-        switch role {
-        case "walker": WalkerView(onExit: { role = "" })
-        case "friend": FriendView(onExit: { role = "" })
-        default: RoleView(pick: { role = $0 })
+        Group {
+            switch role {
+            case "walker": WalkerView(onExit: { role = "" })
+            case "friend": FriendView(onExit: { role = "" })
+            default: RoleView(pick: { role = $0 })
+            }
         }
+        .id(textScale) // rebuild fonts when the text size setting changes
     }
 }
 

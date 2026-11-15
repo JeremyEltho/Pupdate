@@ -64,8 +64,19 @@ struct WalkScreen: View {
                                 Text(walk == nil ? "Hi Jordan" : copy.title)
                                     .font(Typeface.display(30)).foregroundStyle(urgent ? Palette.alert : Palette.text)
                                     .contentTransition(.opacity)
-                                Text(walk == nil ? "Start a walk and \(buddy?.name ?? "Levin") comes with you." : copy.sub)
-                                    .font(Typeface.body(15)).foregroundStyle(Palette.muted)
+                                if let line = walk?.buddyLine, state != "calm" {
+                                    HStack(alignment: .top, spacing: 5) {
+                                        if walk?.buddyLineSource == "gemini" {
+                                            Image(systemName: "sparkles").font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.gold)
+                                                .accessibilityHidden(true)
+                                        }
+                                        Text("\u{201C}\(line)\u{201D}").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                                    }
+                                    Text(copy.sub).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                                } else {
+                                    Text(walk == nil ? "Start a walk and \(buddy?.name ?? "Levin") comes with you." : copy.sub)
+                                        .font(Typeface.body(15)).foregroundStyle(Palette.muted)
+                                }
                             }
                             Spacer(minLength: 0)
                             if let secs {
@@ -109,7 +120,7 @@ struct WalkScreen: View {
                                 }
                             }
                         }
-                        SafetyStatusRow(walk: w)
+                        SafetyStatusRow(walk: w, watching: store.circle.count)
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
                                 LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert")

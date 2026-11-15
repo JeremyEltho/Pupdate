@@ -41,6 +41,7 @@
 		6499108F8D319FD461CA1D5E /* Figtree_500Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F980DF873ED18C254C5C285 /* Figtree_500Medium.ttf */; };
 		74946AC7C61C0713C2827F05 /* hatching_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = 984167E13DA97FAC2B41FCBB /* hatching_chick.png */; };
 		765AEBD4EBC66A758CBFEA52 /* pet_chipmunk.png in Resources */ = {isa = PBXBuildFile; fileRef = 169E39A5629EF38715BFFA01 /* pet_chipmunk.png */; };
+		792737B1466C90F554F17DD9 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 817D82ED2DFE35FF7C2DC11A /* Feedback.swift */; };
 		7CC8BD3791CC68B6EB390C20 /* hatching_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = 3160588157497DAEF3091F57 /* hatching_chick.png */; };
 		7D5F936772FB4338785ADC96 /* pet_cat.png in Resources */ = {isa = PBXBuildFile; fileRef = 8F2003D13FA4E0302F89A097 /* pet_cat.png */; };
 		7E7811FA9F3CDA01902B0C7E /* WalkBuddyWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 00B6D76E05787D1231B6551A /* WalkBuddyWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -159,6 +160,7 @@
 		7098F73BA912A61CD62D8BA0 /* pet_otter.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_otter.png; sourceTree = "<group>"; };
 		796B23329BB175A36B6A98F3 /* pet_sloth.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_sloth.png; sourceTree = "<group>"; };
 		80FCE687106C73BE363BE783 /* pet_cat.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_cat.png; sourceTree = "<group>"; };
+		817D82ED2DFE35FF7C2DC11A /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		83A102C515C2D034403E579D /* footprints.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = footprints.png; sourceTree = "<group>"; };
 		847A8FFDEDF2AA284D66F99F /* pet_seal.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_seal.png; sourceTree = "<group>"; };
 		87531619D60E6CF76BA59E6C /* trophy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = trophy.png; sourceTree = "<group>"; };
@@ -231,6 +233,7 @@
 				17BCECCF077A717EB4C92D16 /* Components.swift */,
 				D397B560408C78936BB58BBE /* CustomizeView.swift */,
 				04FE03BF453D467FF8C4C835 /* Features.swift */,
+				817D82ED2DFE35FF7C2DC11A /* Feedback.swift */,
 				98D2B9A27F422E49CCC151A3 /* FriendView.swift */,
 				0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */,
 				0AEE91B97020907042DBA94E /* LiveActivityManager.swift */,
@@ -548,6 +551,7 @@
 				49E89CCD85818F573696B42F /* Components.swift in Sources */,
 				F72EDCD45207A6B8C6B575D5 /* CustomizeView.swift in Sources */,
 				44BB996D745E0B45BBC3CD7F /* Features.swift in Sources */,
+				792737B1466C90F554F17DD9 /* Feedback.swift in Sources */,
 				3CA0FD335ACD82E8AEF6D26D /* FriendView.swift in Sources */,
 				012E90982DCDAF81341E14D4 /* HomeView.swift in Sources */,
 				578017CBF37AB99BA711A2D3 /* LiveActivityManager.swift in Sources */,

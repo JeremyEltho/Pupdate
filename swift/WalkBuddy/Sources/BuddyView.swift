@@ -122,10 +122,14 @@ struct BuddyView: View {
         }
         .contentShape(Rectangle())
         .gesture(stroke)
+        .onTapGesture {
+            // Accessibility option: some people can't rub the screen, so Settings can allow tap-to-pet.
+            if UserDefaults.standard.string(forKey: "wb.petStyle") == "tap" { completePet() }
+        }
         .simultaneousGesture(LongPressGesture(minimumDuration: 2).onEnded { _ in onDuress?() })
         .accessibilityElement()
         .accessibilityLabel("Your buddy")
-        .accessibilityHint("Rub your finger across to pet")
+        .accessibilityHint(UserDefaults.standard.string(forKey: "wb.petStyle") == "tap" ? "Tap to pet" : "Rub your finger across to pet")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { completePet() }
         .onAppear { animate() }
@@ -156,7 +160,7 @@ struct BuddyView: View {
     }
 
     private func completePet() {
-        Haptics.success()
+        if Motion.reduced { onPet?(); return }
         withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) { squash = 0.86 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
             withAnimation(.spring(response: 0.4, dampingFraction: 0.45)) { squash = 1 }
@@ -176,6 +180,9 @@ struct BuddyView: View {
 
     private func animate() {
         bob = false
+        shake = false
+        badgeIn = true
+        if Motion.reduced { return } // no bobbing or shaking
         withAnimation(.easeInOut(duration: bobSpeed).repeatForever(autoreverses: true)) { bob = true }
         shake = false
         if mood == .alarmed || mood == .worried {

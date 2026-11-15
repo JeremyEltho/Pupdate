@@ -1,3 +1,4 @@
+import AudioToolbox
 import CoreLocation
 import Foundation
 import SwiftUI
@@ -12,6 +13,7 @@ final class WalkerStore: ObservableObject {
     @Published var error: String?
     @Published var evolvedTo: String?
     @Published var happy = false
+    @Published var circle: [FriendInfo] = []
     private var loop: Task<Void, Never>?
     private var lastState: String?
     private let location = LocationTicker()
@@ -20,6 +22,7 @@ final class WalkerStore: ObservableObject {
         guard loop == nil else { return }
         loop = Task { [weak self] in
             if let r = try? await API.shared.routes() { self?.routes = r }
+            await self?.loadCircle()
             while !Task.isCancelled {
                 await self?.refresh()
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
@@ -50,7 +53,13 @@ final class WalkerStore: ObservableObject {
             Task { if let r = try? await API.shared.routes() { self.routes = r } }
         }
         let st = w?.engine.state
-        if let st, st != lastState, st != "calm" { Haptics.warning() }
+        if let st, st != lastState, st != "calm" {
+            Feedback.checkInChime()
+            if st == "checkin" || st == "countdown" {
+                let name = w?.buddy.name ?? "Levin"
+                Feedback.speak(w?.buddyLine ?? stateCopy(st, name: name).title + " " + stateCopy(st, name: name).sub)
+            }
+        }
         lastState = st
         if w != walk { walk = w }
         // Every active walk (demo too) runs location so the app stays alive with the screen locked
@@ -58,13 +67,17 @@ final class WalkerStore: ObservableObject {
         if let w, w.status == "active" { location.start(walkId: w.id, sendFixes: !w.demo) } else { location.stop() }
     }
 
+    func loadCircle() async {
+        if let c = try? await API.shared.circle(me), c != circle { circle = c }
+    }
+
     func pet() async {
         Haptics.tap()
-        guard let w = walk else { beHappy(); return }
+        guard let w = walk else { Feedback.petted(); beHappy(); return }
         do {
             let r = try await API.shared.pet(w.id)
             apply(r.walk)
-            if r.events.contains(where: { $0.type == "pet_ok" }) { Haptics.success(); beHappy() }
+            if r.events.contains(where: { $0.type == "pet_ok" }) { Feedback.petted(); beHappy() }
             if let evo = r.events.first(where: { $0.evolved != nil })?.evolved {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { evolvedTo = evo }
             }
@@ -137,7 +150,11 @@ final class FriendStore: ObservableObject {
             let hadAlert = alert != nil
             if f != feed { feed = f }
             if error != nil { error = nil }
-            if alert != nil && !hadAlert { startBuzz() }
+            if let a = alert, !hadAlert {
+                startBuzz()
+                Feedback.alertSound()
+                Feedback.speak(a.summary ?? "WalkBuddy alert for \(a.walkerName).")
+            }
             if alert == nil { buzz?.cancel(); buzz = nil }
         } catch {
             self.error = error.localizedDescription
@@ -148,8 +165,8 @@ final class FriendStore: ObservableObject {
         buzz?.cancel()
         buzz = Task {
             while !Task.isCancelled {
-                Haptics.warning()
-                try? await Task.sleep(nanoseconds: 900_000_000)
+                if Feedback.strongVibration { AudioServicesPlaySystemSound(kSystemSoundID_Vibrate) } else { Haptics.warning() }
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
             }
         }
     }

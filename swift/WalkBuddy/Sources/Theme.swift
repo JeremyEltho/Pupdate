@@ -28,12 +28,24 @@ enum Palette {
     static let sky = Color(hex: 0x7aa2ff)
 }
 
+/// Fonts scale with the iPhone's text size (Dynamic Type) and with Settings > Text size.
 enum Typeface {
-    static func display(_ size: CGFloat) -> Font { .custom("BricolageGrotesque-ExtraBold", size: size) }
-    static func displayBold(_ size: CGFloat) -> Font { .custom("BricolageGrotesque-Bold", size: size) }
-    static func body(_ size: CGFloat = 16) -> Font { .custom("Figtree-Medium", size: size) }
-    static func semi(_ size: CGFloat = 16) -> Font { .custom("Figtree-SemiBold", size: size) }
-    static func bold(_ size: CGFloat = 16) -> Font { .custom("Figtree-Bold", size: size) }
+    static var scale: CGFloat { CGFloat(UserDefaults.standard.object(forKey: "wb.textScale") as? Double ?? 1.0) }
+    private static func f(_ name: String, _ size: CGFloat, _ style: Font.TextStyle) -> Font {
+        .custom(name, size: size * scale, relativeTo: style)
+    }
+    static func display(_ size: CGFloat) -> Font { f("BricolageGrotesque-ExtraBold", size, .title) }
+    static func displayBold(_ size: CGFloat) -> Font { f("BricolageGrotesque-Bold", size, .title3) }
+    static func body(_ size: CGFloat = 16) -> Font { f("Figtree-Medium", size, .body) }
+    static func semi(_ size: CGFloat = 16) -> Font { f("Figtree-SemiBold", size, .body) }
+    static func bold(_ size: CGFloat = 16) -> Font { f("Figtree-Bold", size, .body) }
+}
+
+/// Motion is reduced when the iPhone setting is on or when chosen in Settings.
+enum Motion {
+    static var reduced: Bool {
+        UIAccessibility.isReduceMotionEnabled || (UserDefaults.standard.object(forKey: "wb.reduceMotion") as? Bool ?? false)
+    }
 }
 
 /// 3D sprites from Microsoft Fluent Emoji (MIT). See Resources/Sprites/FLUENT_EMOJI_LICENSE.txt.

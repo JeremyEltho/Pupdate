@@ -90,11 +90,11 @@ struct HomeView: View {
                     HStack(spacing: 10) {
                         StatCard(sprite: .fire, value: "\(streak)", label: "safe walks in a row")
                         StatCard(sprite: .trophy, value: "Lv \(level(buddy.xp))", label: formName(buddy.form, species: buddy.species))
-                        StatCard(sprite: .shield, value: "2", label: "friends watching")
+                        StatCard(sprite: .shield, value: "\(store.circle.count)", label: "friends watching")
                     }
 
                     SafetyPowers(buddyName: buddy.name)
-                    CircleCard()
+                    CircleCard(friends: store.circle)
                     EvolutionTrack(buddy: buddy)
                 }
                 .padding(.horizontal, 20).padding(.bottom, 40)
@@ -113,7 +113,7 @@ struct HomeView: View {
         .fullScreenCover(item: $panel) { p in
             Group {
                 switch p {
-                case .settings: SettingsView(onClose: { panel = nil })
+                case .settings: SettingsView(onClose: { panel = nil; Task { await store.loadCircle() } })
                 case .customize:
                     CustomizeView { saved in
                         panel = nil
