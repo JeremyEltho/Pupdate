@@ -90,6 +90,8 @@ struct Walk: Codable, Equatable, Identifiable {
     var sim: SimInfo?
 }
 
+struct Health: Decodable { var ok: Bool }
+
 /// The demo walker, for the demo controls (demo walks only).
 struct SimInfo: Codable, Equatable {
     var paused: Bool; var dir: Int; var arriving: Bool; var progress: Double; var lengthM: Double; var speedOverride: Double?
@@ -173,7 +175,8 @@ final class API {
     }
 
     // Typed calls
-    func health() async throws -> [String: Bool] { try await get("/health") }
+    /// Reads only "ok": the server adds other fields (e.g. "store": "mongodb") that aren't booleans.
+    func health() async throws -> Health { try await get("/health") }
     func routes() async throws -> [RouteInfo] { try await get("/routes") }
     func user(_ id: String) async throws -> UserInfo { try await get("/users/\(id)") }
     func active(_ id: String) async throws -> Walk? { try await get("/users/\(id)/active") }
