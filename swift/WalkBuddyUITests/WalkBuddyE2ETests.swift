@@ -2,7 +2,7 @@ import XCTest
 
 /// End-to-end: the real app, tapping through the demo, against the real backend on localhost:8100.
 final class WalkBuddyE2ETests: XCTestCase {
-    let server = "http://127.0.0.1:8100"
+    let server = "https://45-76-67-21.sslip.io"
 
     override func setUp() { continueAfterFailure = false }
 

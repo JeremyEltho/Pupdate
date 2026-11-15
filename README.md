@@ -23,6 +23,16 @@ swift/     Native SwiftUI iPhone app + Live Activity widget (Lock Screen and Dyn
 app/       Earlier Expo prototype of the same app (kept for reference)
 ```
 
+## Hosting (the live demo)
+
+The backend runs on a **Vultr** server (Ubuntu 24.04, Los Angeles) behind Caddy with automatic HTTPS at
+`https://45-76-67-21.sslip.io`, and saves its state to **MongoDB Atlas** (free M0 cluster) after every change,
+so a restart loses nothing. The iPhone app uses that address by default, so the demo needs no laptop.
+
+- Deploy a fresh server: put `VULTR_API_KEY` and `MONGODB_URI` in `.env` (git-ignored) and run `deploy/vultr-deploy.sh`.
+- Update the running server: `ssh root@<ip> 'cd /opt/walkbuddy && git pull && systemctl restart walkbuddy'`.
+- Laptop fallback: `./demo-server.sh` runs the backend locally behind a fixed ngrok address.
+
 ## Run the backend
 
 ```bash

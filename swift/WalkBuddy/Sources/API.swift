@@ -68,7 +68,12 @@ final class API {
 
     var base: String {
         get {
-            UserDefaults.standard.string(forKey: "wb.server")
+            let d = UserDefaults.standard
+            // Forget old temporary tunnel addresses so the permanent server is used.
+            if let saved = d.string(forKey: "wb.server"), saved.contains("trycloudflare.com") || saved.contains("ngrok") {
+                d.removeObject(forKey: "wb.server")
+            }
+            return d.string(forKey: "wb.server")
                 ?? (Bundle.main.object(forInfoDictionaryKey: "WBDefaultServer") as? String) ?? "http://localhost:8100"
         }
         set {

@@ -14,11 +14,27 @@ import json,sys
 oses=json.load(sys.stdin)['os']
 ub=[o for o in oses if o['family']=='ubuntu' and '24.04' in o['name'] and 'x64' in o['name']]
 print(ub[0]['id'])")
-USER_DATA=$(sed "s|__MONGODB_URI__|$MONGODB_URI|" "$DIR/deploy/cloud-init.sh" | base64 | tr -d '\n')
+USER_DATA=$(python3 -c "
+import sys,os,base64
+s=open(sys.argv[1]).read().replace('__MONGODB_URI__', os.environ['MONGODB_URI'])
+print(base64.b64encode(s.encode()).decode())" "$DIR/deploy/cloud-init.sh")
+# SSH key so the server can be updated later without rebuilding it
+KEY="$HOME/.ssh/walkbuddy_vultr"
+[ -f "$KEY" ] || ssh-keygen -t ed25519 -N "" -C walkbuddy-vultr -f "$KEY" >/dev/null
+SSHKEY_ID=$(curl -sf "${H[@]}" "$API/ssh-keys" | python3 -c "
+import json,sys
+k=[x for x in json.load(sys.stdin)['ssh_keys'] if x['name']=='walkbuddy']
+print(k[0]['id'] if k else '')")
+if [ -z "$SSHKEY_ID" ]; then
+  SSHKEY_ID=$(python3 -c "import json,sys;print(json.dumps({'name':'walkbuddy','ssh_key':open(sys.argv[1]).read().strip()}))" "$KEY.pub" \
+    | curl -sf "${H[@]}" -X POST "$API/ssh-keys" -d @- | python3 -c "import json,sys;print(json.load(sys.stdin)['ssh_key']['id'])")
+fi
 BODY=$(python3 -c "
 import json,sys
-print(json.dumps({'region':'lax','plan':'vc2-1c-1gb','os_id':int(sys.argv[1]),'label':'walkbuddy','hostname':'walkbuddy','user_data':sys.argv[2],'backups':'disabled'}))" "$OS_ID" "$USER_DATA")
-ID=$(curl -sf "${H[@]}" -X POST "$API/instances" -d "$BODY" | python3 -c "import json,sys;print(json.load(sys.stdin)['instance']['id'])")
+print(json.dumps({'region':'lax','plan':'vc2-1c-1gb','os_id':int(sys.argv[1]),'label':'walkbuddy','hostname':'walkbuddy','user_data':sys.argv[2],'backups':'disabled','sshkey_id':[sys.argv[3]]}))" "$OS_ID" "$USER_DATA" "$SSHKEY_ID")
+RESP=$(curl -s "${H[@]}" -X POST "$API/instances" -d "$BODY")
+ID=$(echo "$RESP" | python3 -c "import json,sys;d=json.loads(sys.stdin.read() or '{}');print(d.get('instance',{}).get('id',''))")
+if [ -z "$ID" ]; then echo "Vultr refused to create the server: $RESP"; exit 1; fi
 echo "created instance $ID, waiting for an IP..."
 for i in $(seq 1 60); do
   IP=$(curl -sf "${H[@]}" "$API/instances/$ID" | python3 -c "import json,sys;i=json.load(sys.stdin)['instance'];print(i['main_ip'] if i['main_ip']!='0.0.0.0' else '')")
