@@ -28,7 +28,10 @@ struct FriendView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     TopBar(onBack: onExit) {
-                        StatChip(sprite: .shield, value: "Guardian")
+                        HStack(spacing: 8) {
+                            SettingsButton()
+                            StatChip(sprite: .shield, value: "Guardian")
+                        }
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Hi Maya").font(Typeface.display(34)).foregroundStyle(Palette.text)
@@ -44,14 +47,15 @@ struct FriendView: View {
                                     BuddyView(form: w.buddy.form, mood: STATE_COPY[w.engine.state]?.mood ?? .calm, size: 76, pedestal: false)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(w.walkerName).font(Typeface.display(24)).foregroundStyle(Palette.text)
-                                        Text(route.map { "\($0.from) to \($0.to)" } ?? "Walking").font(Typeface.body(14)).foregroundStyle(Palette.muted)
+                                        Text(route.map { "To \($0.to)" } ?? "Walking").font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(1)
                                     }
                                     Spacer()
-                                    Pill(text: friendState(w.engine.state, w.walkerName), tint: tone(w.engine.state))
+                                    Pill(text: friendState(w.engine.state, w.walkerName), tint: tone(w.engine.state)).fixedSize()
                                 }
                                 LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, offRoute: w.offRoute, alert: w.engine.state == "alert")
                                     .frame(height: 240)
                                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                EscalationLadder(state: w.engine.state)
                             } else {
                                 HStack(spacing: 12) {
                                     Sprite.house.image.resizable().scaledToFit().frame(width: 44)
@@ -59,6 +63,10 @@ struct FriendView: View {
                                 }
                             }
                         }
+                    }
+
+                    if let w = walk {
+                        GameCard { WalkLog(events: w.events, title: "\(w.walkerName)'s walk log") }
                     }
 
                     GameCard {
@@ -138,7 +146,7 @@ struct FriendView: View {
         switch s {
         case "calm": return "All good"
         case "checkin": return "Checking in"
-        case "nudge", "final": return "\(first) hasn't answered"
+        case "nudge", "final": return "No answer yet"
         case "countdown": return "Alerting soon"
         case "alert": return "Alert sent"
         default: return s

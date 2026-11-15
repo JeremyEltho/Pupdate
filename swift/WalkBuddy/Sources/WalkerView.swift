@@ -99,12 +99,23 @@ struct WalkScreen: View {
                     }
 
                     if let w = walk {
+                        GameCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                EscalationLadder(state: state)
+                                HStack(spacing: 8) {
+                                    Image(systemName: "hand.tap.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.muted)
+                                    Text("Tap \(w.buddy.name) to answer. Hold for 2 seconds to send a silent alert.")
+                                        .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                                }
+                            }
+                        }
+                        SafetyStatusRow(walk: w)
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
                                 LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, offRoute: w.offRoute, alert: state == "alert")
                                     .frame(height: 280)
                                 HStack {
-                                    Sprite.footprints.image.resizable().scaledToFit().frame(width: 22, height: 22)
+                                    Sprite.pin.image.resizable().scaledToFit().frame(width: 22, height: 22)
                                     Text(route.map { r in
                                         let left = routeProgress(r.points, w.pos).1
                                         return left >= 1000 ? String(format: "%.1f km to home", Double(left) / 1000) : "\(left) m to home"
@@ -120,6 +131,7 @@ struct WalkScreen: View {
                         if !w.demo {
                             GameButton(title: "I'm home, end walk", kind: .ghost) { Task { await store.end() } }
                         }
+                        GameCard { WalkLog(events: w.events) }
                     }
                 }
                 .padding(.horizontal, 20).padding(.bottom, 40)

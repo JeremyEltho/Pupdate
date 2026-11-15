@@ -9,7 +9,7 @@ struct EngineSnap: Codable, Equatable {
     var ignorePets: Bool?
 }
 
-struct WalkEvent: Codable, Equatable { var type: String; var xp: Int?; var evolved: String?; var kind: String? }
+struct WalkEvent: Codable, Equatable { var type: String; var xp: Int?; var evolved: String?; var kind: String?; var reason: String?; var state: String?; var late: Bool?; var afterAlert: Bool?; var realAt: String? }
 
 struct AlertInfo: Codable, Equatable, Identifiable {
     var id: String
@@ -123,10 +123,25 @@ final class API {
     func feed(_ fid: String) async throws -> Feed { try await get("/friends/\(fid)/feed") }
     func closeAlert(_ aid: String, friend: String) async throws -> AlertInfo { try await post("/alerts/\(aid)/close", ["friend_id": friend]) }
     func startWalk(_ walker: String, route: String) async throws -> Walk {
-        try await post("/walks", ["walker_id": walker, "route_id": route, "demo": false])
+        var body: [String: Any] = ["walker_id": walker, "route_id": route, "demo": false]
+        body.merge(API.walkSettings) { a, _ in a }
+        return try await post("/walks", body)
     }
+    /// Walker settings sent with every new walk (see SettingsView).
+    static var walkSettings: [String: Any] {
+        let d = UserDefaults.standard
+        let every = d.object(forKey: "wb.checkinEvery") as? Int ?? 600
+        return [
+            "checkin_every_s": every > 0 ? every : NSNull(),
+            "watch_route": d.object(forKey: "wb.watchRoute") as? Bool ?? true,
+            "watch_speed": d.object(forKey: "wb.watchSpeed") as? Bool ?? true,
+        ]
+    }
+
     func startPlanned(_ walker: String, points: [[Double]], from: String, to: String, demo: Bool) async throws -> Walk {
-        try await post("/walks", ["walker_id": walker, "points": points, "from_name": from, "to_name": to, "demo": demo])
+        var body: [String: Any] = ["walker_id": walker, "points": points, "from_name": from, "to_name": to, "demo": demo]
+        body.merge(API.walkSettings) { a, _ in a }
+        return try await post("/walks", body)
     }
     func tick(_ wid: String, lat: Double? = nil, lng: Double? = nil, accuracy: Double? = nil) async throws {
         var b: [String: Any] = [:]

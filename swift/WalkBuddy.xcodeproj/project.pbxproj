@@ -10,7 +10,9 @@
 		012E90982DCDAF81341E14D4 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */; };
 		05AC8E25148F17DF83518A55 /* Figtree_700Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6EA689B3EBDE2623ABB92877 /* Figtree_700Bold.ttf */; };
 		05C13996B080942F2BABD2F1 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E15FD4A8EC210F8AF78E6EA /* App.swift */; };
+		0DA1DD12C918702770A8F10E /* WalkBuddyE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFA98779034F27B04568CC2 /* WalkBuddyE2ETests.swift */; };
 		11E35BFAEB61EDE32A9C646F /* red_exclamation_mark.png in Resources */ = {isa = PBXBuildFile; fileRef = 448BC62EE5A97EE9F02AAF55 /* red_exclamation_mark.png */; };
+		15F58FBA8EEFE7FCE344FD3E /* compass.png in Resources */ = {isa = PBXBuildFile; fileRef = E7D0DDF99F983816B16014B9 /* compass.png */; };
 		1C401AD1D09DE4EB0736F964 /* sweat_droplets.png in Resources */ = {isa = PBXBuildFile; fileRef = 3B70066026A44DB654CDFD71 /* sweat_droplets.png */; };
 		2031CF395EC9751684C25866 /* trophy.png in Resources */ = {isa = PBXBuildFile; fileRef = 87531619D60E6CF76BA59E6C /* trophy.png */; };
 		253B102BDAB044C94255C881 /* WalkActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5715CC6C74E6CC5A9D871D /* WalkActivity.swift */; };
@@ -20,8 +22,10 @@
 		3A32EBFCCE67280B74276503 /* gem_stone.png in Resources */ = {isa = PBXBuildFile; fileRef = 4DAC68ED8CEE377E7975C53A /* gem_stone.png */; };
 		3CA0FD335ACD82E8AEF6D26D /* FriendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98D2B9A27F422E49CCC151A3 /* FriendView.swift */; };
 		3D3E4C984F59DA8FA99BC2F9 /* bell.png in Resources */ = {isa = PBXBuildFile; fileRef = 3401831157CE8BCF65E08C54 /* bell.png */; };
+		44BB996D745E0B45BBC3CD7F /* Features.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04FE03BF453D467FF8C4C835 /* Features.swift */; };
 		49E89CCD85818F573696B42F /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BCECCF077A717EB4C92D16 /* Components.swift */; };
 		4B309B4B1D5AB2D50899601D /* owl.png in Resources */ = {isa = PBXBuildFile; fileRef = 5F21A7F05804F4238C382920 /* owl.png */; };
+		4C4DF37B6537DBDB1DD793A8 /* books.png in Resources */ = {isa = PBXBuildFile; fileRef = FA80AFA33B43297FD9EE4B23 /* books.png */; };
 		55E52F24ADB743250B022CEE /* red_exclamation_mark.png in Resources */ = {isa = PBXBuildFile; fileRef = F0A8908627F4923CFB052BB7 /* red_exclamation_mark.png */; };
 		578017CBF37AB99BA711A2D3 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AEE91B97020907042DBA94E /* LiveActivityManager.swift */; };
 		5C5F4C0B5E840EAC1C8E00F5 /* WalkActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D5715CC6C74E6CC5A9D871D /* WalkActivity.swift */; };
@@ -40,7 +44,10 @@
 		ACB6DF5BDBF2FEE4F963FF02 /* BricolageGrotesque_700Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 10D4AA74FD5F870121B73DD8 /* BricolageGrotesque_700Bold.ttf */; };
 		B85AB784FA5BE1C01084F79B /* red_question_mark.png in Resources */ = {isa = PBXBuildFile; fileRef = 43F99D3464223EE3F499EAC2 /* red_question_mark.png */; };
 		C0C0139E5A6C58B30DEE7162 /* BricolageGrotesque_800ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4ECDDECC179C1627AFF8B01 /* BricolageGrotesque_800ExtraBold.ttf */; };
+		C39ADB1DF9C8E416429F60BC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE093A2BCEBF0528CEE05998 /* SettingsView.swift */; };
 		D3E8797405187EED74FC55FD /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3226F77E2337CA747503E715 /* Theme.swift */; };
+		D9541537DEAEEA6635045FAE /* ScreenshotTour.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDD9F7CA4DF6895469C3B80C /* ScreenshotTour.swift */; };
+		D9B578F47DE98168F6E2683A /* round_pushpin.png in Resources */ = {isa = PBXBuildFile; fileRef = F082E56F006C9FE582FF4023 /* round_pushpin.png */; };
 		DED6D8E067B3BC3AE52F4E8F /* WalkerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977D67226CE589C63C91BDEB /* WalkerView.swift */; };
 		DF68D33D86FBAA8A2CF1DC85 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E289BC8D1F1F4E1F161E51E2 /* API.swift */; };
 		E07C467F056164CE2E373EA3 /* front-facing_baby_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = B582BE88DBC43EFE3FA7FA3B /* front-facing_baby_chick.png */; };
@@ -55,6 +62,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		4749A7F489B93CA676021CFE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C189C65B62B0F422D6070826 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F949F0288528AAF306E5E2A3;
+			remoteInfo = WalkBuddy;
+		};
 		8770675863622E49BF4043F8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C189C65B62B0F422D6070826 /* Project object */;
@@ -80,6 +94,7 @@
 
 /* Begin PBXFileReference section */
 		00B6D76E05787D1231B6551A /* WalkBuddyWidgets.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WalkBuddyWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		04FE03BF453D467FF8C4C835 /* Features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features.swift; sourceTree = "<group>"; };
 		0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0AEE91B97020907042DBA94E /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		0E81B80B738B66DA0487CC46 /* sparkles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sparkles.png; sourceTree = "<group>"; };
@@ -104,6 +119,7 @@
 		5F980DF873ED18C254C5C285 /* Figtree_500Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Figtree_500Medium.ttf; sourceTree = "<group>"; };
 		64AA14012BE99329CB565C36 /* red_question_mark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red_question_mark.png; sourceTree = "<group>"; };
 		65491BC1B266EF215FB5AEB8 /* crown.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = crown.png; sourceTree = "<group>"; };
+		66927C91E9F2D7DC46C2D59F /* WalkBuddyUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WalkBuddyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6B71A6F8D4FC502605C2782A /* fire.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fire.png; sourceTree = "<group>"; };
 		6EA689B3EBDE2623ABB92877 /* Figtree_700Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Figtree_700Bold.ttf; sourceTree = "<group>"; };
 		83A102C515C2D034403E579D /* footprints.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = footprints.png; sourceTree = "<group>"; };
@@ -112,6 +128,7 @@
 		984167E13DA97FAC2B41FCBB /* hatching_chick.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hatching_chick.png; sourceTree = "<group>"; };
 		98D2B9A27F422E49CCC151A3 /* FriendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendView.swift; sourceTree = "<group>"; };
 		9ABB96D5237C5D548841D0ED /* WalkLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkLiveActivity.swift; sourceTree = "<group>"; };
+		9FFA98779034F27B04568CC2 /* WalkBuddyE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkBuddyE2ETests.swift; sourceTree = "<group>"; };
 		ABED9BA8EDFBD76926BAA613 /* PlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanView.swift; sourceTree = "<group>"; };
 		B4ECDDECC179C1627AFF8B01 /* BricolageGrotesque_800ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = BricolageGrotesque_800ExtraBold.ttf; sourceTree = "<group>"; };
 		B582BE88DBC43EFE3FA7FA3B /* front-facing_baby_chick.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "front-facing_baby_chick.png"; sourceTree = "<group>"; };
@@ -120,11 +137,16 @@
 		D7599797ED8B1972F393A29A /* glowing_star.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = glowing_star.png; sourceTree = "<group>"; };
 		DA59E75C56FF0C96A90196C4 /* owl.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = owl.png; sourceTree = "<group>"; };
 		DC2561ADCA34D0E46C0C54F8 /* WalkBuddy.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WalkBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDD9F7CA4DF6895469C3B80C /* ScreenshotTour.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotTour.swift; sourceTree = "<group>"; };
+		DE093A2BCEBF0528CEE05998 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E15C95D6D2366FF5C341AA4F /* sweat_droplets.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sweat_droplets.png; sourceTree = "<group>"; };
 		E289BC8D1F1F4E1F161E51E2 /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		E7D0DDF99F983816B16014B9 /* compass.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = compass.png; sourceTree = "<group>"; };
+		F082E56F006C9FE582FF4023 /* round_pushpin.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = round_pushpin.png; sourceTree = "<group>"; };
 		F0A8908627F4923CFB052BB7 /* red_exclamation_mark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red_exclamation_mark.png; sourceTree = "<group>"; };
 		F617BEE5F4C846438983DEA5 /* house.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = house.png; sourceTree = "<group>"; };
 		FA092A1C5DB83B3C97F434C9 /* LiveMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveMapView.swift; sourceTree = "<group>"; };
+		FA80AFA33B43297FD9EE4B23 /* books.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = books.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -132,6 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				DC2561ADCA34D0E46C0C54F8 /* WalkBuddy.app */,
+				66927C91E9F2D7DC46C2D59F /* WalkBuddyUITests.xctest */,
 				00B6D76E05787D1231B6551A /* WalkBuddyWidgets.appex */,
 			);
 			name = Products;
@@ -156,11 +179,13 @@
 				5E15FD4A8EC210F8AF78E6EA /* App.swift */,
 				D2E7CFFD4734434E62DA686D /* BuddyView.swift */,
 				17BCECCF077A717EB4C92D16 /* Components.swift */,
+				04FE03BF453D467FF8C4C835 /* Features.swift */,
 				98D2B9A27F422E49CCC151A3 /* FriendView.swift */,
 				0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */,
 				0AEE91B97020907042DBA94E /* LiveActivityManager.swift */,
 				FA092A1C5DB83B3C97F434C9 /* LiveMapView.swift */,
 				ABED9BA8EDFBD76926BAA613 /* PlanView.swift */,
+				DE093A2BCEBF0528CEE05998 /* SettingsView.swift */,
 				5C1DEBC73B17D7B2BD511B8B /* Stores.swift */,
 				3226F77E2337CA747503E715 /* Theme.swift */,
 				977D67226CE589C63C91BDEB /* WalkerView.swift */,
@@ -169,10 +194,21 @@
 			path = WalkBuddy/Sources;
 			sourceTree = "<group>";
 		};
+		30BA24D89277949AB5B3CD06 /* WalkBuddyUITests */ = {
+			isa = PBXGroup;
+			children = (
+				DDD9F7CA4DF6895469C3B80C /* ScreenshotTour.swift */,
+				9FFA98779034F27B04568CC2 /* WalkBuddyE2ETests.swift */,
+			);
+			path = WalkBuddyUITests;
+			sourceTree = "<group>";
+		};
 		4A97B898663A06AFE1BED9A7 /* Sprites */ = {
 			isa = PBXGroup;
 			children = (
 				3401831157CE8BCF65E08C54 /* bell.png */,
+				FA80AFA33B43297FD9EE4B23 /* books.png */,
+				E7D0DDF99F983816B16014B9 /* compass.png */,
 				65491BC1B266EF215FB5AEB8 /* crown.png */,
 				6B71A6F8D4FC502605C2782A /* fire.png */,
 				535FEFCC5F17988F277D2F26 /* FLUENT_EMOJI_LICENSE.txt */,
@@ -185,6 +221,7 @@
 				DA59E75C56FF0C96A90196C4 /* owl.png */,
 				F0A8908627F4923CFB052BB7 /* red_exclamation_mark.png */,
 				64AA14012BE99329CB565C36 /* red_question_mark.png */,
+				F082E56F006C9FE582FF4023 /* round_pushpin.png */,
 				5DB9EB6C43819F8D26DAD10C /* shield.png */,
 				0E81B80B738B66DA0487CC46 /* sparkles.png */,
 				E15C95D6D2366FF5C341AA4F /* sweat_droplets.png */,
@@ -233,6 +270,7 @@
 				B976D3B9F90370B9DB9B740E /* Resources */,
 				F80627A4E47DAB8BC13CC4D1 /* Shared */,
 				1F966B3270D591BA313C0910 /* Sources */,
+				30BA24D89277949AB5B3CD06 /* WalkBuddyUITests */,
 				5F6BC8446318EA630944C248 /* WalkBuddyWidgets */,
 				1867CD53C69A4A414E7F713A /* Products */,
 			);
@@ -250,6 +288,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		008A0727440EAA3BED662518 /* WalkBuddyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7108C88F9D26FC41D2529492 /* Build configuration list for PBXNativeTarget "WalkBuddyUITests" */;
+			buildPhases = (
+				FB0D385170E7AA48C93ABF31 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5B036E80F2E76F3599A89F5A /* PBXTargetDependency */,
+			);
+			name = WalkBuddyUITests;
+			packageProductDependencies = (
+			);
+			productName = WalkBuddyUITests;
+			productReference = 66927C91E9F2D7DC46C2D59F /* WalkBuddyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		6BC040022BD1724216B05230 /* WalkBuddyWidgets */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F9645F677F1C37A5898112CE /* Build configuration list for PBXNativeTarget "WalkBuddyWidgets" */;
@@ -297,6 +353,11 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					008A0727440EAA3BED662518 = {
+						DevelopmentTeam = F87457F436;
+						ProvisioningStyle = Automatic;
+						TestTargetID = F949F0288528AAF306E5E2A3;
+					};
 					6BC040022BD1724216B05230 = {
 						DevelopmentTeam = F87457F436;
 						ProvisioningStyle = Automatic;
@@ -323,6 +384,7 @@
 			targets = (
 				F949F0288528AAF306E5E2A3 /* WalkBuddy */,
 				6BC040022BD1724216B05230 /* WalkBuddyWidgets */,
+				008A0727440EAA3BED662518 /* WalkBuddyUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -353,6 +415,8 @@
 				98394F17DBC3BC2010F31BA4 /* Figtree_600SemiBold.ttf in Resources */,
 				05AC8E25148F17DF83518A55 /* Figtree_700Bold.ttf in Resources */,
 				3D3E4C984F59DA8FA99BC2F9 /* bell.png in Resources */,
+				4C4DF37B6537DBDB1DD793A8 /* books.png in Resources */,
+				15F58FBA8EEFE7FCE344FD3E /* compass.png in Resources */,
 				82BC7EB7E23412B7BCDA73C2 /* crown.png in Resources */,
 				E6457C6C9EFCE92DC9AF50D4 /* fire.png in Resources */,
 				AADB5B7F43DDD5465B0DA040 /* footprints.png in Resources */,
@@ -364,6 +428,7 @@
 				E13AE9C37A9B4BD8EBBB0987 /* owl.png in Resources */,
 				55E52F24ADB743250B022CEE /* red_exclamation_mark.png in Resources */,
 				EB5B8FB4812F7084D8FB9A49 /* red_question_mark.png in Resources */,
+				D9B578F47DE98168F6E2683A /* round_pushpin.png in Resources */,
 				8AFD8A4A6D1F44514DD83FE8 /* shield.png in Resources */,
 				853BDA21402F1032D48CA4D0 /* sparkles.png in Resources */,
 				E3FBF88C022A26A936D2C9C6 /* sweat_droplets.png in Resources */,
@@ -382,11 +447,13 @@
 				05C13996B080942F2BABD2F1 /* App.swift in Sources */,
 				FE76F2B8815A0A1B31ABCF93 /* BuddyView.swift in Sources */,
 				49E89CCD85818F573696B42F /* Components.swift in Sources */,
+				44BB996D745E0B45BBC3CD7F /* Features.swift in Sources */,
 				3CA0FD335ACD82E8AEF6D26D /* FriendView.swift in Sources */,
 				012E90982DCDAF81341E14D4 /* HomeView.swift in Sources */,
 				578017CBF37AB99BA711A2D3 /* LiveActivityManager.swift in Sources */,
 				32C3C108484C4D8F09E3088F /* LiveMapView.swift in Sources */,
 				9315041C6AF099AFFB49DB86 /* PlanView.swift in Sources */,
+				C39ADB1DF9C8E416429F60BC /* SettingsView.swift in Sources */,
 				6051B2078FEBA93A8F840BF7 /* Stores.swift in Sources */,
 				D3E8797405187EED74FC55FD /* Theme.swift in Sources */,
 				253B102BDAB044C94255C881 /* WalkActivity.swift in Sources */,
@@ -403,6 +470,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FB0D385170E7AA48C93ABF31 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D9541537DEAEEA6635045FAE /* ScreenshotTour.swift in Sources */,
+				0DA1DD12C918702770A8F10E /* WalkBuddyE2ETests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -410,6 +486,11 @@
 			isa = PBXTargetDependency;
 			target = 6BC040022BD1724216B05230 /* WalkBuddyWidgets */;
 			targetProxy = 8770675863622E49BF4043F8 /* PBXContainerItemProxy */;
+		};
+		5B036E80F2E76F3599A89F5A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F949F0288528AAF306E5E2A3 /* WalkBuddy */;
+			targetProxy = 4749A7F489B93CA676021CFE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -498,6 +579,23 @@
 			};
 			name = Debug;
 		};
+		3170C97C5E6ED3CF4CF8744B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkbuddy.app.F87457F436.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WalkBuddy;
+			};
+			name = Release;
+		};
 		386B8391010B733D1BE459D6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -532,6 +630,23 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.walkbuddy.app.F87457F436;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		49A95F1957310B471FA9CEB5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.walkbuddy.app.F87457F436.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WalkBuddy;
 			};
 			name = Debug;
 		};
@@ -628,6 +743,15 @@
 			buildConfigurations = (
 				3E140264D5F7A1A78BC5BC5D /* Debug */,
 				0AE4E3FE8207740F0704527C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7108C88F9D26FC41D2529492 /* Build configuration list for PBXNativeTarget "WalkBuddyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				49A95F1957310B471FA9CEB5 /* Debug */,
+				3170C97C5E6ED3CF4CF8744B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

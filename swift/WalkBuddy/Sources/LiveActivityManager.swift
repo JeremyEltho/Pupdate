@@ -11,7 +11,8 @@ final class LiveActivityManager {
     private var last: WalkActivityAttributes.ContentState?
 
     func sync(walk: Walk?, route: RouteInfo?) {
-        guard let w = walk, w.status == "active" else { end(); return }
+        let enabled = UserDefaults.standard.object(forKey: "wb.liveActivity") as? Bool ?? true
+        guard enabled, let w = walk, w.status == "active" else { end(); return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let content = makeState(w, route)
         if activity == nil || walkId != w.id {

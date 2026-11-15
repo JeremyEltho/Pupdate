@@ -41,6 +41,7 @@ enum Sprite: String {
     case hatchling = "hatching_chick", chick = "front-facing_baby_chick", owl
     case question = "red_question_mark", exclaim = "red_exclamation_mark", sparkles, sweat = "sweat_droplets"
     case fire, gem = "gem_stone", shield, footprints, house, bell, trophy, star = "glowing_star", crown
+    case compass, books, pin = "round_pushpin"
 
     var image: Image {
         if let ui = UIImage(named: rawValue) ?? Bundle.main.path(forResource: rawValue, ofType: "png").flatMap(UIImage.init(contentsOfFile:)) {
@@ -74,7 +75,8 @@ func formName(_ form: String) -> String {
 func level(_ xp: Int) -> Int { xp / 25 + 1 }
 
 enum Haptics {
-    static func tap() { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
-    static func success() { UINotificationFeedbackGenerator().notificationOccurred(.success) }
-    static func warning() { UINotificationFeedbackGenerator().notificationOccurred(.warning) }
+    private static var on: Bool { UserDefaults.standard.object(forKey: "wb.haptics") as? Bool ?? true }
+    static func tap() { if on { UIImpactFeedbackGenerator(style: .medium).impactOccurred() } }
+    static func success() { if on { UINotificationFeedbackGenerator().notificationOccurred(.success) } }
+    static func warning() { if on { UINotificationFeedbackGenerator().notificationOccurred(.warning) } }
 }

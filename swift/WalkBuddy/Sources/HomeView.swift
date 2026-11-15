@@ -20,9 +20,9 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     TopBar(onBack: onExit) {
                         HStack(spacing: 8) {
+                            SettingsButton()
                             StatChip(sprite: .fire, value: "\(streak)")
                             StatChip(sprite: .gem, value: "\(buddy.xp)", tint: Palette.gold)
-                            StatChip(sprite: .star, value: "Lv \(level(buddy.xp))")
                         }
                     }
                     if store.error != nil && store.user == nil {
@@ -70,7 +70,7 @@ struct HomeView: View {
                     // Quick destinations.
                     HStack(spacing: 10) {
                         QuickPlace(title: "Home", sub: "Tooker House", sprite: .house) { planning = .some("Tooker House") }
-                        QuickPlace(title: "Library", sub: "Hayden Library", sprite: .footprints) { planning = .some("Hayden Library") }
+                        QuickPlace(title: "Library", sub: "Hayden Library", sprite: .books) { planning = .some("Hayden Library") }
                     }
 
                     // Stats.
@@ -80,6 +80,8 @@ struct HomeView: View {
                         StatCard(sprite: .shield, value: "2", label: "friends watching")
                     }
 
+                    SafetyPowers(buddyName: buddy.name)
+                    CircleCard()
                     EvolutionTrack(buddy: buddy)
                 }
                 .padding(.horizontal, 20).padding(.bottom, 40)

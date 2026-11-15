@@ -69,3 +69,27 @@ targets:
         CFBundleDisplayName: WalkBuddy
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+  WalkBuddyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: WalkBuddyUITests
+    dependencies:
+      - target: WalkBuddy
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.walkbuddy.app.F87457F436.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: WalkBuddy
+schemes:
+  WalkBuddy:
+    build:
+      targets:
+        WalkBuddy: all
+        WalkBuddyWidgets: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - WalkBuddyUITests
