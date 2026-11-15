@@ -19,3 +19,4 @@ deploy/.url
 .venv-tools/
 backend/cache/
 cache/
+xcuserdata/
