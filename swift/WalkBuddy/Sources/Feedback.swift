@@ -1,6 +1,7 @@
 import AudioToolbox
 import AVFoundation
 import UIKit
+import UserNotifications
 
 /// Sound, speech and vibration, each switchable in Settings > Accessibility.
 enum Feedback {
@@ -35,5 +36,31 @@ enum Feedback {
     static func petted() {
         if soundsOn { AudioServicesPlaySystemSound(1104) }
         Haptics.success()
+    }
+}
+
+/// Local notifications for when the app is in the background. There is no push (APNs needs a paid account),
+/// so these only fire while iOS keeps the app running: reliably on the walker's phone during a walk
+/// (background location), and only briefly on a friend's phone after they leave the app.
+@MainActor
+enum Notify {
+    static func ask() {
+        // UI tests launch with -wb.role; a permission dialog there would cover the screen under test.
+        guard !ProcessInfo.processInfo.arguments.contains("-wb.role") else { return }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    /// Posting again with the same id replaces the earlier banner.
+    static func post(_ id: String, title: String, body: String = "") {
+        guard UIApplication.shared.applicationState != .active else { return }
+        let c = UNMutableNotificationContent()
+        c.title = title
+        c.body = body
+        c.sound = .default
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: c, trigger: nil))
+    }
+
+    static func clear(_ id: String) {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [id])
     }
 }

@@ -26,6 +26,7 @@ final class WalkerStore: ObservableObject {
 
     func start() {
         guard loop == nil else { return }
+        Notify.ask()
         loop = Task { [weak self] in
             if let r = try? await API.shared.routes() { self?.routes = r }
             await self?.loadCircle()
@@ -68,11 +69,14 @@ final class WalkerStore: ObservableObject {
         let st = w?.engine.state
         if let st, st != lastState, st != "calm" {
             Feedback.checkInChime()
+            // Neutral wording: a bystander who sees the Lock Screen learns nothing about safety or alerts.
+            Notify.post("wb.checkin", title: "\(w?.buddy.name ?? "Levin") wants a pet")
             if st == "checkin" || st == "countdown" {
                 let name = w?.buddy.name ?? "Levin"
                 Feedback.speak(w?.buddyLine ?? stateCopy(st, name: name).title + " " + stateCopy(st, name: name).sub)
             }
         }
+        if st == "calm" || st == nil, lastState != st { Notify.clear("wb.checkin") }
         lastState = st
         announce(w)
         if w != walk { walk = w }
@@ -185,6 +189,7 @@ final class FriendStore: ObservableObject {
 
     func start() {
         guard loop == nil else { return }
+        Notify.ask()
         loop = Task { [weak self] in
             if let r = try? await API.shared.routes() { self?.routes = r }
             while !Task.isCancelled {
@@ -208,11 +213,13 @@ final class FriendStore: ObservableObject {
             if feed != nil, let n = fresh.first {
                 Haptics.warning()
                 Feedback.speak(n.text)
+                Notify.post("wb.notice", title: n.text)
             }
             let oldUpdates = Set((feed?.updates ?? []).map(\.text))
             if feed != nil, let u = (f.updates ?? []).first(where: { !oldUpdates.contains($0.text) }) {
                 Haptics.warning()
                 Feedback.speak(u.text)
+                Notify.post("wb.notice", title: u.text)
             }
             if f != feed { feed = f }
             if error != nil { error = nil }
@@ -220,8 +227,9 @@ final class FriendStore: ObservableObject {
                 startBuzz()
                 Feedback.alertSound()
                 Feedback.speak(a.summary ?? "WalkBuddy alert for \(a.walkerName).")
+                Notify.post("wb.alert", title: "WalkBuddy alert for \(a.walkerName)", body: a.summary ?? "Open WalkBuddy to see where they are.")
             }
-            if alert == nil { buzz?.cancel(); buzz = nil }
+            if alert == nil { buzz?.cancel(); buzz = nil; if hadAlert { Notify.clear("wb.alert") } }
         } catch {
             self.error = error.localizedDescription
         }
