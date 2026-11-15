@@ -1,1 +1,8 @@
+fastapi
+uvicorn[standard]
+pydantic
+httpx
+python-dotenv
+networkx
 pymongo
+pytest
