@@ -41,6 +41,7 @@ final class WalkBuddyE2ETests: XCTestCase {
     /// Walker answers the first check-in by petting: +10 XP and the evolution celebration.
     func testWalkerPetsAndEvolves() {
         api("/demo/reset")
+        api("/users/jordan/buddy", "{\"name\":\"Levin\",\"species\":\"dog\"}")
         api("/demo/start")
         let app = launch(role: "walker")
         XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30), "check-in never showed")
@@ -54,7 +55,7 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCTAssertTrue(app.buttons["Awesome"].waitForExistence(timeout: 8), "evolution overlay never showed")
         app.buttons["Awesome"].tap()
         XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
-        XCTAssertTrue(text(app, "Chick").waitForExistence(timeout: 5))
+        XCTAssertTrue(text(app, "Scout Pup").waitForExistence(timeout: 5))
     }
 
     /// Friend runs the demo panel: start, stop answering, the alert takeover, close.

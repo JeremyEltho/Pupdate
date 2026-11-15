@@ -19,7 +19,7 @@ LOCK = threading.RLock()
 
 SEED_USERS = {
     "jordan": {"id": "jordan", "name": "Jordan", "phone": "+15555550100", "friends": ["maya", "sam"], "streak": 6,
-               "buddy": {"name": "Levin", "xp": 90, "form": "sprout", "species": "chick"}},
+               "buddy": {"name": "Levin", "xp": 90, "form": "sprout", "species": "dog"}},
     "maya": {"id": "maya", "name": "Maya", "phone": "+15555550101", "friends": ["jordan"], "streak": 2,
              "buddy": {"name": "Pip", "xp": 40, "form": "sprout", "species": "cat"}},
     "sam": {"id": "sam", "name": "Sam", "phone": "+15555550102", "friends": ["jordan"], "streak": 11,

@@ -1,4 +1,5 @@
 import ActivityKit
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -27,9 +28,16 @@ struct BuddyBadge: View {
     var size: CGFloat
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            spriteImage(WalkStateStyle.spriteName(form: state.form, species: state.species)).resizable().scaledToFit()
-                .frame(width: size, height: size)
-            if let b = WalkStateStyle.badgeName(state: state.state) {
+            if state.species == "dog" {
+                // The dog's face follows the walk and smiles right after a pet. Each change animates in.
+                DogView(form: state.form, mood: WalkStateStyle.dogMood(state), size: size, animated: false)
+                    .id("\(state.state)-\(state.happy ?? false)")
+                    .transition(.scale(scale: 0.7).combined(with: .opacity))
+            } else {
+                spriteImage(WalkStateStyle.spriteName(form: state.form, species: state.species)).resizable().scaledToFit()
+                    .frame(width: size, height: size)
+            }
+            if !(state.happy ?? false), let b = WalkStateStyle.badgeName(state: state.state) {
                 spriteImage(b).resizable().scaledToFit().frame(width: size * 0.42, height: size * 0.42).offset(x: size * 0.12, y: -size * 0.08)
             }
         }
@@ -102,7 +110,10 @@ struct WalkLiveActivity: Widget {
                 if let t = s.turnText, s.state == "calm" {
                     TurnRow(state: s, text: t)
                 }
-                ProgressTrack(state: s)
+                HStack(spacing: 10) {
+                    ProgressTrack(state: s)
+                    if WalkStateStyle.showsPet(s), let id = ctx.attributes.walkId { PetButton(walkId: id, state: s) }
+                }
                 HStack {
                     Text("\(ctx.attributes.buddyName) is walking you to \(ctx.attributes.to)")
                     Spacer()
@@ -132,7 +143,10 @@ struct WalkLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 6) {
                         if let t = s.turnText, s.state == "calm" { TurnRow(state: s, text: t) }
-                        ProgressTrack(state: s)
+                        HStack(spacing: 10) {
+                            ProgressTrack(state: s)
+                            if WalkStateStyle.showsPet(s), let id = ctx.attributes.walkId { PetButton(walkId: id, state: s) }
+                        }
                     }
                     .padding(.horizontal, 8).padding(.top, 6)
                 }
@@ -152,5 +166,22 @@ struct WalkLiveActivity: Widget {
             }
             .keylineTint(stateTint(s.state))
         }
+    }
+}
+
+/// Pets the buddy from the Lock Screen / Dynamic Island without unlocking.
+struct PetButton: View {
+    let walkId: String
+    let state: WalkActivityAttributes.ContentState
+
+    var body: some View {
+        Button(intent: PetBuddyIntent(walkId: walkId)) {
+            Label("Pet", systemImage: "hand.raised.fill")
+                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .padding(.horizontal, 12).padding(.vertical, 7)
+                .background(Capsule().fill(stateTint(state.state)))
+                .foregroundStyle(night)
+        }
+        .buttonStyle(.plain)
     }
 }

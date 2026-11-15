@@ -37,9 +37,17 @@ struct BuddyView: View {
         case .asking: return .question
         case .worried: return .sweat
         case .alarmed: return .exclaim
-        case .happy: return .sparkles
+        case .happy: return isDog ? nil : .sparkles   // the dog shows its own hearts
         case .calm: return nil
         }
+    }
+
+    private var isDog: Bool { VECTOR_SPECIES.contains(species ?? "") }
+    /// 0...1 while a rub is in progress (drives the dog's lean-in).
+    private var rubbing: CGFloat { hand == nil ? 0 : max(0.35, min(1, strokeDist / strokeNeeded)) }
+    private var look: CGPoint {
+        guard let h = hand else { return .zero }
+        return CGPoint(x: max(-1, min(1, h.x / size * 2 - 1)), y: max(-1, min(1, h.y / size * 2 - 1)))
     }
 
     private var bobSpeed: Double { mood == .alarmed ? 0.28 : mood == .worried ? 0.5 : 1.3 }
@@ -71,10 +79,18 @@ struct BuddyView: View {
                 .scaleEffect(x: bob ? 0.8 : 1)
                 .offset(y: -size * 0.09)
             ZStack(alignment: .top) {
-                petSprite(species, form).image
-                    .resizable().scaledToFit()
-                    .frame(width: sprite, height: sprite)
-                    .shadow(color: glow.opacity(0.35), radius: 24, y: 6)
+                if isDog {
+                    // The dog reacts on its own: leans in and closes its eyes while you rub,
+                    // wags hard and shows its tongue when happy, tucks its tail when worried.
+                    DogView(form: form, mood: dogMood(mood), size: sprite * 1.08, animated: !Motion.reduced,
+                            petting: rubbing, look: look)
+                        .shadow(color: glow.opacity(0.35), radius: 24, y: 6)
+                } else {
+                    petSprite(species, form).image
+                        .resizable().scaledToFit()
+                        .frame(width: sprite, height: sprite)
+                        .shadow(color: glow.opacity(0.35), radius: 24, y: 6)
+                }
                 if let gear = petGear(species, form) {
                     gear.image.resizable().scaledToFit()
                         .frame(width: sprite * (gear == .crown ? 0.42 : 0.3))

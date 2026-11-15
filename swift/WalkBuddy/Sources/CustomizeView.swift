@@ -63,7 +63,7 @@ struct CustomizeView: View {
                                     withAnimation(.spring(response: 0.35, dampingFraction: 0.6)) { species = sp.id }
                                 } label: {
                                     VStack(spacing: 4) {
-                                        petSprite(sp.id, "sprout").image.resizable().scaledToFit().frame(width: 46, height: 46)
+                                        PetImage(species: sp.id, form: "sprout", mood: on ? .happy : .calm, size: 46)
                                             .scaleEffect(on ? 1.12 : 1)
                                         Text(sp.name).font(Typeface.bold(12)).foregroundStyle(on ? Palette.gold : Palette.muted)
                                     }

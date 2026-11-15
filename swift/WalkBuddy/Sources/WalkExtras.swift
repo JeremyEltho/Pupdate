@@ -36,7 +36,7 @@ struct NextTurnCard: View {
                 Text(turn.text).font(Typeface.semi(15)).foregroundStyle(Palette.text).lineLimit(2)
                 if turn.near {
                     HStack(spacing: 5) {
-                        petSprite(species, form).image.resizable().scaledToFit().frame(width: 18, height: 18)
+                        PetImage(species: species, form: form, size: 18)
                         Text(buddyLine).font(Typeface.body(13)).foregroundStyle(Palette.muted)
                     }
                 }

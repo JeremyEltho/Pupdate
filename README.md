@@ -22,6 +22,15 @@ Built at SunHacks 2026.
 
 The safety logic lives in one small, deterministic state machine (`backend/app/engine.py`) with injected time, and it is fully unit-tested.
 
+
+## The dog
+
+Levin is an animated dog by default (species `dog`; the other pets are still in Customize).
+- **Reacts in the app:** wags slowly when calm, tilts its head with one ear up when asking, tucks its tail when worried, trembles when alarmed. While you rub it, it leans in and closes its eyes; after a pet it's happy (tongue out, fast wag, hearts).
+- **Evolves:** Puppy -> Scout Pup (gold bandana) -> Guardian Dog (reflective vest, shield tag, headlamp).
+- **Live Activity:** the dog's face on the Lock Screen and Dynamic Island follows the walk state and smiles right after a pet. A **Pet** button there checks in without unlocking. During an alert it's only a late pet: friends are told and the alert stays open.
+- Art is generated: edit `swift/tools/dog_art.py`, then `python3 dog_art.py && python3 gen_dog_swift.py`. Preview every form and mood with `python3 dog_preview.py dog.html` (see `docs/dog-moods.png`).
+
 ## Repo layout
 
 ```

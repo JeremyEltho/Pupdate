@@ -131,7 +131,7 @@ private struct WalkerDot: View {
                 .scaleEffect(pulse ? 1.65 : 1).opacity(pulse ? 0.35 : 1)
             Circle().fill(.white).frame(width: 40, height: 40).shadow(color: .black.opacity(0.35), radius: 5, y: 3)
             Circle().fill(tint).frame(width: 34, height: 34)
-            petSprite(species, form).image.resizable().scaledToFit().frame(width: 28, height: 28)
+            PetImage(species: species, form: form, size: 30)
         }
         .onAppear {
             guard !Motion.reduced else { return }

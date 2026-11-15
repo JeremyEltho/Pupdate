@@ -16,7 +16,13 @@ struct WalkerView: View {
         .animation(.easeInOut(duration: 0.35), value: store.walk?.id)
         .onAppear { store.start() }
         .onDisappear { store.stop() }
-        .onChange(of: store.walk) { _, w in LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }) }
+        .onChange(of: store.walk) { _, w in
+            LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }, happy: store.happy)
+        }
+        .onChange(of: store.happy) { _, h in   // the Lock Screen pet smiles when you pet it, then goes back
+            let w = store.walk
+            LiveActivityManager.shared.sync(walk: w, route: store.routes.first { $0.id == w?.routeId }, happy: h)
+        }
     }
 }
 
@@ -227,7 +233,7 @@ struct EvolutionOverlay: View {
                 Text("Evolution!").font(Typeface.display(20)).foregroundStyle(Palette.gold).textCase(nil)
                 ZStack {
                     Sprite.sparkles.image.resizable().scaledToFit().frame(width: 260).opacity(show ? 0.9 : 0)
-                    petSprite(species, form).image.resizable().scaledToFit().frame(width: 200)
+                    PetImage(species: species, form: form, mood: .happy, size: 200, animated: true)
                         .scaleEffect(show ? 1 : 0.2)
                         .shadow(color: Palette.gold.opacity(0.7), radius: 30)
                 }
