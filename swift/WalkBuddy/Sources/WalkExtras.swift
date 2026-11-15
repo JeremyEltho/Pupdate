@@ -18,7 +18,7 @@ func formatMeters(_ m: Int) -> String { m >= 1000 ? String(format: "%.1f km", Do
 struct NextTurnCard: View {
     let turn: NextTurn
     var buddyName = "Levin"
-    var species: String? = "chick"
+    var species: String? = "dog"
     var form = "sprout"
 
     var body: some View {
@@ -44,8 +44,8 @@ struct NextTurnCard: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.card2))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(turn.near ? Palette.gold : Palette.lineTop, lineWidth: turn.near ? 2 : 1))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(turn.near ? Palette.gold : Palette.lineTop, lineWidth: turn.near ? 2 : 1))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(turn.near ? "Turn here: \(turn.text)" : "In \(formatMeters(turn.inM)), \(turn.text)")
         .accessibilityIdentifier("next-turn")
@@ -160,7 +160,6 @@ struct FlagAheadBanner: View {
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(flagTint(flag.status).opacity(0.14)))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(flagTint(flag.status).opacity(0.6)))
         .accessibilityElement(children: .combine)
     }
 }
@@ -227,8 +226,7 @@ struct TestToolsCard: View {
                 } label: {
                     Text("\(Int(x))x").font(Typeface.bold(13)).foregroundStyle(on ? Palette.ink : Palette.text)
                         .frame(maxWidth: .infinity, minHeight: 36)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(on ? Palette.gold : Color(hex: 0x0f1433)))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.line))
+                        .background(RoundedRectangle(cornerRadius: 12).fill(on ? Palette.gold : Palette.card2))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Speed \(Int(x)) times")
@@ -304,8 +302,7 @@ struct TestToolsCard: View {
         }
         .foregroundStyle(Palette.text)
         .frame(maxWidth: .infinity, minHeight: 44)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0f1433)))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+        .background(RoundedRectangle(cornerRadius: 14).fill(Palette.card2))
     }
 }
 
@@ -345,7 +342,7 @@ struct EndEarlyCard: View {
                         }
                         .foregroundStyle(on ? tint : Palette.text)
                         .padding(.horizontal, 14).frame(minHeight: 44)
-                        .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Color(hex: 0x0f1433)))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Palette.card2))
                         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(on ? tint : Palette.line))
                     }
                     .buttonStyle(.plain)
@@ -363,9 +360,7 @@ struct EndEarlyCard: View {
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Palette.card2))
-        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Palette.lineTop))
-        .shadow(color: .black.opacity(0.5), radius: 20, y: -4)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
         .accessibilityIdentifier("end-early-card")
     }
 }

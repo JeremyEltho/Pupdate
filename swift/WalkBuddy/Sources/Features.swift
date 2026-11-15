@@ -26,7 +26,7 @@ struct EscalationLadder: View {
                     let color: Color = i >= 2 ? Palette.alert : Palette.gold
                     VStack(spacing: 6) {
                         Capsule()
-                            .fill(now ? color : done ? color.opacity(0.55) : Color(hex: 0x0b1030))
+                            .fill(now ? color : done ? color.opacity(0.55) : Palette.card2)
                             .frame(height: 8)
                             .overlay(Capsule().strokeBorder(now ? .white.opacity(0.5) : .clear, lineWidth: 1))
                             .shadow(color: now ? color.opacity(0.7) : .clear, radius: 6)
@@ -63,7 +63,6 @@ struct SafetyStatusRow: View {
         .padding(.horizontal, 10).padding(.vertical, 8)
         .frame(maxWidth: .infinity)
         .background(Capsule().fill(tint.opacity(0.12)))
-        .overlay(Capsule().strokeBorder(tint.opacity(0.25)))
     }
 }
 
@@ -144,7 +143,7 @@ struct TripsView: View {
 struct WalkLog: View {
     let events: [WalkEvent]
     var title = "Walk log"
-    var species: String? = "chick"
+    var species: String? = "dog"
     var body: some View {
         let rows = events.compactMap(describe).reversed().prefix(6)
         VStack(alignment: .leading, spacing: 12) {
@@ -244,7 +243,7 @@ struct SafetyPowers: View {
             (.shield, "Silent alert", "Hold \(buddyName) for 2 seconds. Your screen stays calm while friends get a quiet alert."),
             (.compass, "Route and speed", "Leaving your route, stopping a long time, or moving at car speed triggers a check-in."),
             (.exclaim, "Lost contact", "If your phone goes quiet for 90 seconds, your friends know."),
-            (.star, "Lock Screen", "Your walk, countdown and \(buddyName) live on your Lock Screen and Dynamic Island."),
+            (.pin, "Lock Screen", "Your walk, countdown and \(buddyName) live on your Lock Screen and Dynamic Island."),
         ]
     }
 
@@ -254,7 +253,7 @@ struct SafetyPowers: View {
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, it in
                     VStack(alignment: .leading, spacing: 8) {
-                        it.0.image.resizable().scaledToFit().frame(width: 34, height: 34)
+                        SpriteIcon(it.0, size: 26)
                         Text(it.1).font(Typeface.displayBold(16)).foregroundStyle(Palette.text)
                         Text(it.2).font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -262,8 +261,7 @@ struct SafetyPowers: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 168, alignment: .topLeading)
                     .padding(14)
-                    .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.card))
-                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.line))
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card))
                 }
             }
         }

@@ -11,7 +11,9 @@ struct WalkBuddyApp: App {
 
 struct RootView: View {
     @AppStorage("wb.role") private var role = ""
-    @AppStorage("wb.textScale") private var textScale = 1.0
+    /// The text size the app was last built with. Changing the setting rebuilds the whole tree (fonts are read
+    /// when views are made), so it's applied when Settings closes, not while it's open.
+    @State private var appliedScale = UserDefaults.standard.object(forKey: "wb.textScale") as? Double ?? 1.0
     var body: some View {
         Group {
             switch role {
@@ -20,8 +22,16 @@ struct RootView: View {
             default: RoleView(pick: { role = $0 })
             }
         }
-        .id(textScale) // rebuild fonts when the text size setting changes
+        .id(appliedScale)
+        .onReceive(NotificationCenter.default.publisher(for: .wbApplyTextScale)) { _ in
+            let s = UserDefaults.standard.object(forKey: "wb.textScale") as? Double ?? 1.0
+            if s != appliedScale { appliedScale = s }
+        }
     }
+}
+
+extension Notification.Name {
+    static let wbApplyTextScale = Notification.Name("wb.applyTextScale")
 }
 
 struct RoleView: View {
@@ -37,9 +47,7 @@ struct RoleView: View {
                 VStack(spacing: 22) {
                     VStack(spacing: 8) {
                         HStack(alignment: .bottom, spacing: -18) {
-                            Sprite.poodle.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
                             BuddyView(form: "strider", species: "dog", mood: .happy, size: 170, pedestal: true)
-                            Sprite.dog.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
                         }
                         Text("Pupdate").font(Typeface.display(44)).foregroundStyle(Palette.text)
                         Text("Your pup walks you home and keeps your friends updated. If you stop answering it, they find out.")
@@ -63,8 +71,7 @@ struct RoleView: View {
                                 .font(Typeface.body(15)).foregroundStyle(Palette.text)
                                 .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                                 .padding(.horizontal, 14).frame(minHeight: 50)
-                                .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0b1030)))
-                                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+                                .background(RoundedRectangle(cornerRadius: 14).fill(Palette.card2))
                             HStack(spacing: 12) {
                                 GameButton(title: "Save and test", kind: .ghost, busy: checking) { Task { await test() } }
                                 Text(status ?? "").font(Typeface.bold(15))
@@ -102,7 +109,6 @@ struct TopBar<Trailing: View>: View {
                     .foregroundStyle(Palette.muted)
                     .frame(width: 40, height: 40)
                     .background(Circle().fill(.white.opacity(0.07)))
-                    .overlay(Circle().strokeBorder(.white.opacity(0.09)))
                     .accessibilityLabel("Back")
             }
             Spacer(minLength: 8)

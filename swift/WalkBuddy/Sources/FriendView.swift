@@ -79,7 +79,7 @@ struct FriendView: View {
                                 }
                             } else {
                                 HStack(spacing: 12) {
-                                    Sprite.house.image.resizable().scaledToFit().frame(width: 44)
+                                    SpriteIcon(.house, size: 40)
                                     Text("Nobody is walking right now.").font(Typeface.body(15)).foregroundStyle(Palette.muted)
                                 }
                             }
@@ -165,7 +165,7 @@ struct FriendView: View {
                                 SectionTitle(text: "Recent alerts")
                                 ForEach(recent.prefix(5)) { a in
                                     HStack {
-                                        Sprite.bell.image.resizable().scaledToFit().frame(width: 22)
+                                        SpriteIcon(.bell, size: 22)
                                         Text(KIND[a.kind]?.short ?? a.kind).font(Typeface.semi(15)).foregroundStyle(Palette.text)
                                         Text(clock(a.openedAt)).font(Typeface.body(14)).foregroundStyle(Palette.muted)
                                         Spacer()
@@ -187,6 +187,8 @@ struct FriendView: View {
             }
         }
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.alert?.id)
+        // The takeover sits under any open panel, so an alert closes Settings or Flags to be seen.
+        .onChange(of: store.alert?.id) { _, id in if id != nil, panel != nil { panel = nil } }
         .onAppear { store.start() }
         .onDisappear { store.stop() }
         .fullScreenCover(item: $panel) { p in
@@ -213,7 +215,7 @@ struct FriendView: View {
 
 struct TakeoverView: View {
     let alert: AlertInfo
-    var alertSpecies: String? = "chick"
+    var alertSpecies: String? = "dog"
     let closing: Bool
     let onClose: () -> Void
     @State private var pulse = false
@@ -265,7 +267,6 @@ struct TakeoverView: View {
                             }
                             .padding(16)
                             .background(RoundedRectangle(cornerRadius: 18).fill(.white.opacity(0.07)))
-                            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.1)))
                         }
                     }
                 }

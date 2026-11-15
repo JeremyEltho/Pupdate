@@ -12,7 +12,7 @@ struct LiveMapView: View {
     var trail: [[Double]] = []
     var pos: [Double]?
     var form: String = "sprout"
-    var species: String? = "chick"
+    var species: String? = "dog"
     var offRoute = false
     var alert = false
     var follow = true
@@ -24,6 +24,11 @@ struct LiveMapView: View {
     @State private var shown: CLLocationCoordinate2D?
     @State private var following = true
     @State private var lastCam: MapCamera?
+    /// When the last position arrived, and the smoothed gap between arrivals. Polls take the interval
+    /// plus the network round trip, so gliding for exactly `interval` left the marker parked for a beat
+    /// every update (a stutter about once a second). Gliding for the measured gap keeps it moving.
+    @State private var lastArrival: Date?
+    @State private var gap: Double?
     @AppStorage("wb.satellite") private var satellite = true
 
     private func c(_ p: [Double]) -> CLLocationCoordinate2D { .init(latitude: p[0], longitude: p[1]) }
@@ -45,7 +50,7 @@ struct LiveMapView: View {
             }
             if let last = route?.last {
                 Annotation("Home", coordinate: c(last), anchor: .bottom) {
-                    Sprite.house.image.resizable().scaledToFit().frame(width: 38, height: 38)
+                    SpriteIcon(.house, size: 20, tint: Palette.ink).frame(width: 34, height: 34).background(Circle().fill(Palette.gold))
                         .shadow(color: .black.opacity(0.4), radius: 4, y: 3)
                 }
             }
@@ -93,13 +98,19 @@ struct LiveMapView: View {
         }
         let d = CLLocation(latitude: old.latitude, longitude: old.longitude)
             .distance(from: CLLocation(latitude: target.latitude, longitude: target.longitude))
+        let now = Date()
+        if let t = lastArrival {
+            let g = min(max(now.timeIntervalSince(t), interval * 0.8), interval * 2.5)
+            gap = gap.map { $0 * 0.7 + g * 0.3 } ?? g
+        }
+        lastArrival = now
         if d < 1.5 { return }  // GPS jitter: don't wiggle
         if d > 200 {  // a new walk or a reset: jump, don't fly across town
             shown = target
             if following && follow { recenter(animated: false) }
             return
         }
-        withAnimation(.linear(duration: interval)) {
+        withAnimation(.linear(duration: gap ?? interval)) {
             shown = target
             if following && follow { camera = .camera(cam(at: target)) }
         }

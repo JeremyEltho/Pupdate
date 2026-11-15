@@ -30,7 +30,7 @@ struct WalkActivityAttributes: ActivityAttributes {
 enum WalkStateStyle {
     static func isUrgent(_ s: String) -> Bool { ["final", "countdown", "alert"].contains(s) }
     static func needsTap(_ s: String) -> Bool { s != "calm" }
-    static func spriteName(form: String, species: String = "chick") -> String {
+    static func spriteName(form: String, species: String = "dog") -> String {
         let pets = ["dog": "pet_dog", "cat": "pet_cat", "bunny": "pet_rabbit", "poodle": "pet_poodle", "hedgehog": "pet_hedgehog",
                     "chipmunk": "pet_chipmunk", "otter": "pet_otter", "seal": "pet_seal", "sloth": "pet_sloth",
                     "turtle": "pet_turtle", "penguin": "penguin"]

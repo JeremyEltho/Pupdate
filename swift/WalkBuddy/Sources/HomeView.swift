@@ -2,9 +2,9 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject var store: WalkerStore
+    @Binding var panel: ScreenPanel?
     let onExit: () -> Void
     @State private var appear = false
-    @State private var panel: ScreenPanel?
 
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: Date())
@@ -36,9 +36,8 @@ struct HomeView: View {
 
                     // Hero: the buddy on its stage.
                     ZStack(alignment: .bottom) {
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .fill(RadialGradient(colors: [Color(hex: 0x2a2f78), Color(hex: 0x141a44), Palette.card], center: .init(x: 0.5, y: 0.35), startRadius: 10, endRadius: 260))
-                            .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous).strokeBorder(Palette.lineTop))
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Palette.card)
                         VStack(spacing: 6) {
                             BuddyView(form: buddy.form, species: buddy.species, mood: store.happy ? .happy : .calm, size: 250, onPet: { Task { await store.pet() } })
                                 .scaleEffect(appear ? 1 : 0.85).opacity(appear ? 1 : 0)
@@ -55,11 +54,9 @@ struct HomeView: View {
                             .foregroundStyle(Palette.gold)
                             .padding(.horizontal, 12).padding(.vertical, 8)
                             .background(Capsule().fill(Palette.gold.opacity(0.14)))
-                            .overlay(Capsule().strokeBorder(Palette.gold.opacity(0.4)))
                         }
                         .padding(14)
                     }
-                    .shadow(color: .black.opacity(0.45), radius: 22, y: 12)
 
                     // Primary action: looks like a search field, opens the map.
                     Button { panel = .plan(nil) } label: {
@@ -74,9 +71,7 @@ struct HomeView: View {
                             Image(systemName: "chevron.right").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
                         }
                         .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
-                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.gold.opacity(0.55), lineWidth: 1.5))
-                        .shadow(color: Palette.gold.opacity(0.18), radius: 18, y: 6)
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
                     }
                     .buttonStyle(.plain)
 
@@ -99,8 +94,7 @@ struct HomeView: View {
                             Image(systemName: "chevron.right").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
                         }
                         .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
-                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.lineTop))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("open-flags")
@@ -117,8 +111,7 @@ struct HomeView: View {
                             Image(systemName: "chevron.right").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
                         }
                         .padding(14)
-                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
-                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.lineTop))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("open-trips")
@@ -147,24 +140,7 @@ struct HomeView: View {
             }
             #endif
         }
-        .fullScreenCover(item: $panel) { p in
-            Group {
-                switch p {
-                case .settings: SettingsView(onClose: { panel = nil; Task { await store.loadCircle() } })
-                case .customize:
-                    CustomizeView { saved in
-                        panel = nil
-                        if saved != nil { Task { await store.refresh() } }
-                    }
-                case .plan(let preset):
-                    PlanView(store: store, onClose: { panel = nil }, preset: preset)
-                case .flags:
-                    FlagsView(me: "jordan", onClose: { panel = nil })
-                case .trips:
-                    TripsView(me: store.me, onClose: { panel = nil })
-                }
-            }
-        }
+        // The panels are presented by WalkerView (see there), so starting a walk can't tear one down.
     }
 }
 
@@ -176,7 +152,7 @@ private struct QuickPlace: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                sprite.image.resizable().scaledToFit().frame(width: 34, height: 34)
+                SpriteIcon(sprite, size: 26)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title).font(Typeface.displayBold(16)).foregroundStyle(Palette.text)
                     Text(sub).font(Typeface.body(12)).foregroundStyle(Palette.muted).lineLimit(1)
@@ -185,8 +161,7 @@ private struct QuickPlace: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Palette.card))
-            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.line))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card))
         }
         .buttonStyle(.plain)
     }
@@ -198,14 +173,13 @@ private struct StatCard: View {
     let label: String
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            sprite.image.resizable().scaledToFit().frame(width: 34, height: 34)
+            SpriteIcon(sprite, size: 26)
             Text(value).font(Typeface.display(22)).foregroundStyle(Palette.text).monospacedDigit()
             Text(label).font(Typeface.body(12)).foregroundStyle(Palette.muted).lineLimit(2).fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.card))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.line))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card))
     }
 }
 
@@ -226,7 +200,7 @@ private struct EvolutionTrack: View {
                                 .colorMultiply(reached ? .white : .black)
                                 .opacity(reached ? 1 : 0.55)
                                 .padding(8)
-                                .background(Circle().fill(reached ? Palette.gold.opacity(0.16) : Color(hex: 0x0f1433)))
+                                .background(Circle().fill(reached ? Palette.gold.opacity(0.16) : Palette.card2))
                                 .overlay(Circle().strokeBorder(buddy.form == st.form ? Palette.gold : .clear, lineWidth: 2))
                             Text(formName(st.form, species: buddy.species)).font(Typeface.bold(13)).foregroundStyle(reached ? Palette.text : Palette.muted)
                             Text(reached ? "Unlocked" : "\(st.xp) XP").font(Typeface.body(11)).foregroundStyle(Palette.muted)

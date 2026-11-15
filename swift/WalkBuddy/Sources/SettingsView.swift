@@ -42,7 +42,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Settings").font(Typeface.display(34)).foregroundStyle(Palette.text)
                         Spacer()
-                        Button(action: onClose) {
+                        Button(action: close) {
                             Image(systemName: "xmark").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
                                 .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
                         }
@@ -223,8 +223,7 @@ struct SettingsView: View {
                             .font(Typeface.body(15)).foregroundStyle(Palette.text)
                             .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
                             .padding(.horizontal, 14).frame(minHeight: 48)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0b1030)))
-                            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Palette.card2))
                         HStack(spacing: 12) {
                             GameButton(title: "Save and test", kind: .ghost, busy: busy) {
                                 Task {
@@ -252,7 +251,7 @@ struct SettingsView: View {
                             .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
                         divider
                         GameButton(title: "Switch role (now: \(role == "friend" ? "friend" : "walker"))", kind: .ghost) {
-                            onClose()
+                            close()
                             role = ""
                         }
                     }
@@ -283,8 +282,19 @@ struct SettingsView: View {
         } message: {
             Text("Levin won't check in, so nobody is alerted if you stop answering. The silent alert, lost contact and car speed still work. Your circle is told check-ins are off.")
         }
-        .sheet(isPresented: $customizing) {
-            CustomizeView { _ in customizing = false }.presentationBackground(Palette.bg)
+        // A full-screen cover, not a sheet: sheets here were being dismissed by the polling re-renders behind them.
+        .fullScreenCover(isPresented: $customizing) {
+            CustomizeView { _ in customizing = false }
+        }
+
+    }
+
+    /// Text size: RootView rebuilds the app to apply it, which would slam this screen shut mid-change.
+    /// So it's applied once Settings has finished sliding away.
+    private func close() {
+        onClose()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            NotificationCenter.default.post(name: .wbApplyTextScale, object: nil)
         }
     }
 
@@ -319,8 +329,7 @@ struct SettingsView: View {
             .font(Typeface.body(15)).foregroundStyle(Palette.text)
             .keyboardType(keyboard).autocorrectionDisabled()
             .padding(.horizontal, 14).frame(minHeight: 48)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0b1030)))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+            .background(RoundedRectangle(cornerRadius: 14).fill(Palette.card2))
             .accessibilityLabel(placeholder)
     }
 
@@ -351,7 +360,7 @@ struct SettingsView: View {
             }
             .foregroundStyle(on ? tint : Palette.muted)
             .frame(maxWidth: .infinity, minHeight: 42)
-            .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Color(hex: 0x0f1433)))
+            .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Palette.card2))
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(on ? tint : Palette.line, lineWidth: on ? 1.5 : 1))
         }
         .buttonStyle(.plain)
@@ -381,7 +390,6 @@ struct SettingsButton: View {
         Button(action: action) {
             Image(systemName: "gearshape.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.muted)
                 .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
-                .overlay(Circle().strokeBorder(.white.opacity(0.09)))
         }
         .accessibilityLabel("Settings")
     }

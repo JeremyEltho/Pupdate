@@ -5,7 +5,7 @@ struct CustomizeView: View {
     let onClose: (BuddyInfo?) -> Void
     @State private var buddy: BuddyInfo?
     @State private var name = ""
-    @State private var species = "chick"
+    @State private var species = "dog"
     @State private var saving = false
     @State private var error: String?
     @FocusState private var naming: Bool
@@ -37,10 +37,9 @@ struct CustomizeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
                     .background(
-                        RoundedRectangle(cornerRadius: 32, style: .continuous)
-                            .fill(RadialGradient(colors: [Color(hex: 0x2a2f78), Color(hex: 0x141a44), Palette.card], center: .init(x: 0.5, y: 0.35), startRadius: 10, endRadius: 260))
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Palette.card)
                     )
-                    .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous).strokeBorder(Palette.lineTop))
 
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Name").font(Typeface.displayBold(17)).foregroundStyle(Palette.text)
@@ -48,7 +47,7 @@ struct CustomizeView: View {
                             .font(Typeface.semi(18)).foregroundStyle(Palette.text)
                             .focused($naming).submitLabel(.done)
                             .padding(.horizontal, 16).frame(minHeight: 52)
-                            .background(RoundedRectangle(cornerRadius: 16).fill(Color(hex: 0x0b1030)))
+                            .background(RoundedRectangle(cornerRadius: 16).fill(Palette.card2))
                             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(naming ? Palette.gold : Palette.line, lineWidth: naming ? 1.5 : 1))
                             .onChange(of: name) { _, v in if v.count > 16 { name = String(v.prefix(16)) } }
                     }
@@ -94,7 +93,7 @@ struct CustomizeView: View {
             if let u = try? await API.shared.user("jordan") {
                 buddy = u.buddy
                 name = u.buddy.name
-                species = u.buddy.species ?? "chick"
+                species = u.buddy.species ?? "dog"
             }
         }
     }

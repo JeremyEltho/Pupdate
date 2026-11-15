@@ -4,16 +4,38 @@ import SwiftUI
 struct WalkerView: View {
     let onExit: () -> Void
     @StateObject private var store = WalkerStore()
+    /// Home's panels (Plan, Settings, ...) live here, not in HomeView: starting a walk from the Plan screen
+    /// swaps Home for the walk screen underneath the open panel, and the panel then slides down onto it.
+    /// When the presenter lived in HomeView, the swap tore the panel down mid-presentation.
+    @State private var panel: ScreenPanel?
 
     var body: some View {
         Group {
             if store.walk != nil {
                 WalkScreen(store: store, onExit: onExit).transition(.opacity)
             } else {
-                HomeView(store: store, onExit: onExit).transition(.opacity)
+                HomeView(store: store, panel: $panel, onExit: onExit).transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.35), value: store.walk?.id)
+        .fullScreenCover(item: $panel) { p in
+            Group {
+                switch p {
+                case .settings: SettingsView(onClose: { panel = nil; Task { await store.loadCircle() } })
+                case .customize:
+                    CustomizeView { saved in
+                        panel = nil
+                        if saved != nil { Task { await store.refresh() } }
+                    }
+                case .plan(let preset):
+                    PlanView(store: store, onClose: { panel = nil }, preset: preset)
+                case .flags:
+                    FlagsView(me: "jordan", onClose: { panel = nil })
+                case .trips:
+                    TripsView(me: store.me, onClose: { panel = nil })
+                }
+            }
+        }
         .onAppear { store.start() }
         .onDisappear { store.stop() }
         .onChange(of: store.walk) { _, w in
@@ -32,9 +54,12 @@ struct WalkScreen: View {
     @StateObject private var flagStore = FlagStore(me: "jordan")
     @State private var newFlagAt: CLLocationCoordinate2D?
     @State private var endingEarly = false
+    /// The walk as last seen. When a walk ends this screen fades out while store.walk is already nil;
+    /// rendering from the last walk keeps it intact during the fade instead of collapsing to "Hi Jordan".
+    @State private var lastWalk: Walk?
 
     var body: some View {
-        let walk = store.walk
+        let walk = store.walk ?? lastWalk
         let state = walk?.engine.state ?? "calm"
         let buddy = walk?.buddy ?? store.user?.buddy
         let copy = stateCopy(state, name: buddy?.name ?? "Levin")
@@ -66,8 +91,9 @@ struct WalkScreen: View {
                     }
                     if let t = walk?.nextTurn, state == "calm" || state == "checkin" {
                         NextTurnCard(turn: t, buddyName: buddy?.name ?? "Levin", species: buddy?.species, form: buddy?.form ?? "sprout")
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    if let f = walk?.flagAhead { FlagAheadBanner(flag: f) }
+                    if let f = walk?.flagAhead { FlagAheadBanner(flag: f).transition(.move(edge: .top).combined(with: .opacity)) }
 
                     // Speech bubble from the buddy.
                     VStack(spacing: 0) {
@@ -87,6 +113,7 @@ struct WalkScreen: View {
                                         Text("\u{201C}\(line)\u{201D}").font(Typeface.semi(15)).foregroundStyle(Palette.text)
                                     }
                                     Text(copy.sub).font(Typeface.body(13)).foregroundStyle(Palette.muted)
+                                        .contentTransition(.opacity)
                                 } else {
                                     Text(walk == nil ? "Start a walk and \(buddy?.name ?? "Levin") comes with you." : copy.sub)
                                         .font(Typeface.body(15)).foregroundStyle(Palette.muted)
@@ -95,20 +122,22 @@ struct WalkScreen: View {
                             Spacer(minLength: 0)
                             if let secs {
                                 ZStack {
-                                    Circle().stroke(Color(hex: 0x0b1030), lineWidth: 7)
+                                    Circle().stroke(Palette.card2, lineWidth: 7)
                                     Circle().trim(from: 0, to: min(1, Double(secs) / 15))
                                         .stroke(urgent ? Palette.alert : Palette.gold, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                                         .rotationEffect(.degrees(-90))
                                         .animation(.linear(duration: 1), value: secs)
                                     Text("\(secs)").font(Typeface.display(26)).foregroundStyle(Palette.text).monospacedDigit()
-                                        .contentTransition(.numericText())
+                                        .contentTransition(.numericText(countsDown: true))
+                                        .animation(.snappy, value: secs)
                                 }
                                 .frame(width: 70, height: 70)
+                                .transition(.scale(scale: 0.6).combined(with: .opacity))
                             }
                         }
                         .padding(18)
-                        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.card2))
-                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(urgent ? Palette.alert.opacity(0.6) : Palette.lineTop, lineWidth: 1.5))
+                        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(urgent ? Palette.alert.opacity(0.6) : Palette.lineTop, lineWidth: 1.5))
                         BubbleTail().fill(Palette.card2).frame(width: 26, height: 14)
                             .overlay(BubbleTail().stroke(urgent ? Palette.alert.opacity(0.6) : Palette.lineTop, lineWidth: 1.5).mask(Rectangle().padding(.top, 2)))
                             .offset(y: -1.5)
@@ -135,7 +164,7 @@ struct WalkScreen: View {
                             }
                         }
                         SafetyStatusRow(walk: w, watching: store.circle.count)
-                        if let n = w.notices, !n.isEmpty { GameCard { NoticeList(notices: n) } }
+                        if let n = w.notices, !n.isEmpty { GameCard { NoticeList(notices: n) }.transition(.opacity) }
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
                                 LiveMapView(route: route?.points, trail: w.trail, pos: (w.demo ? nil : store.localPos) ?? w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert", flags: flagStore.flags)
@@ -150,7 +179,7 @@ struct WalkScreen: View {
                                         .accessibilityLabel("Flag this spot for your circle")
                                     }
                                 HStack {
-                                    Sprite.pin.image.resizable().scaledToFit().frame(width: 22, height: 22)
+                                    SpriteIcon(.pin, size: 22)
                                     Text(route.map { r in
                                         let left = routeProgress(r.points, w.pos).1
                                         return left >= 1000 ? String(format: "%.1f km to home", Double(left) / 1000) : "\(left) m to home"
@@ -176,6 +205,11 @@ struct WalkScreen: View {
                 }
                 .padding(.horizontal, 20).padding(.bottom, 40)
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
+                // Stage changes (calm -> check-in -> nudge ...) and Gemini's line arriving a moment later
+                // add and remove cards; animate that instead of letting the page jump.
+                .animation(Motion.reduced ? nil : .spring(response: 0.45, dampingFraction: 0.85), value: state)
+                .animation(Motion.reduced ? nil : .easeInOut(duration: 0.3), value: walk?.buddyLine)
+                .animation(Motion.reduced ? nil : .easeInOut(duration: 0.3), value: walk?.flagAhead?.id)
             }
             if let c = newFlagAt {
                 VStack {
@@ -207,8 +241,9 @@ struct WalkScreen: View {
         .animation(.easeInOut(duration: 0.3), value: urgent)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: newFlagAt?.latitude)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: endingEarly)
-        .onAppear { flagStore.start() }
+        .onAppear { flagStore.start(); if let w = store.walk { lastWalk = w } }
         .onDisappear { flagStore.stop() }
+        .onChange(of: store.walk) { _, w in if let w { lastWalk = w } }
     }
 
     private func flagHere(_ w: Walk) {
@@ -232,7 +267,7 @@ struct BubbleTail: Shape {
 struct EvolutionOverlay: View {
     let name: String
     let form: String
-    var species: String? = "chick"
+    var species: String? = "dog"
     let done: () -> Void
     @State private var show = false
     @State private var spin = false
@@ -249,10 +284,9 @@ struct EvolutionOverlay: View {
             VStack(spacing: 18) {
                 Text("Evolution!").font(Typeface.display(20)).foregroundStyle(Palette.gold).textCase(nil)
                 ZStack {
-                    Sprite.sparkles.image.resizable().scaledToFit().frame(width: 260).opacity(show ? 0.9 : 0)
+                    SpriteIcon(.sparkles, size: 260).opacity(show ? 0.35 : 0)
                     PetImage(species: species, form: form, mood: .happy, size: 200, animated: true)
                         .scaleEffect(show ? 1 : 0.2)
-                        .shadow(color: Palette.gold.opacity(0.7), radius: 30)
                 }
                 Text("\(name) became a \(formName(form, species: species))").font(Typeface.display(32)).foregroundStyle(.white)
                     .multilineTextAlignment(.center)

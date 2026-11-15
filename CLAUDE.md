@@ -36,7 +36,7 @@ backend/app/
   route_ai.py   Gemini safer-route pick with friends' flags + street rule fallback + "never through Avoid" rule
   buddy_ai.py   Gemini check-in lines, alert briefs, gemini_json helper, fallbacks
   speed.py      real GPS ingest: accuracy filter, car/stop/off-route anomalies, then walks.on_position
-  demo.py       sim walker (2x, 4x when escalating), catch-up in 5 s steps, pace modes (run/stop_go/backtrack/car/stop),
+  demo.py       sim walker (2x, escalation too), catch-up in 5 s steps, pace modes (run/stop_go/backtrack/car/stop),
                 controls (pause/resume, forward/backward, jump 0..1, arrive = walk to the end and finish the walk)
   store.py      persistence: MongoDB snapshot (used on Vultr), Upstash Redis (unused), memory (local)
   main.py       FastAPI routes (see README API table)

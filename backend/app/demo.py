@@ -17,7 +17,9 @@ from .routes import OFF_ROUTE_M, load_routes, off_route_m
 
 log = logging.getLogger("walkbuddy.demo")
 WALK_SPEED = 1.4  # m/s, a brisk walk
-WALK_X, ESCALATE_X = 2.0, 4.0
+# Escalation used to jump to 4x, which left a 20 s countdown about 5 real seconds: too short to
+# rub the buddy in time. It now stays at walking speed (the speed control still overrides it).
+WALK_X, ESCALATE_X = 2.0, 2.0
 TICK_REAL_S = 0.25
 DEVIATE_SIM_S = 70.0  # how long the sim stays off route
 OFF_ROUTE_CHECKIN_S = 20.0  # off route this long (sim s) -> check-in

@@ -71,7 +71,6 @@ struct FlagMarks: MapContent {
                     Image(systemName: f.status == "ok" ? "checkmark.circle.fill" : "flag.fill")
                         .font(.system(size: 14, weight: .heavy)).foregroundStyle(.white)
                         .frame(width: 30, height: 30).background(Circle().fill(flagTint(f.status)))
-                        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
                         .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
                 }
                 .accessibilityLabel("\(flagTitle(f.status)) flag: \(f.reason), by \(f.byName)")
@@ -117,7 +116,7 @@ struct NewFlagCard: View {
                         Label(flagTitle(s), systemImage: s == "avoid" ? "nosign" : "exclamationmark.triangle.fill")
                             .font(Typeface.bold(14)).foregroundStyle(status == s ? flagTint(s) : Palette.muted)
                             .frame(maxWidth: .infinity, minHeight: 42)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(status == s ? flagTint(s).opacity(0.14) : Color(hex: 0x0f1433)))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(status == s ? flagTint(s).opacity(0.14) : Palette.card2))
                             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(status == s ? flagTint(s) : Palette.line))
                     }
                     .accessibilityAddTraits(status == s ? .isSelected : [])
@@ -136,15 +135,12 @@ struct NewFlagCard: View {
             TextField("Note (optional)", text: $note)
                 .font(Typeface.body(15)).foregroundStyle(Palette.text)
                 .padding(.horizontal, 14).frame(minHeight: 44)
-                .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0b1030)))
-                .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+                .background(RoundedRectangle(cornerRadius: 14).fill(Palette.card2))
             GameButton(title: "Share with my circle") { onSave(reason, status, radius, note) }
             Text("Your circle sees it. It expires in 7 days.").font(Typeface.body(12)).foregroundStyle(Palette.muted)
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Palette.card2))
-        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Palette.lineTop))
-        .shadow(color: .black.opacity(0.5), radius: 20, y: -4)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
     }
 }
 
@@ -174,7 +170,7 @@ struct FlagDetailCard: View {
                     Button { onStatus(s) } label: {
                         Text(flagTitle(s)).font(Typeface.bold(14)).foregroundStyle(flag.status == s ? flagTint(s) : Palette.muted)
                             .frame(maxWidth: .infinity, minHeight: 42)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(flag.status == s ? flagTint(s).opacity(0.14) : Color(hex: 0x0f1433)))
+                            .background(RoundedRectangle(cornerRadius: 14).fill(flag.status == s ? flagTint(s).opacity(0.14) : Palette.card2))
                             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(flag.status == s ? flagTint(s) : Palette.line))
                     }
                     .accessibilityLabel("Mark \(flagTitle(s))")
@@ -188,9 +184,7 @@ struct FlagDetailCard: View {
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 26, style: .continuous).fill(Palette.card2))
-        .overlay(RoundedRectangle(cornerRadius: 26, style: .continuous).strokeBorder(Palette.lineTop))
-        .shadow(color: .black.opacity(0.5), radius: 20, y: -4)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card2))
     }
 
     private func ago(_ t: Double) -> String {
@@ -249,7 +243,7 @@ struct FlagsView: View {
                 HStack(spacing: 10) {
                     Button(action: onClose) {
                         Image(systemName: "chevron.left").font(.system(size: 16, weight: .heavy)).foregroundStyle(Palette.text)
-                            .frame(width: 46, height: 46).background(Circle().fill(Palette.card)).overlay(Circle().strokeBorder(Palette.lineTop))
+                            .frame(width: 46, height: 46).background(Circle().fill(Palette.card))
                     }
                     .accessibilityLabel("Back")
                     VStack(alignment: .leading, spacing: 1) {

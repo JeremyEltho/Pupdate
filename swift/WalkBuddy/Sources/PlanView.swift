@@ -304,7 +304,7 @@ struct PlanView: View {
                 FlagMarks(flags: plan.flags)
                 if let d = plan.destination {
                     Annotation(d.name ?? "", coordinate: d.placemark.coordinate, anchor: .bottom) {
-                        Sprite.house.image.resizable().scaledToFit().frame(width: 46, height: 46)
+                        SpriteIcon(.house, size: 40)
                             .shadow(color: .black.opacity(0.4), radius: 5, y: 4)
                     }
                 }
@@ -331,7 +331,6 @@ struct PlanView: View {
                         Image(systemName: "chevron.left").font(.system(size: 16, weight: .heavy)).foregroundStyle(Palette.text)
                             .frame(width: 46, height: 46)
                             .background(Circle().fill(Palette.card))
-                            .overlay(Circle().strokeBorder(Palette.lineTop))
                     }
                     .accessibilityLabel("Back")
                     HStack(spacing: 10) {
@@ -349,7 +348,6 @@ struct PlanView: View {
                     .padding(.horizontal, 16).frame(height: 52)
                     .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.card))
                     .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(focused ? Palette.gold : Palette.lineTop, lineWidth: focused ? 1.5 : 1))
-                    .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
                 }
                 if focused && !plan.suggestions.isEmpty {
                     VStack(spacing: 0) {
@@ -371,9 +369,7 @@ struct PlanView: View {
                             if i < plan.suggestions.count - 1 { Divider().overlay(Palette.line) }
                         }
                     }
-                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Palette.card))
-                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.lineTop))
-                    .shadow(color: .black.opacity(0.45), radius: 16, y: 8)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.card))
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 } else if plan.destination == nil {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -381,12 +377,11 @@ struct PlanView: View {
                             ForEach(quick, id: \.self) { q in
                                 Button { Task { await plan.pick(name: q) } } label: {
                                     HStack(spacing: 6) {
-                                        Sprite.house.image.resizable().scaledToFit().frame(width: 20, height: 20)
+                                        SpriteIcon(.house, size: 20)
                                         Text(q).font(Typeface.semi(14)).foregroundStyle(Palette.text)
                                     }
                                     .padding(.horizontal, 12).padding(.vertical, 9)
                                     .background(Capsule().fill(Palette.card))
-                                    .overlay(Capsule().strokeBorder(Palette.lineTop))
                                 }
                             }
                         }
@@ -434,7 +429,7 @@ private struct TripSheet: View {
     @Binding var demo: Bool
     let starting: Bool
     let buddyForm: String
-    var buddySpecies: String? = "chick"
+    var buddySpecies: String? = "dog"
     let buddyName: String
     let go: () -> Void
 
@@ -497,14 +492,13 @@ private struct TripSheet: View {
         .padding(.bottom, 8)
         .background(
             UnevenRoundedRectangle(topLeadingRadius: 30, topTrailingRadius: 30, style: .continuous)
-                .fill(LinearGradient(colors: [Palette.card2, Palette.card], startPoint: .top, endPoint: .bottom))
+                .fill(Palette.card)
                 .ignoresSafeArea(edges: .bottom)
         )
         .overlay(
             UnevenRoundedRectangle(topLeadingRadius: 30, topTrailingRadius: 30, style: .continuous)
                 .strokeBorder(Palette.lineTop, lineWidth: 1).ignoresSafeArea(edges: .bottom)
         )
-        .shadow(color: .black.opacity(0.5), radius: 24, y: -6)
     }
 }
 
@@ -539,7 +533,7 @@ private struct RouteOption: View {
                 }
             }
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(selected ? tint.opacity(0.12) : Color(hex: 0x0f1433)))
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(selected ? tint.opacity(0.12) : Palette.card2))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(selected ? tint : Palette.line, lineWidth: selected ? 2 : 1))
         }
         .buttonStyle(.plain)

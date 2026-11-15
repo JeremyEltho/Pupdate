@@ -67,7 +67,7 @@ final class LiveActivityManager {
         let petted = happy && st != "alert"   // a late pet never looks like "all good"
         return .init(state: st, title: petted ? "Good \(w.buddy.name)!" : copy.title,
                      subtitle: petted ? "Thanks for checking in." : copy.sub, deadline: petted ? nil : deadline, form: w.buddy.form,
-                     species: w.buddy.species ?? "chick",
+                     species: w.buddy.species ?? "dog",
                      xp: w.buddy.xp, progress: progress, metersLeft: left,
                      turnText: w.nextTurn?.text, turnSymbol: w.nextTurn.map { turnSymbol($0.maneuver) }, turnMeters: w.nextTurn?.inM, happy: petted)
     }

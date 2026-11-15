@@ -9,23 +9,25 @@ extension Color {
 }
 
 enum Palette {
-    static let bg = Color(hex: 0x0a0d1c)      // night sky
-    static let bg2 = Color(hex: 0x141a44)
-    static let card = Color(hex: 0x151a33)
-    static let card2 = Color(hex: 0x1d2445)
-    static let line = Color(hex: 0x2a3260)
-    static let lineTop = Color(hex: 0x3b4687)
-    static let text = Color(hex: 0xf3f4ff)
-    static let muted = Color(hex: 0x9aa1c9)
-    static let gold = Color(hex: 0xffbe3d)     // XP gold, the one accent
-    static let goldDeep = Color(hex: 0xc97f00)
-    static let ok = Color(hex: 0x3ee0a1)
-    static let okDeep = Color(hex: 0x12996a)
-    static let warn = Color(hex: 0xffc857)
-    static let alert = Color(hex: 0xff4d6d)
-    static let alertDeep = Color(hex: 0xb51a3c)
-    static let ink = Color(hex: 0x1a1300)
-    static let sky = Color(hex: 0x7aa2ff)
+    // Neutral graphite, no blue-purple tint. One accent (amber) for XP and the primary action;
+    // green / amber / red only where they mean state.
+    static let bg = Color(hex: 0x0c0c0d)
+    static let bg2 = Color(hex: 0x0c0c0d)
+    static let card = Color(hex: 0x171719)
+    static let card2 = Color(hex: 0x1f1f22)
+    static let line = Color(hex: 0x2c2c30)
+    static let lineTop = Color(hex: 0x2c2c30)
+    static let text = Color(hex: 0xf4f4f2)
+    static let muted = Color(hex: 0x9b9ba1)
+    static let gold = Color(hex: 0xf2b134)
+    static let goldDeep = Color(hex: 0xf2b134)
+    static let ok = Color(hex: 0x34c77b)
+    static let okDeep = Color(hex: 0x34c77b)
+    static let warn = Color(hex: 0xf2b134)
+    static let alert = Color(hex: 0xff4f4a)
+    static let alertDeep = Color(hex: 0xff4f4a)
+    static let ink = Color(hex: 0x111111)
+    static let sky = Color(hex: 0x7fb2ff)
 }
 
 /// Fonts scale with the iPhone's text size (Dynamic Type) and with Settings > Text size.
@@ -62,6 +64,56 @@ enum Sprite: String {
             return Image(uiImage: ui)
         }
         return Image(systemName: "questionmark.circle")
+    }
+}
+
+extension Sprite {
+    /// UI icons are SF Symbols; only the pets themselves stay as pictures.
+    var symbol: String? {
+        switch self {
+        case .fire: return "flame.fill"
+        case .gem: return "bolt.fill"
+        case .star: return "star.fill"
+        case .trophy: return "trophy.fill"
+        case .shield: return "shield.lefthalf.filled"
+        case .house: return "house.fill"
+        case .books: return "books.vertical.fill"
+        case .pin: return "mappin.and.ellipse"
+        case .bell: return "bell.fill"
+        case .sparkles: return "sparkles"
+        case .question: return "questionmark"
+        case .sweat: return "drop.fill"
+        case .exclaim: return "exclamationmark"
+        case .compass: return "location.north.line.fill"
+        default: return nil
+        }
+    }
+    var tint: Color {
+        switch self {
+        case .fire, .gem, .trophy, .star, .sparkles: return Palette.gold
+        case .exclaim, .bell: return Palette.alert
+        case .question, .sweat: return Palette.sky
+        default: return Palette.text
+        }
+    }
+}
+
+/// An icon: the SF Symbol for UI sprites, the picture for pets.
+struct SpriteIcon: View {
+    let sprite: Sprite
+    var size: CGFloat = 22
+    var tint: Color?
+    init(_ sprite: Sprite, size: CGFloat = 22, tint: Color? = nil) { self.sprite = sprite; self.size = size; self.tint = tint }
+    var body: some View {
+        if let sym = sprite.symbol {
+            Image(systemName: sym)
+                .font(.system(size: size * 0.7, weight: .semibold))
+                .foregroundStyle(tint ?? sprite.tint)
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            sprite.image.resizable().scaledToFit().frame(width: size, height: size)
+        }
     }
 }
 
@@ -102,7 +154,7 @@ let SPECIES: [Species] = [
 ]
 
 func petSprite(_ species: String?, _ form: String) -> Sprite {
-    let sp = species ?? "chick"
+    let sp = species ?? "dog"
     if sp == "chick" {
         switch form { case "strider": return .chick; case "guardian": return .owl; default: return .hatchling }
     }
@@ -143,8 +195,8 @@ func dogMood(_ m: Mood) -> DogMood {
 /// Old call sites: chick line by form.
 func formSprite(_ form: String) -> Sprite { petSprite("chick", form) }
 
-func formName(_ form: String, species: String? = "chick") -> String {
-    if (species ?? "chick") == "chick" {
+func formName(_ form: String, species: String? = "dog") -> String {
+    if (species ?? "dog") == "chick" {
         switch form { case "strider": return "Chick"; case "guardian": return "Night Owl"; default: return "Hatchling" }
     }
     if species == "dog" {
@@ -155,7 +207,7 @@ func formName(_ form: String, species: String? = "chick") -> String {
 
 /// Gear a non-chick pet wears at each stage.
 func petGear(_ species: String?, _ form: String) -> Sprite? {
-    guard (species ?? "chick") != "chick", !VECTOR_SPECIES.contains(species ?? "") else { return nil }
+    guard (species ?? "dog") != "chick", !VECTOR_SPECIES.contains(species ?? "") else { return nil }
     switch form { case "strider": return .star; case "guardian": return .crown; default: return nil }
 }
 
