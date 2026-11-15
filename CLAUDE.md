@@ -1,0 +1,107 @@
+# WalkBuddy: notes for the next agent
+
+Read `README.md` first for what the product does. This file covers how the code is laid out, how to change it without breaking the demo, and what is still open.
+
+## Ground rules
+
+- **The safety path never waits on AI.** Every Gemini call has an instant fallback. Check-ins and alerts must still fire if Gemini is down, slow or has no key. Keep it that way: Gemini runs in background threads and writes into state when it answers (`buddy_ai.fill_async`, `pace._start_judge`).
+- **The engine is pure and time-injected.** `backend/app/engine.py` has no I/O and no wall clock. Change it only with tests in `tests/test_engine.py` and `tests/test_petting_intervals.py`.
+- **The demo sim never pets.** Every pet comes from the phone.
+- **Duress is invisible to the walker.** `walk_view(viewer="walker")` strips it. Never leak it into the walker's UI, the Live Activity or the logs shown to the walker.
+- **Only a friend closes an alert.** The walker can't, and a late pet doesn't either.
+- **Run tests before every deploy:** `cd backend && .venv/bin/pytest -q` (83 should pass), plus the UI suite below.
+
+## Layout
+
+```
+backend/app/
+  engine.py     state machine: calm -> checkin -> nudge -> final -> countdown -> alert; per-walk stage lengths
+                (make_stages), checkins_off, 90 s lost-contact watchdog
+  walks.py      STATE (users, walks, alerts, flags, seq), start_walk, handle(events), alerts + Gemini briefs,
+                walk_view (the JSON the phones render), on_position (pace + flags hooks), notices to friends,
+                timing_warnings, dump/restore for MongoDB
+  pace.py       pace samples every 5 s, rule patterns (running, stop_and_go, backtracking, sudden_stop, vehicle),
+                Gemini judge (check_in yes/no + buddy line + friend note), cooldown. ASYNC/_judge_override for tests
+  flags.py      flagged spots: avoid/caution/ok, circle visibility (connected()), 7-day expiry, seeds on reset
+  nav.py        turn-by-turn: next maneuver from the walker's distance along the route
+  routes.py     demo routes (data/routes_precomputed.json, with steps) + phone-planned routes (CUSTOM, persisted)
+  route_ai.py   Gemini safer-route pick with friends' flags + street rule fallback + "never through Avoid" rule
+  buddy_ai.py   Gemini check-in lines, alert briefs, gemini_json helper, fallbacks
+  speed.py      real GPS ingest: accuracy filter, car/stop/off-route anomalies, then walks.on_position
+  demo.py       sim walker (2x, 4x when escalating), catch-up in 5 s steps, pace modes (run/stop_go/backtrack/car/stop)
+  store.py      persistence: MongoDB snapshot (used on Vultr), Upstash Redis (unused), memory (local)
+  main.py       FastAPI routes (see README API table)
+swift/
+  project.yml   XcodeGen spec (run `xcodegen generate` after adding files). WBDefaultServer = the Vultr URL
+  WalkBuddy/Sources/
+    API.swift            Codable models (snake_case -> camelCase) + calls; walkSettings sent with every walk
+    Stores.swift         WalkerStore (1 s poll, spoken turns, flag heads-ups), FriendStore (1.5 s poll, alarms,
+                         notices), LocationTicker (background GPS on real walks)
+    WalkerView.swift     WalkScreen: next turn, buddy, ladder, notices, map + flags, pace card, test tools
+    WalkExtras.swift     NextTurnCard, PaceCard, Sparkline, FlagAheadBanner, NoticeList, TestToolsCard
+    FlagsView.swift      FlagStore, FlagMarks (MapContent), NewFlagCard, FlagDetailCard, FlagsView
+    PlanView.swift       PlannedRoute (Apple route or joined detour), flagsOn, PlanModel (search, alternates,
+                         detourIfBlocked, Gemini assess), TripSheet
+    SettingsView.swift   check-ins on/off (confirm), schedule, alert timing, accessibility, circle, server, demo.
+                         ScreenPanel enum
+    HomeView, FriendView, BuddyView (rub-to-pet, 2 s duress), Features (ladder, walk log), Theme, Feedback
+  WalkBuddy/Shared/WalkActivity.swift   Live Activity ContentState (shared with the widget; new fields must be optional)
+  WalkBuddyWidgets/                     Lock Screen + Dynamic Island UI
+  WalkBuddyUITests/                     XCUITest end-to-end against the live server (15 tests)
+deploy/        vultr-deploy.sh, cloud-init.sh (fresh server)
+demo-server.sh laptop fallback (local uvicorn + ngrok)
+app/           old Expo prototype, unused
+```
+
+## UI conventions that fix real bugs
+
+- **One presenter per screen:** each screen has a single `.fullScreenCover(item: $panel)` driven by `ScreenPanel`. Stacked sheets were being dismissed by polling re-renders. Add new screens as a `ScreenPanel` case, not a new sheet.
+- **Publish only on change:** stores compare before assigning `@Published` values (`if w != walk { walk = w }`). Keep that, or every poll re-renders everything.
+- **In-place overlays:** the new-flag card on the walk screen is an overlay in the ZStack, not a sheet, for the same reason.
+- **Fonts and accessibility:** use `Typeface.*` (Dynamic Type via `relativeTo`), `Palette.*` colors, and `Motion.reduced` for animation. Give new controls accessibility labels or identifiers; the UI tests depend on them.
+
+## Running things
+
+```bash
+# backend
+cd backend && .venv/bin/pytest -q && .venv/bin/uvicorn app.main:app --port 8100
+# app (simulator): find a booted one with `xcrun simctl list devices booted`
+cd swift && xcodegen generate && xcodebuild -project WalkBuddy.xcodeproj -scheme WalkBuddy \
+  -destination 'id=<SIM_ID>' -derivedDataPath build-sim build
+# UI tests hit the live server (they reset demo state there)
+xcodebuild test ... -only-testing:WalkBuddyUITests/WalkBuddyE2ETests
+# physical iPhone (free team F87457F436; the device must be unlocked and trusted)
+xcodebuild ... -destination "id=00008130-000C40222E43001C" -derivedDataPath build-dev -allowProvisioningUpdates build
+xcrun devicectl device install app --device 00008130-000C40222E43001C build-dev/Build/Products/Debug-iphoneos/WalkBuddy.app
+```
+
+To simulate GPS in the simulator: `xcrun simctl location <SIM_ID> set 33.4195,-111.9345`.
+
+## Deploying
+
+- **Server:** Vultr, Ubuntu 24.04 at 45.76.67.21.
+  - Caddy serves `https://45-76-67-21.sslip.io` and proxies to uvicorn on 127.0.0.1:8100.
+  - The systemd unit is `walkbuddy`; code lives in `/opt/walkbuddy`; secrets are in `/etc/walkbuddy.env` (MONGODB_URI, GEMINI_API_KEY).
+- **SSH:** `ssh -i ~/.ssh/walkbuddy_vultr root@45.76.67.21`.
+- **Update:** `cd /opt/walkbuddy && git pull && systemctl restart walkbuddy` (run `pip install -r backend/requirements.txt` if requirements changed).
+- **GitHub:** JeremyEltho/walkbuddy (public), branch `main`.
+  - The working copy here lives inside the parent hackathon repo (`sunhacks26`, branch master, no remote), so it can't push directly.
+  - Pushes go through a separate clone of the GitHub repo: rsync `walkbuddy/` into it with `--exclude-from=<clone>/.gitignore --exclude .git`, then commit and push from the clone.
+  - **Check the diff before committing.** rsync overwrites, so keep README.md in this folder as the source of truth.
+- **Never commit secrets.** `.env` files are git-ignored: `walkbuddy/.env` holds VULTR_API_KEY and MONGODB_URI, and the Gemini key is in `../fitcheck/.env`. Don't print their values.
+- **State:** a MongoDB Atlas snapshot (db `walkbuddy`, collection `state`, `_id: "state"`), saved after every POST or DELETE and every 5 s. `POST /demo/reset` reseeds users, walks, alerts and seed flags, and keeps the circle, buddy name/species and flags people added.
+
+## Demo users
+
+- **jordan:** the walker. Buddy Levin, a chick at 90 XP, so it evolves at 100. Circle: maya and sam.
+- **maya:** the friend role on the phone.
+- **sam:** another circle member.
+- **IDs are hard-coded:** `"jordan"` in WalkerStore and Settings, `"maya"` in FriendStore. There is no auth; that is deliberate for the hackathon.
+
+## Open items, in priority order
+
+1. **Real-device check:** install the latest build on the iPhone. Confirm the Lock Screen Live Activity, including the new turn row, and test the friend role on a second phone. Not yet verified on hardware; the simulator and the UI tests pass.
+2. **Friend alerts need the app open:** there are no push notifications (APNs needs a paid developer account).
+3. **No auth:** user IDs are trusted from the client.
+4. **Walk recap:** a Gemini walk recap and habit notes after a walk (not built).
+5. **Demo routes are hand drawn:** the step names on them are approximate.

@@ -256,4 +256,111 @@ final class WalkBuddyE2ETests: XCTestCase {
             XCTAssertTrue(sw.exists, "missing setting: \(label)")
         }
     }
+
+    private func get(_ path: String) -> Any? {
+        var out: Any?
+        let done = expectation(description: path)
+        URLSession.shared.dataTask(with: URL(string: server + path)!) { d, _, _ in
+            out = d.flatMap { try? JSONSerialization.jsonObject(with: $0) }; done.fulfill()
+        }.resume()
+        wait(for: [done], timeout: 10)
+        return out
+    }
+
+    private func delete(_ path: String) {
+        var req = URLRequest(url: URL(string: server + path)!)
+        req.httpMethod = "DELETE"
+        let done = expectation(description: path)
+        URLSession.shared.dataTask(with: req) { _, _, _ in done.fulfill() }.resume()
+        wait(for: [done], timeout: 10)
+    }
+
+    private func scrollTo(_ app: XCUIApplication, _ el: XCUIElement) {
+        var tries = 0
+        while !(el.exists && el.isHittable) && tries < 10 { app.swipeUp(); tries += 1 }
+    }
+
+    /// Turn-by-turn: the demo route shows the next turn and the distance to it.
+    func testNextTurnCard() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker")
+        XCTAssertTrue(text(app, "Orange Mall").waitForExistence(timeout: 15), "next turn card missing")
+        XCTAssertTrue(app.descendants(matching: .any)["next-turn"].exists)
+    }
+
+    /// One phone: the walker's own Test tools make the demo walker run; Gemini (or the safe fallback)
+    /// checks in, the pace card says Running, and the walk log records the judgment.
+    func testOnePhonePaceToolsTriggerCheckin() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker")
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 15))
+        // Answer the scripted first check-in so the pace check-in is the next one.
+        XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30))
+        rub(app)
+        if app.buttons["Awesome"].waitForExistence(timeout: 6) { app.buttons["Awesome"].tap() }
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
+        let run = app.buttons["Run"].firstMatch
+        scrollTo(app, run)
+        XCTAssertTrue(run.exists, "test tools missing on the walk screen")
+        run.tap()
+        XCTAssertTrue(text(app, "Running").waitForExistence(timeout: 30), "pace card never showed running")
+        app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
+        XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30), "pace never triggered a check-in")
+        rub(app)
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
+        let judged = text(app, "Gemini:")
+        scrollTo(app, judged)
+        XCTAssertTrue(judged.exists || text(app, "Started running").exists, "walk log missing the pace entry")
+    }
+
+    /// Flags: open Flagged spots, drop a flag at the map center, see the active count go up.
+    func testAddFlagFromPhone() {
+        api("/demo/reset")
+        let app = launch(role: "walker")
+        let open = app.buttons["open-flags"]
+        scrollTo(app, open)
+        open.tap()
+        XCTAssertTrue(text(app, "2 active").waitForExistence(timeout: 10), "seeded flags missing")
+        app.buttons["Flag the map center"].tap()
+        app.buttons["Construction"].tap()
+        app.buttons["Share with my circle"].tap()
+        XCTAssertTrue(text(app, "3 active").waitForExistence(timeout: 10), "new flag not saved")
+        // Clean up: delete Jordan's flags.
+        for f in (get("/flags?viewer=jordan") as? [[String: Any]]) ?? [] where (f["by"] as? String) == "jordan" {
+            delete("/flags/\(f["id"]!)?by=jordan")
+        }
+    }
+
+    /// Settings: a 1-hour check-in gap warns; turning check-ins off asks first.
+    func testTimingWarningsAndCheckinsOff() {
+        api("/demo/reset")
+        let app = launch(role: "walker")
+        XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 10))
+        app.buttons["Settings"].tap()
+        let hour = app.buttons["1 hour"]
+        XCTAssertTrue(hour.waitForExistence(timeout: 10)); hour.tap()
+        XCTAssertTrue(text(app, "every 60 min").waitForExistence(timeout: 10), "no long-gap warning")
+        app.buttons["Only if off"].tap()
+        let toggle = app.switches["checkins-toggle"]
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertTrue(app.alerts["Turn check-ins off?"].waitForExistence(timeout: 5), "no confirmation")
+        app.alerts.buttons["Turn off"].tap()
+        XCTAssertTrue(text(app, "Off: only the silent alert").waitForExistence(timeout: 5))
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertTrue(text(app, "Levin checks in and alerts").waitForExistence(timeout: 5))
+        let total = app.staticTexts["alert-total"]
+        scrollTo(app, total)
+        XCTAssertTrue(total.label.contains("1 min 50 s"), "default ladder total wrong: \(total.label)")
+    }
+
+    /// The friend sees the warning when the walker picked a 30-minute check-in gap.
+    func testFriendSeesLongGapNotice() {
+        api("/demo/reset")
+        api("/walks", "{\"walker_id\":\"jordan\",\"route_id\":\"library-to-tooker\",\"demo\":false,\"checkin_every_s\":1800}")
+        let app = launch(role: "friend")
+        XCTAssertTrue(text(app, "every 30 min").waitForExistence(timeout: 15), "friend never saw the notice")
+        api("/demo/reset")
+    }
 }
