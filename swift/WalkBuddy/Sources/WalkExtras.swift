@@ -201,10 +201,64 @@ struct TestToolsCard: View {
     let flagHere: () -> Void
     @State private var busy: String?
     @State private var msg: String?
+    @State private var scrub: Double?   // the slider's value while a finger is on it
+
+    /// Drive the demo walker: pause, direction, speed, where on the route, and arrive.
+    @ViewBuilder private func walkerControls(_ sim: SimInfo) -> some View {
+        Text("Demo walker").font(Typeface.semi(13)).foregroundStyle(Palette.muted)
+        HStack(spacing: 8) {
+            tool(sim.paused ? "Resume" : "Pause", sim.paused ? "play.fill" : "pause.fill", "pause") {
+                try await API.shared.demo("control", ["action": sim.paused ? "resume" : "pause"])
+            }
+            tool(sim.dir < 0 ? "Walk forward" : "Walk back", sim.dir < 0 ? "arrow.right" : "arrow.left", "dir") {
+                try await API.shared.demo("control", ["action": sim.dir < 0 ? "forward" : "backward"])
+            }
+        }
+        HStack(spacing: 8) {
+            ForEach([1.0, 2.0, 4.0, 8.0], id: \.self) { x in
+                let on = sim.speedOverride == x || (sim.speedOverride == nil && x == 2 && walk.speed == 2)
+                Button {
+                    Task {
+                        // tapping the active speed goes back to automatic (2x walking, 4x while escalating)
+                        do { try await API.shared.demo("speed", ["x": on && sim.speedOverride != nil ? NSNull() : x]); msg = nil }
+                        catch { msg = error.localizedDescription }
+                        Haptics.tap()
+                    }
+                } label: {
+                    Text("\(Int(x))x").font(Typeface.bold(13)).foregroundStyle(on ? Palette.ink : Palette.text)
+                        .frame(maxWidth: .infinity, minHeight: 36)
+                        .background(RoundedRectangle(cornerRadius: 12).fill(on ? Palette.gold : Color(hex: 0x0f1433)))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.line))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Speed \(Int(x)) times")
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        VStack(alignment: .leading, spacing: 2) {
+            Slider(value: Binding(get: { scrub ?? sim.progress }, set: { scrub = $0 }), in: 0...1) { editing in
+                guard !editing, let v = scrub else { return }
+                Task {
+                    do { try await API.shared.demo("control", ["action": "jump", "value": v]) } catch { msg = error.localizedDescription }
+                    scrub = nil
+                }
+            }
+            .tint(Palette.gold)
+            .accessibilityLabel("Position along the route")
+            .accessibilityValue("\(Int((scrub ?? sim.progress) * 100)) percent")
+            Text("\(formatMeters(Int((scrub ?? sim.progress) * sim.lengthM))) of \(formatMeters(Int(sim.lengthM)))\(sim.paused ? " · paused" : "")\(sim.arriving ? " · heading home" : "")")
+                .font(Typeface.body(12)).foregroundStyle(Palette.muted).monospacedDigit()
+        }
+        tool(sim.arriving ? "Walking home..." : "Arrive", "house.fill", "arrive") {
+            try await API.shared.demo("control", ["action": "arrive"])
+        }
+        .disabled(sim.arriving)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionTitle(text: "Test tools", sub: "Try every feature from this phone. The demo walker moves at 2x; you still do all the petting.")
+            if let sim = walk.sim { walkerControls(sim) }
             Text("Pace (Gemini decides)").font(Typeface.semi(13)).foregroundStyle(Palette.muted)
             HStack(spacing: 8) {
                 tool("Run", "figure.run", "pace-run") { try await API.shared.demo("pace", ["mode": "run"]) }

@@ -400,6 +400,34 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCTAssertTrue(text(friend, "ended the walk early").waitForExistence(timeout: 10), "friend screen missing the update")
     }
 
+    /// Demo walker controls: pause holds the walker, 8x and Arrive walk it home and end the walk.
+    func testDemoWalkerControls() {
+        api("/demo/reset")
+        api("/demo/start")
+        let app = launch(role: "walker")
+        XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 15))
+        let pause = app.buttons["Pause"]
+        scrollTo(app, pause)
+        XCTAssertTrue(pause.exists, "no demo walker controls")
+        pause.tap()
+        XCTAssertTrue(app.buttons["Resume"].waitForExistence(timeout: 5), "pause didn't take")
+        let sim = (get("/users/jordan/active") as? [String: Any])?["sim"] as? [String: Any]
+        XCTAssertEqual(sim?["paused"] as? Bool, true)
+        app.buttons["Resume"].tap()
+        XCTAssertTrue(app.buttons["Pause"].waitForExistence(timeout: 5))
+        api("/demo/control", "{\"action\":\"jump\",\"value\":0.9}")
+        app.buttons["Speed 8 times"].tap()
+        let arrive = app.buttons["Arrive"]
+        scrollTo(app, arrive)
+        arrive.tap()
+        XCTAssertTrue(app.buttons.containing(NSPredicate(format: "label CONTAINS %@", "Where to tonight?")).firstMatch
+            .waitForExistence(timeout: 40), "walker never arrived")
+        let trips = get("/users/jordan/trips") as? [[String: Any]] ?? []
+        XCTAssertEqual(trips.first?["to"] as? String, "Tooker House")
+        XCTAssertNil(trips.first?["ended_early"] as? String)
+        api("/demo/reset")
+    }
+
     /// Trip history: a walk that just ended is on top of Past walks, above the seeded ones.
     func testTripHistoryShowsEndedWalk() {
         api("/demo/reset")

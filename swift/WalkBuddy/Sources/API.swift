@@ -87,6 +87,12 @@ struct Walk: Codable, Equatable, Identifiable {
     var notices: [Notice]?
     var checkinsOff: Bool?
     var escalationS: Double?
+    var sim: SimInfo?
+}
+
+/// The demo walker, for the demo controls (demo walks only).
+struct SimInfo: Codable, Equatable {
+    var paused: Bool; var dir: Int; var arriving: Bool; var progress: Double; var lengthM: Double; var speedOverride: Double?
 }
 
 struct RouteInfo: Codable, Equatable, Identifiable {

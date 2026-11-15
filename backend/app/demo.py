@@ -42,10 +42,10 @@ def step(w):
     route = load_routes().get(w["route_id"]) if w["route_id"] else None
     out = []
     t = sim["last_now"]
-    while t < now - 1e-9:
+    while t < now - 1e-9 and w["status"] == "active":
         t = min(now, t + CATCH_UP_STEP_S)
         out += _step_to(w, t, route)
-    if not out and t >= now:
+    if not out and t >= now and w["status"] == "active":
         out += _step_to(w, now, route)
     return out
 
@@ -68,8 +68,10 @@ def _step_to(w, now, route):
             sim["dir"] = sim.pop("pace_dir")
         sim["pace_mode"] = mode = None
         sim["pace_until"] = None
-    speed = WALK_SPEED
-    if mode == "run":
+    speed = 0.0 if sim.get("paused") else WALK_SPEED
+    if sim.get("paused"):
+        pass  # held in place by the demo controls; the phone keeps "ticking", so no lost-contact alert
+    elif mode == "run":
         speed = RUN_SPEED
     elif mode == "car":
         speed = CAR_SPEED
@@ -80,6 +82,13 @@ def _step_to(w, now, route):
     elif mode == "backtrack":
         sim["dir"] = -1
     sim["dist_m"] += sim["dir"] * speed * dt
+    if sim.get("arriving") and sim["dist_m"] >= L:
+        # "Arrive" from the demo controls: reach the destination and finish the walk like a real one.
+        sim["dist_m"] = L
+        events = e.tick(now, point_along(route["points"], L))
+        out = walks.handle(w, events)
+        walks.finish_walk(w)
+        return out
     if sim["dist_m"] >= L:
         sim["dist_m"], sim["dir"] = L - (sim["dist_m"] - L), -1
     elif sim["dist_m"] <= 0:
@@ -217,3 +226,45 @@ def set_speed(w, x):
     with walks.LOCK:
         w["sim"]["speed_override"] = x
         w["clock"].set_speed(x or WALK_X)
+
+
+CONTROLS = ("pause", "resume", "forward", "backward", "jump", "arrive")
+
+
+def control(w, action, value=None):
+    """Drive the sim walker from a phone: pause, direction, jump along the route (0..1), arrive."""
+    if action not in CONTROLS:
+        raise ValueError("action must be one of " + ", ".join(CONTROLS))
+    with walks.LOCK:
+        sim = w["sim"]
+        route = load_routes().get(w["route_id"]) if w["route_id"] else None
+        if action == "pause":
+            sim["paused"] = True
+        elif action == "resume":
+            sim["paused"] = False
+        elif action in ("forward", "backward"):
+            sim.pop("pace_dir", None)
+            sim["dir"] = 1 if action == "forward" else -1
+            sim["arriving"] = False if action == "backward" else sim.get("arriving", False)
+        elif action == "jump":
+            if route is None or value is None:
+                raise ValueError("jump needs a demo route and a value from 0 to 1")
+            sim["dist_m"] = max(0.0, min(1.0, float(value))) * route["length_m"]
+            sim["deviate_until"] = None
+            sim["arriving"] = False
+        elif action == "arrive":
+            sim.update(arriving=True, paused=False, dir=1, deviate_until=None)
+            sim.pop("pace_dir", None)
+        return view(w)
+
+
+def view(w):
+    """Sim walker state for the demo controls (demo walks only)."""
+    if not w.get("demo"):
+        return None
+    sim = w["sim"]
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
+    L = route["length_m"] if route else 0
+    return {"paused": bool(sim.get("paused")), "dir": sim.get("dir", 1), "arriving": bool(sim.get("arriving")),
+            "progress": round(sim["dist_m"] / L, 3) if L else 0.0, "length_m": L,
+            "speed_override": sim.get("speed_override")}

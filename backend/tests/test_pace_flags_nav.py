@@ -496,3 +496,47 @@ def test_starting_a_new_walk_files_the_old_one():
     v = c.post("/demo/start", json={}).json()
     c.post("/demo/start", json={})
     assert c.get("/users/jordan/trips").json()[0]["id"] == v["id"]
+
+
+# -- demo controls ----------------------------------------------------------------------
+
+def _advance(w, sim_s):
+    with walks.LOCK:
+        w["clock"].base_sim += sim_s   # move the sim clock forward without sleeping
+        demo.step(w)
+
+
+def test_demo_controls_pause_jump_direction_and_arrive():
+    c.post("/demo/reset")
+    v = c.post("/demo/start", json={}).json()
+    assert v["sim"]["paused"] is False and v["sim"]["dir"] == 1 and v["sim"]["length_m"] > 900
+    w = walks.STATE["walks"][v["id"]]
+    assert c.post("/demo/control", json={"action": "fly"}).status_code == 400
+    v = c.post("/demo/control", json={"action": "jump", "value": 0.5}).json()
+    assert abs(v["sim"]["progress"] - 0.5) < 0.02
+    c.post("/demo/control", json={"action": "pause"})
+    held = w["sim"]["dist_m"]
+    _advance(w, 60)
+    assert w["sim"]["dist_m"] == held and w["status"] == "active"
+    assert not any(a["kind"] == "lost_contact" for a in walks.STATE["alerts"].values())
+    c.post("/demo/control", json={"action": "resume"})
+    c.post("/demo/control", json={"action": "backward"})
+    _advance(w, 20)
+    assert w["sim"]["dist_m"] < held
+    v = c.post("/demo/control", json={"action": "arrive"}).json()
+    assert v["sim"]["arriving"] and v["sim"]["dir"] == 1
+    for _ in range(20):
+        if w["status"] != "active":
+            break
+        _advance(w, 60)
+    assert w["status"] == "ended" and not w.get("ended_early")
+    trip = c.get("/users/jordan/trips").json()[0]
+    assert trip["id"] == v["id"] and trip["to"] == "Tooker House" and trip["distance_m"] > 900
+    assert c.post("/demo/control", json={"action": "pause"}).status_code == 409   # nothing to drive now
+
+
+def test_real_walks_have_no_sim_controls():
+    c.post("/demo/reset")
+    v = c.post("/walks", json={"walker_id": "jordan", "route_id": "library-to-tooker"}).json()
+    assert v["sim"] is None
+    assert c.post("/demo/control", json={"action": "pause"}).status_code == 409

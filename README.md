@@ -55,7 +55,7 @@ so a restart loses nothing. The iPhone app uses that address by default, so the 
 cd backend
 python3.11 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-.venv/bin/pytest -q                                   # 89 tests
+.venv/bin/pytest -q                                   # 92 tests
 .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8100
 ```
 
@@ -93,7 +93,7 @@ Each phone chooses a role on first launch: **walker (Jordan)** or **friend (Maya
 
 ## Testing on one phone
 
-During a demo walk, the walker's screen has a **Test tools** card: Run, Stop & go, Turn back, Car speed, Check in now, Stop answering, Go off route and Flag this spot. To see what friends get, open Settings > Switch role > Friend. A real (non-demo) walk uses your actual GPS for everything above.
+During a demo walk, the walker's screen has a **Test tools** card. **Demo walker** drives the simulated walker: Pause/Resume, Walk back/forward, speed 1x, 2x, 4x or 8x (tap the lit one to go back to automatic), a slider to jump anywhere along the route, and Arrive, which walks it to the destination and ends the walk like a real arrival. Below that: Run, Stop & go, Turn back, Car speed, Check in now, Stop answering, Go off route and Flag this spot. To see what friends get, open Settings > Switch role > Friend. A real (non-demo) walk uses your actual GPS for everything above.
 
 ## Demo script (about 2 min, two phones)
 
@@ -121,12 +121,12 @@ The simulator never pets the buddy. Every pet comes from the phone.
 | `POST /settings/check` | Warnings a walk with these timing settings would send |
 | `GET/POST/DELETE /users/{id}/circle` | Manage your circle |
 | `GET /users/{id}/trips` | Past walks, newest first (silent alerts are left out) |
-| `POST /demo/reset`, `/demo/start`, `/demo/stop-answering`, `/demo/checkin`, `/demo/deviate`, `/demo/speed`, `/demo/pace {mode: run, stop_go, backtrack, car, stop}` | Demo controls |
+| `POST /demo/reset`, `/demo/start`, `/demo/stop-answering`, `/demo/checkin`, `/demo/deviate`, `/demo/speed {x}`, `/demo/pace {mode: run, stop_go, backtrack, car, stop}`, `/demo/control {action: pause, resume, forward, backward, jump (value 0..1), arrive}` | Demo controls |
 
 ## Known limits
 
 - **Friend alerts only arrive while the app is open.** They come by polling, with no push notifications.
-- **The demo routes are hand-drawn.** They're approximate ASU Tempe paths. Routes planned in the app use Apple walking directions.
+- **The demo routes come from OpenStreetMap.** `backend/tools/build_routes.py` routes them over mapped sidewalks, campus malls and crosswalks (no road without a sidewalk), and names the turns from the map. They're only as good as the map data. Routes planned in the app use Apple walking directions.
 - **The Live Activity needs the app running.** It updates locally, so the app has to stay alive, which it does during a walk via background location.
 - **Quick tunnels drop.** For a stable address, use a named Cloudflare tunnel or an ngrok reserved domain.
 

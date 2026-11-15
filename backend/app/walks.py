@@ -530,7 +530,13 @@ def walk_view(w, viewer="walker"):
         "ended_early": w.get("ended_early"),
         "escalation_s": w["engine"].escalation_total(),
         "stages": {n: v for n, v in w["engine"]._stages()},
+        "sim": demo_view(w),
     }
+
+
+def demo_view(w):
+    from . import demo
+    return demo.view(w)
 
 
 def feed(friend_id):

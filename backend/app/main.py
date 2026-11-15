@@ -194,6 +194,11 @@ class DemoStart(BaseModel):
     walker_id: str = "jordan"
 
 
+class DemoControl(BaseModel):
+    action: str  # pause | resume | forward | backward | jump | arrive
+    value: Optional[float] = None  # jump: 0..1 along the route
+
+
 class DemoSpeed(BaseModel):
     x: Optional[float] = None  # None returns to automatic 2x / 4x
 
@@ -467,6 +472,18 @@ def demo_pace(req: DemoPace):
     except ValueError as e:
         raise HTTPException(400, str(e))
     return {"ok": True, "mode": req.mode}
+
+
+@app.post("/demo/control")
+def demo_control(req: DemoControl):
+    w = _demo_walk()
+    try:
+        demo.control(w, req.action, req.value)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    demo.catch_up()
+    with walks.LOCK:
+        return walks.walk_view(w)
 
 
 @app.post("/demo/speed")
