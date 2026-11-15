@@ -128,7 +128,8 @@ final class WalkBuddyE2ETests: XCTestCase {
         let anyOption = options.firstMatch
         XCTAssertTrue(anyOption.waitForExistence(timeout: 20), "no route options")
         if app.buttons["Quickest route"].exists { app.buttons["Quickest route"].tap() }
-        XCTAssertTrue(text(app, "Safety notes by Gemini").waitForExistence(timeout: 15), "no Gemini route notes")
+        // "Safety notes by Gemini" with a key, "Safety picked by street type" without one (the fallback).
+        XCTAssertTrue(text(app, "A guide, not a guarantee").waitForExistence(timeout: 15), "no route safety notes")
         let go = app.buttons["Walk with Levin"]
         XCTAssertTrue(go.waitForExistence(timeout: 20), "no trip sheet")
         let enabled = NSPredicate(format: "isEnabled == true")
@@ -156,7 +157,7 @@ final class WalkBuddyE2ETests: XCTestCase {
         expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: go)
         waitForExpectations(timeout: 20)
         go.tap()
-        XCTAssertTrue(app.buttons["I'm home, end walk"].waitForExistence(timeout: 15), "real walk did not start")
+        XCTAssertTrue(app.buttons["I'm home"].waitForExistence(timeout: 15), "real walk did not start")
         sleep(25) // the shell moves the simulated GPS now
         let shot = { (name: String) in
             let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot()); a.name = name; a.lifetime = .keepAlways; self.add(a)
@@ -167,7 +168,7 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         sleep(3); XCUIDevice.shared.press(.home); sleep(3); shot("la-3-lock-screen")
         app.activate()
-        let end = app.buttons["I'm home, end walk"]
+        let end = app.buttons["I'm home"]
         if end.waitForExistence(timeout: 10) { end.tap() }
     }
 
@@ -283,6 +284,16 @@ final class WalkBuddyE2ETests: XCTestCase {
         while !(el.exists && el.isHittable) && tries < 10 { app.swipeUp(); tries += 1 }
     }
 
+    /// Scroll back up from the page margin: a swipe that starts on the live map pans the map instead of the page.
+    private func scrollUpTo(_ app: XCUIApplication, _ el: XCUIElement) {
+        var tries = 0
+        while !(el.exists && el.isHittable) && tries < 10 {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.35))
+                .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.9)))
+            tries += 1
+        }
+    }
+
     /// Turn-by-turn: the demo route shows the next turn and the distance to it.
     func testNextTurnCard() {
         api("/demo/reset")
@@ -309,8 +320,8 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCTAssertTrue(run.exists, "test tools missing on the walk screen")
         run.tap()
         XCTAssertTrue(text(app, "Running").waitForExistence(timeout: 30), "pace card never showed running")
-        app.swipeDown(); app.swipeDown(); app.swipeDown(); app.swipeDown()
         XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30), "pace never triggered a check-in")
+        scrollUpTo(app, app.buttons["Your buddy"].firstMatch)
         rub(app)
         XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
         let judged = text(app, "Gemini:")
