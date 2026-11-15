@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "WalkBuddy",
+    "slug": "walkbuddy",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WalkBuddy uses your location during a walk so your friends can find you if you stop answering."
+        }
+      ],
+      "expo-font",
+      "expo-splash-screen"
+    ],
+    "scheme": "walkbuddy",
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/app"
+    }
+  }
+}
