@@ -68,6 +68,11 @@ class Tick(BaseModel):
     ts: Optional[float] = None  # phone timestamp (seconds); defaults to server time
 
 
+class BuddyEdit(BaseModel):
+    name: Optional[str] = None
+    species: Optional[str] = None
+
+
 class CloseAlert(BaseModel):
     friend_id: str
 
@@ -113,6 +118,16 @@ def get_user(uid: str):
         raise HTTPException(404, "unknown user")
     w = walks.active_walk(uid)
     return dict(u, active_walk_id=w["id"] if w else None)
+
+
+@app.post("/users/{uid}/buddy")
+def edit_buddy(uid: str, req: BuddyEdit):
+    try:
+        return walks.customize_buddy(uid, req.name, req.species)
+    except KeyError:
+        raise HTTPException(404, "unknown user")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @app.get("/users/{uid}/active")

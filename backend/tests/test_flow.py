@@ -115,3 +115,16 @@ def test_planned_route_from_phone_runs_as_demo():
     assert r["to"] == "Tooker House" and r["length_m"] > 100
     jump(10)
     assert c.get(f"/walks/{w['id']}").json()["pos"] != pts[0]
+
+
+def test_customize_buddy_and_reset_restores():
+    c.post("/demo/reset")
+    b = c.post("/users/jordan/buddy", json={"name": "Biscuit", "species": "dog"}).json()
+    assert b["name"] == "Biscuit" and b["species"] == "dog" and b["xp"] == 90
+    assert c.get("/users/jordan").json()["buddy"]["species"] == "dog"
+    assert c.post("/users/jordan/buddy", json={"species": "dragon"}).status_code == 400
+    assert c.post("/users/jordan/buddy", json={"name": "  "}).status_code == 400
+    c.post("/demo/reset")  # keeps the chosen pet, resets XP
+    b = c.get("/users/jordan").json()["buddy"]
+    assert b["name"] == "Biscuit" and b["species"] == "dog" and b["xp"] == 90
+    c.post("/users/jordan/buddy", json={"name": "Levin", "species": "chick"})

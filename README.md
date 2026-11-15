@@ -1,6 +1,6 @@
 # WalkBuddy
 
-Raise a little buddy by walking home safe. While you walk, your buddy (Levin) checks in now and then, and you answer by petting it. If you stop answering, it escalates, and then your friends get a full-screen alert with your last location.
+Raise a little buddy by walking home safe. Pick your pet (pup, kitty, bunny, otter, sloth and more), name it, and while you walk it checks in now and then. You answer by petting it: rub your finger across it, because a tap doesn't count. If you stop answering, it escalates, and then your friends get a full-screen alert with your last location.
 
 Built at SunHacks 2026.
 
@@ -10,7 +10,7 @@ Built at SunHacks 2026.
 - **Escalation.** If you don't answer: check-in (30 s), nudge (30 s), final warning (30 s), countdown (20 s), then an alert to your friends.
 - **Duress.** A 2 second long-press on the buddy sends a silent alert. Your own screen stays calm. Your friends' screens say "Do not call first" and hide the call button.
 - **Lost contact.** If your phone stops checking in for 90 s, your friends get a lost-contact alert.
-- **XP and evolution.** Answering on time earns XP. The buddy evolves Hatchling → Chick → Night Owl, and a safe-walk streak grows.
+- **XP and evolution.** Answering on time earns XP. The chick grows from egg to chick to night owl; every other pet earns a star at 100 XP and a crown at 250 XP. A safe-walk streak grows too.
 - **Closing alerts.** Only a friend can close an alert. If you pet the buddy late, the friend sees "petted after the alert", and the alert stays open until they confirm.
 
 The safety logic lives in one small, deterministic state machine (`backend/app/engine.py`) with injected time, and it is fully unit-tested.

@@ -21,11 +21,11 @@ _ids = itertools.count(1)
 
 SEED_USERS = {
     "jordan": {"id": "jordan", "name": "Jordan", "phone": "+15555550100", "friends": ["maya", "sam"], "streak": 6,
-               "buddy": {"name": "Levin", "xp": 90, "form": "sprout"}},
+               "buddy": {"name": "Levin", "xp": 90, "form": "sprout", "species": "chick"}},
     "maya": {"id": "maya", "name": "Maya", "phone": "+15555550101", "friends": ["jordan"], "streak": 2,
-             "buddy": {"name": "Pip", "xp": 40, "form": "sprout"}},
+             "buddy": {"name": "Pip", "xp": 40, "form": "sprout", "species": "cat"}},
     "sam": {"id": "sam", "name": "Sam", "phone": "+15555550102", "friends": ["jordan"], "streak": 11,
-            "buddy": {"name": "Moss", "xp": 130, "form": "strider"}},
+            "buddy": {"name": "Moss", "xp": 130, "form": "strider", "species": "dog"}},
 }
 
 STATE = {"users": {}, "walks": {}, "alerts": {}}
@@ -56,8 +56,14 @@ class Clock:
 
 
 def reset():
+    """Reseed XP, streaks, walks and alerts. Keeps each buddy's chosen name and species."""
     with LOCK:
+        keep = {uid: {k: u["buddy"][k] for k in ("name", "species") if k in u["buddy"]}
+                for uid, u in STATE.get("users", {}).items()}
         STATE["users"] = copy.deepcopy(SEED_USERS)
+        for uid, extra in keep.items():
+            if uid in STATE["users"]:
+                STATE["users"][uid]["buddy"].update(extra)
         STATE["walks"] = {}
         STATE["alerts"] = {}
 
@@ -70,6 +76,26 @@ def user(uid):
     if not u:
         raise KeyError(uid)
     return u
+
+
+SPECIES = {"chick", "dog", "cat", "bunny", "poodle", "hedgehog", "chipmunk", "otter", "seal", "sloth", "turtle", "penguin"}
+
+
+def customize_buddy(uid, name=None, species=None):
+    with LOCK:
+        u = user(uid)
+        b = dict(u["buddy"])
+        if name is not None:
+            name = name.strip()[:16]
+            if not name:
+                raise ValueError("name can't be empty")
+            b["name"] = name
+        if species is not None:
+            if species not in SPECIES:
+                raise ValueError("unknown species")
+            b["species"] = species
+        u["buddy"] = b
+        return b
 
 
 def friends_watching(walker_id):

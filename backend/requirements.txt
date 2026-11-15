@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic
-httpx
-pytest
-python-dotenv
-networkx
