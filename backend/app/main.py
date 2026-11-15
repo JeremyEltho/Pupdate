@@ -15,7 +15,10 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import FileResponse, RedirectResponse  # noqa: E402
 from pydantic import BaseModel  # noqa: E402
 
-from . import demo, walks  # noqa: E402
+from fastapi import Request  # noqa: E402
+from starlette.concurrency import run_in_threadpool  # noqa: E402
+
+from . import demo, store, walks  # noqa: E402
 from .routes import load_routes  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -24,13 +27,57 @@ log = logging.getLogger("walkbuddy")
 
 @asynccontextmanager
 async def lifespan(app):
-    demo.start_loop()
+    # Local: a background loop advances demo walks. Cloud: each request catches up instead.
+    if store.mongo_enabled():
+        data = await run_in_threadpool(store.mongo_load)
+        if data:
+            with walks.LOCK:
+                walks.restore(data)
+            log.info("restored state from MongoDB")
+    if not store.enabled():
+        demo.start_loop()
     yield
     demo.stop_loop()
 
 
 app = FastAPI(title="WalkBuddy", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+def _load_and_catch_up():
+    data = store.load()
+    with walks.LOCK:
+        if data:
+            walks.restore(data)
+        else:
+            walks.reset()  # first boot: seed the demo users
+        demo.catch_up()
+
+
+def _save():
+    with walks.LOCK:
+        snapshot = walks.dump()
+    store.save(snapshot)
+
+
+@app.middleware("http")
+async def persisted_state(request: Request, call_next):
+    """In the cloud, wrap every request in lock -> load -> catch up -> handle -> save -> unlock."""
+    if store.mongo_enabled() and not store.enabled():
+        response = await call_next(request)
+        if request.method == "POST":  # every change is saved; reads are free
+            await run_in_threadpool(lambda: store.mongo_save(walks.dump()))
+        return response
+    if not store.enabled() or request.url.path.startswith("/app") or request.url.path == "/health":
+        return await call_next(request)
+    token = await run_in_threadpool(store.acquire)
+    try:
+        await run_in_threadpool(_load_and_catch_up)
+        response = await call_next(request)
+        await run_in_threadpool(_save)
+        return response
+    finally:
+        await run_in_threadpool(store.release, token)
 
 
 class StartWalk(BaseModel):
@@ -102,7 +149,7 @@ def _demo_walk():
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    return {"ok": True, "store": "redis" if store.enabled() else "mongodb" if store.mongo_enabled() else "memory"}
 
 
 @app.get("/routes")

@@ -7,7 +7,6 @@ Alert rules:
 - Duress alerts are silent: the walker's own view never shows them.
 """
 import copy
-import itertools
 import threading
 import time
 from datetime import datetime, timezone
@@ -17,7 +16,6 @@ from .engine import ESCALATING, Engine
 from .routes import load_routes
 
 LOCK = threading.RLock()
-_ids = itertools.count(1)
 
 SEED_USERS = {
     "jordan": {"id": "jordan", "name": "Jordan", "phone": "+15555550100", "friends": ["maya", "sam"], "streak": 6,
@@ -28,7 +26,13 @@ SEED_USERS = {
             "buddy": {"name": "Moss", "xp": 130, "form": "strider", "species": "dog"}},
 }
 
-STATE = {"users": {}, "walks": {}, "alerts": {}}
+STATE = {"users": {}, "walks": {}, "alerts": {}, "seq": 0}
+
+
+def new_id(prefix):
+    """IDs come from the persisted state, so they stay unique across server instances."""
+    STATE["seq"] = STATE.get("seq", 0) + 1
+    return "%s%d" % (prefix, STATE["seq"])
 
 
 def iso(ts=None):
@@ -66,6 +70,7 @@ def reset():
                 STATE["users"][uid]["buddy"].update(extra)
         STATE["walks"] = {}
         STATE["alerts"] = {}
+        STATE.setdefault("seq", 0)
 
 
 reset()
@@ -113,7 +118,7 @@ def start_walk(walker_id, route_id=None, dest=None, demo=False, every=600.0, wat
         routes = load_routes()
         route = routes.get(route_id) if route_id else None
         clock = Clock(demo, speed=2.0)
-        wid = "w%d" % next(_ids)
+        wid = new_id("w")
         w = {
             "id": wid, "walker_id": walker_id, "demo": demo, "status": "active",
             "route_id": route["id"] if route else None, "dest": dest or (route["points"][-1] if route else None),
@@ -184,7 +189,7 @@ def open_alert(w, kind):
     for a in open_alerts(w["id"]):
         if a["kind"] == kind:
             return a
-    aid = "a%d" % next(_ids)
+    aid = new_id("a")
     walker = user(w["walker_id"])
     a = {
         "id": aid, "walk_id": w["id"], "walker_id": walker["id"], "walker_name": walker["name"],
@@ -251,3 +256,56 @@ def feed(friend_id):
         alerts.sort(key=lambda a: a["opened_at"], reverse=True)
         return {"walks": walks, "open_alerts": [a for a in alerts if a["status"] == "open"],
                 "recent_alerts": alerts[:10]}
+
+
+# ---------------------------------------------------------------------------
+# Persistence (see store.py): plain-JSON snapshot of the whole state, and back.
+# ---------------------------------------------------------------------------
+
+KEEP_ENDED_WALKS = 5
+
+
+def dump():
+    from . import routes
+    walks_out = {}
+    ended = sorted((w for w in STATE["walks"].values() if w["status"] != "active"),
+                   key=lambda w: w.get("ended_at") or "", reverse=True)[:KEEP_ENDED_WALKS]
+    keep = {w["id"] for w in ended} | {w["id"] for w in STATE["walks"].values() if w["status"] == "active"}
+    for wid, w in STATE["walks"].items():
+        if wid not in keep:
+            continue
+        d = dict(w)
+        d["engine"] = dict(w["engine"].__dict__)
+        d["clock"] = dict(w["clock"].__dict__)
+        if "speedstate" in d:
+            ss = dict(d["speedstate"])
+            ss["flagged"] = sorted(ss.get("flagged", []))
+            ss["fixes"] = [[t, p] for t, p in ss.get("fixes", [])]
+            d["speedstate"] = ss
+        walks_out[wid] = d
+    live_alert_walks = set(walks_out)
+    alerts = {k: a for k, a in STATE["alerts"].items() if a["status"] == "open" or a["walk_id"] in live_alert_walks}
+    return {"users": STATE["users"], "walks": walks_out, "alerts": alerts, "seq": STATE.get("seq", 0),
+            "custom_routes": routes.CUSTOM}
+
+
+def restore(data):
+    from . import routes
+    walks_in = {}
+    for wid, d in data.get("walks", {}).items():
+        w = dict(d)
+        e = Engine.__new__(Engine)
+        e.__dict__.update(d["engine"])
+        c = Clock.__new__(Clock)
+        c.__dict__.update(d["clock"])
+        w["engine"], w["clock"] = e, c
+        if "speedstate" in w:
+            ss = dict(w["speedstate"])
+            ss["flagged"] = set(ss.get("flagged", []))
+            ss["fixes"] = [(t, p) for t, p in ss.get("fixes", [])]
+            w["speedstate"] = ss
+        walks_in[wid] = w
+    STATE.clear()
+    STATE.update({"users": data["users"], "walks": walks_in, "alerts": data.get("alerts", {}), "seq": data.get("seq", 0)})
+    routes.CUSTOM.clear()
+    routes.CUSTOM.update(data.get("custom_routes", {}))

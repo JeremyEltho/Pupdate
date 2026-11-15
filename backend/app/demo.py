@@ -37,9 +37,27 @@ def step(w):
     want = sim["speed_override"] or (ESCALATE_X if escalating else WALK_X)
     clock.set_speed(want)
     now = clock.now()
+    # Replay any gap (cloud catch-up after nobody polled) in small sim steps, so the
+    # simulated phone keeps "ticking" and no false lost-contact alert fires.
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
+    out = []
+    t = sim["last_now"]
+    while t < now - 1e-9:
+        t = min(now, t + CATCH_UP_STEP_S)
+        out += _step_to(w, t, route)
+    if not out and t >= now:
+        out += _step_to(w, now, route)
+    return out
+
+
+CATCH_UP_STEP_S = 5.0
+
+
+def _step_to(w, now, route):
+    sim = w["sim"]
+    e = w["engine"]
     dt = max(0.0, now - sim["last_now"])
     sim["last_now"] = now
-    route = load_routes().get(w["route_id"]) if w["route_id"] else None
     if route is None:
         return walks.handle(w, e.tick(now, e.last_pos))
     # Move along the route, bouncing at the ends (arrival is blocked in demo mode).
@@ -79,16 +97,28 @@ def step(w):
     return walks.handle(w, events)
 
 
+def catch_up():
+    """Advance every active walk to now. Called by the local loop, and per request in the cloud."""
+    with walks.LOCK:
+        for w in list(walks.STATE["walks"].values()):
+            if w["demo"] and w["status"] == "active":
+                step(w)
+            elif w["status"] == "active":
+                # Real walks: run timeouts so alerts fire even if the phone goes quiet.
+                walks.handle(w, w["engine"].advance(w["clock"].now()))
+
+
 def loop():
+    from . import store
+    last_save = 0.0
     while not _stop.is_set():
         try:
-            with walks.LOCK:
-                for w in list(walks.STATE["walks"].values()):
-                    if w["demo"] and w["status"] == "active":
-                        step(w)
-                    elif w["status"] == "active":
-                        # Real walks: just run timeouts so alerts fire even if the phone goes quiet.
-                        walks.handle(w, w["engine"].advance(w["clock"].now()))
+            catch_up()
+            if store.mongo_enabled() and time.time() - last_save > 5:
+                with walks.LOCK:
+                    snap = walks.dump()
+                store.mongo_save(snap)
+                last_save = time.time()
         except Exception:
             log.exception("demo loop error")
         time.sleep(TICK_REAL_S)

@@ -11,3 +11,8 @@ build-dev/
 *.xcworkspace/xcuserdata/
 .DS_Store
 .env
+.vercel/
+.env.local
+.logs/
+deploy/.instance
+deploy/.url

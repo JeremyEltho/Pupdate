@@ -63,15 +63,14 @@ final class WalkBuddyE2ETests: XCTestCase {
         app.swipeDown(); app.swipeDown(); app.swipeDown()
         XCTAssertTrue(text(app, "All good").waitForExistence(timeout: 10), "walk never appeared for the friend")
         reveal(app, "Stop answering").tap()
-        XCTAssertTrue(text(app, "stopped answering").waitForExistence(timeout: 50), "alert takeover never showed")
-        let call = app.buttons["Call Jordan"]
-        if !call.waitForExistence(timeout: 5) {
-            print("BUTTONS ON SCREEN:", app.buttons.allElementsBoundByIndex.map { $0.label })
-        }
-        XCTAssertTrue(call.exists)
-        app.buttons["I've reached Jordan, close alert"].tap()
+        // Wait for the takeover itself (the walk log also mentions "stopped answering" right away).
+        let close = app.buttons["I've reached Jordan, close alert"]
+        XCTAssertTrue(close.waitForExistence(timeout: 60), "alert takeover never showed")
+        XCTAssertTrue(text(app, "Jordan stopped answering").exists)
+        XCTAssertTrue(app.buttons["Call Jordan"].exists, "call button missing on the alert")
+        close.tap()
         let gone = NSPredicate(format: "exists == false")
-        expectation(for: gone, evaluatedWith: text(app, "stopped answering"))
+        expectation(for: gone, evaluatedWith: app.buttons["I've reached Jordan, close alert"])
         waitForExpectations(timeout: 10)
     }
 
