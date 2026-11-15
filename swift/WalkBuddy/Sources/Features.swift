@@ -150,7 +150,7 @@ struct SafetyPowers: View {
     let buddyName: String
     private var items: [(Sprite, String, String)] {
         [
-            (.question, "Check-ins", "\(buddyName) asks \"Still good?\" on your schedule, every 10 minutes by default. Pet it to answer and earn XP."),
+            (.question, "Check-ins", "\(buddyName) asks \"Still good?\" when something looks off, or on a schedule you pick. Pet it to answer and earn XP."),
             (.bell, "Escalation", "No answer? A nudge, a last chance, a countdown, then your friends get an alert. About 2 minutes."),
             (.shield, "Silent alert", "Hold \(buddyName) for 2 seconds. Your screen stays calm while friends get a quiet alert."),
             (.compass, "Route and speed", "Leaving your route, stopping a long time, or moving at car speed triggers a check-in."),

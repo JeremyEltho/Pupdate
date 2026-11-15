@@ -130,7 +130,7 @@ final class API {
     /// Walker settings sent with every new walk (see SettingsView).
     static var walkSettings: [String: Any] {
         let d = UserDefaults.standard
-        let every = d.object(forKey: "wb.checkinEvery") as? Int ?? 600
+        let every = d.object(forKey: "wb.checkinEvery") as? Int ?? 0
         return [
             "checkin_every_s": every > 0 ? every : NSNull(),
             "watch_route": d.object(forKey: "wb.watchRoute") as? Bool ?? true,

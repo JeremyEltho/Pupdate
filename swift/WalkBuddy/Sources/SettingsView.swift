@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage("wb.demoDefault") private var demoDefault = true
     @AppStorage("wb.liveActivity") private var liveActivity = true
     @AppStorage("wb.haptics") private var haptics = true
-    @AppStorage("wb.checkinEvery") private var checkinEvery = 600
+    @AppStorage("wb.checkinEvery") private var checkinEvery = 0
     @AppStorage("wb.watchRoute") private var watchRoute = true
     @AppStorage("wb.watchSpeed") private var watchSpeed = true
     @State private var server = API.shared.base
@@ -44,7 +44,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Levin checks in").font(Typeface.semi(15)).foregroundStyle(Palette.text)
                             HStack(spacing: 6) {
-                                ForEach([(300, "5 min"), (600, "10 min"), (900, "15 min"), (0, "Only if off")], id: \.0) { v, label in
+                                ForEach([(0, "Only if off"), (300, "5 min"), (600, "10 min"), (900, "15 min")], id: \.0) { v, label in
                                     choice(label, icon: v == 0 ? "exclamationmark.triangle.fill" : "clock.fill", on: checkinEvery == v, tint: Palette.gold) { checkinEvery = v }
                                 }
                             }

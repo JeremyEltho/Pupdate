@@ -44,7 +44,7 @@ class StartWalk(BaseModel):
     to_name: Optional[str] = None
     # Walker settings: seconds between scheduled check-ins (None = only when something is off),
     # and whether leaving the route or odd speed should trigger a check-in.
-    checkin_every_s: Optional[float] = 600.0
+    checkin_every_s: Optional[float] = None  # default: only check in when something looks off
     watch_route: bool = True
     watch_speed: bool = True
 
