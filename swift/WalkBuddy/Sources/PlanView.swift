@@ -35,8 +35,16 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
 
     /// Quickest: least walking time.
     var quickest: MKRoute? { routes.min { $0.expectedTravelTime < $1.expectedTravelTime } }
-    /// Safer (heuristic, no crime data): most of the distance on main named streets, fewest turns.
-    var safest: MKRoute? { routes.max { safetyScore($0) < safetyScore($1) } }
+    /// Gemini's pick (from street names) when available; otherwise the street-based rule.
+    @Published var assessment: RouteAssessment?
+    var safest: MKRoute? {
+        if let id = assessment?.saferId, let i = Int(id.dropFirst()), routes.indices.contains(i) { return routes[i] }
+        return routes.max { safetyScore($0) < safetyScore($1) }
+    }
+    func reason(for r: MKRoute) -> String? {
+        guard let i = routes.firstIndex(where: { $0 === r }) else { return nil }
+        return assessment?.reasons["r\(i)"]
+    }
     var sameRoute: Bool { quickest.map { q in safest.map { $0 === q } ?? true } ?? true }
     var route: MKRoute? { choice == .safe ? safest : quickest }
     @Published var error: String?
@@ -110,12 +118,25 @@ final class PlanModel: NSObject, ObservableObject, MKLocalSearchCompleterDelegat
         req.transportType = .walking
         req.requestsAlternateRoutes = true
         do {
+            assessment = nil
             routes = try await MKDirections(request: req).calculate().routes
             if routes.isEmpty { error = "No walking route found" }
+            await assess()
         } catch {
             routes = []
             self.error = "Couldn't get walking directions."
         }
+    }
+
+    /// Ask the server (Gemini) which route is safer at night and why. Keeps the rule on failure.
+    func assess() async {
+        guard !routes.isEmpty else { return }
+        let payload: [[String: Any]] = routes.enumerated().map { i, r in
+            ["id": "r\(i)", "distance_m": r.distance, "minutes": r.expectedTravelTime / 60,
+             "steps": r.steps.map(\.instructions).filter { !$0.isEmpty }]
+        }
+        let hour = Calendar.current.component(.hour, from: Date())
+        assessment = try? await API.shared.assessRoutes(payload, hour: hour)
     }
 
     /// Route polyline as [[lat, lng]], thinned to keep the payload small.
@@ -312,20 +333,28 @@ private struct TripSheet: View {
                     Text(routing ? "Finding walking routes..." : "No route yet").font(Typeface.body(14)).foregroundStyle(Palette.muted)
                 }
             } else if plan.sameRoute, let r = plan.route {
-                RouteOption(kind: .safe, route: r, selected: true, note: "Quickest route is also the safer one") {}
+                RouteOption(kind: .safe, route: r, selected: true, note: plan.reason(for: r) ?? "Quickest route is also the safer one") {}
             } else {
                 VStack(spacing: 10) {
                     if let s = plan.safest {
-                        RouteOption(kind: .safe, route: s, selected: plan.choice == .safe, note: "Main streets, fewer turns") {
+                        RouteOption(kind: .safe, route: s, selected: plan.choice == .safe, note: plan.reason(for: s) ?? "Main streets, fewer turns") {
                             withAnimation(.spring(response: 0.35)) { plan.choice = .safe }
                         }
                     }
                     if let q = plan.quickest {
-                        RouteOption(kind: .quick, route: q, selected: plan.choice == .quick, note: "Fastest way there") {
+                        RouteOption(kind: .quick, route: q, selected: plan.choice == .quick, note: plan.reason(for: q) ?? "Fastest way there") {
                             withAnimation(.spring(response: 0.35)) { plan.choice = .quick }
                         }
                     }
                 }
+            }
+            if let a = plan.assessment, !plan.routes.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: a.source == "gemini" ? "sparkles" : "ruler").font(.system(size: 11, weight: .bold))
+                    Text(a.source == "gemini" ? "Safety notes by Gemini, from street names. A guide, not a guarantee."
+                                              : "Safety picked by street type. A guide, not a guarantee.")
+                }
+                .font(Typeface.body(11.5)).foregroundStyle(Palette.muted)
             }
             Toggle(isOn: $demo) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -370,7 +399,8 @@ private struct RouteOption: View {
                     .frame(width: 40, height: 40).background(Circle().fill(tint))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(kind == .safe ? "Safer route" : "Quickest route").font(Typeface.displayBold(17)).foregroundStyle(Palette.text)
-                    Text(note).font(Typeface.body(13)).foregroundStyle(Palette.muted).lineLimit(1)
+                    Text(note).font(Typeface.body(13)).foregroundStyle(Palette.muted).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {

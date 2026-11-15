@@ -128,3 +128,12 @@ def test_customize_buddy_and_reset_restores():
     b = c.get("/users/jordan").json()["buddy"]
     assert b["name"] == "Biscuit" and b["species"] == "dog" and b["xp"] == 90
     c.post("/users/jordan/buddy", json={"name": "Levin", "species": "chick"})
+
+
+def test_route_assess_falls_back_to_rule_without_gemini(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    r = c.post("/routes/assess", json={"routes": [
+        {"id": "a", "distance_m": 650, "minutes": 9, "steps": ["Turn right onto E University Dr", "Turn left onto S Rural Rd"]},
+        {"id": "b", "distance_m": 600, "minutes": 8, "steps": ["Turn left onto a path", "Walk through the parking lot"]},
+    ]}).json()
+    assert r["source"] == "rule" and r["safer_id"] == "a" and set(r["reasons"]) == {"a", "b"}

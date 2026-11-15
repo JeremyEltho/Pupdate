@@ -53,6 +53,8 @@ struct UserInfo: Codable, Equatable { var id: String; var name: String; var budd
 
 struct Feed: Codable, Equatable { var walks: [Walk]; var openAlerts: [AlertInfo]; var recentAlerts: [AlertInfo] }
 
+struct RouteAssessment: Codable { var saferId: String?; var reasons: [String: String]; var source: String }
+
 struct PetResponse: Codable { var events: [WalkEvent]; var walk: Walk }
 struct DuressResponse: Codable { var ok: Bool; var walk: Walk }
 
@@ -147,6 +149,9 @@ final class API {
         var body: [String: Any] = ["walker_id": walker, "points": points, "from_name": from, "to_name": to, "demo": demo]
         body.merge(API.walkSettings) { a, _ in a }
         return try await post("/walks", body)
+    }
+    func assessRoutes(_ routes: [[String: Any]], hour: Int) async throws -> RouteAssessment {
+        try await post("/routes/assess", ["routes": routes, "hour": hour])
     }
     func tick(_ wid: String, lat: Double? = nil, lng: Double? = nil, accuracy: Double? = nil) async throws {
         var b: [String: Any] = [:]

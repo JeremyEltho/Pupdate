@@ -115,6 +115,18 @@ class Tick(BaseModel):
     ts: Optional[float] = None  # phone timestamp (seconds); defaults to server time
 
 
+class RouteCandidate(BaseModel):
+    id: str
+    distance_m: float = 0
+    minutes: float = 0
+    steps: List[str] = []
+
+
+class AssessRoutes(BaseModel):
+    routes: List[RouteCandidate]
+    hour: int = 21
+
+
 class BuddyEdit(BaseModel):
     name: Optional[str] = None
     species: Optional[str] = None
@@ -155,6 +167,13 @@ def health():
 @app.get("/routes")
 def routes():
     return list(load_routes().values())
+
+
+@app.post("/routes/assess")
+def assess_routes(req: AssessRoutes):
+    """Which walking route is safer at night, and why (Gemini, with a street-based fallback)."""
+    from .route_ai import assess
+    return assess([r.model_dump() for r in req.routes][:4], req.hour)
 
 
 @app.get("/users/{uid}")
