@@ -1,0 +1,202 @@
+import SwiftUI
+
+struct SettingsView: View {
+    let onClose: () -> Void
+    @AppStorage("wb.role") private var role = ""
+    @AppStorage("wb.routePref") private var routePref = "safe"
+    @AppStorage("wb.demoDefault") private var demoDefault = true
+    @AppStorage("wb.liveActivity") private var liveActivity = true
+    @AppStorage("wb.haptics") private var haptics = true
+    @AppStorage("wb.checkinEvery") private var checkinEvery = 600
+    @AppStorage("wb.watchRoute") private var watchRoute = true
+    @AppStorage("wb.watchSpeed") private var watchSpeed = true
+    @State private var server = API.shared.base
+    @State private var status: String?
+    @State private var busy = false
+    @State private var resetDone = false
+
+    var body: some View {
+        ZStack {
+            Sky()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    HStack {
+                        Text("Settings").font(Typeface.display(34)).foregroundStyle(Palette.text)
+                        Spacer()
+                        Button(action: onClose) {
+                            Image(systemName: "xmark").font(.system(size: 15, weight: .heavy)).foregroundStyle(Palette.muted)
+                                .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
+                        }
+                        .accessibilityLabel("Close settings")
+                    }
+                    .padding(.top, 8)
+
+                    group("Check-ins") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Levin checks in").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                            HStack(spacing: 6) {
+                                ForEach([(300, "5 min"), (600, "10 min"), (900, "15 min"), (0, "Only if off")], id: \.0) { v, label in
+                                    choice(label, icon: v == 0 ? "exclamationmark.triangle.fill" : "clock.fill", on: checkinEvery == v, tint: Palette.gold) { checkinEvery = v }
+                                }
+                            }
+                            Text(checkinEvery == 0 ? "Levin only checks in when something looks off." : "Every \(checkinEvery / 60) minutes, plus whenever something looks off.")
+                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        }
+                        divider
+                        toggle("Leaving your route", "Check in if you're more than 60 m off your route for a minute", $watchRoute)
+                        divider
+                        toggle("Odd speed", "Check in if you move at car speed or stop for 5 minutes", $watchSpeed)
+                        divider
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("If you don't answer").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                            Text("Check-in 30 s, nudge 30 s, last chance 30 s, countdown 20 s, then Maya and Sam get an alert. No phone check-in for 90 s also alerts them.")
+                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        }
+                    }
+
+                    group("Walking") {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Default route").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                            HStack(spacing: 8) {
+                                choice("Safer", icon: "shield.lefthalf.filled", on: routePref == "safe", tint: Palette.ok) { routePref = "safe" }
+                                choice("Quickest", icon: "bolt.fill", on: routePref == "quick", tint: Palette.gold) { routePref = "quick" }
+                            }
+                            Text("Safer favors main streets and fewer turns. It's a guide, not a guarantee.")
+                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        }
+                        divider
+                        toggle("Start planned walks as demos", "Simulate the walk at 2x instead of using GPS", $demoDefault)
+                    }
+
+                    group("On your phone") {
+                        toggle("Lock Screen Live Activity", "Your walk and Levin on the Lock Screen and Dynamic Island", $liveActivity)
+                        divider
+                        toggle("Haptics", "Buzz when Levin checks in or an alert arrives", $haptics)
+                    }
+
+                    group("Your circle") {
+                        circleRow("Maya", "M", Color(hex: 0xff8fb1))
+                        divider
+                        circleRow("Sam", "S", Color(hex: 0x7ad7ff))
+                        divider
+                        Text("Friends get your alerts and are the only ones who can close one.")
+                            .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                    }
+
+                    group("Server") {
+                        TextField("https://something.trycloudflare.com", text: $server)
+                            .font(Typeface.body(15)).foregroundStyle(Palette.text)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
+                            .padding(.horizontal, 14).frame(minHeight: 48)
+                            .background(RoundedRectangle(cornerRadius: 14).fill(Color(hex: 0x0b1030)))
+                            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.line))
+                        HStack(spacing: 12) {
+                            GameButton(title: "Save and test", kind: .ghost, busy: busy) {
+                                Task {
+                                    API.shared.base = server
+                                    busy = true
+                                    do { _ = try await API.shared.health(); status = "Connected" } catch { status = "Can't reach it" }
+                                    busy = false
+                                }
+                            }
+                            Text(status ?? "").font(Typeface.bold(14)).foregroundStyle(status == "Connected" ? Palette.ok : Palette.alert)
+                                .frame(width: 110, alignment: .leading)
+                        }
+                    }
+
+                    group("Demo") {
+                        GameButton(title: resetDone ? "Demo reset" : "Reset demo", kind: .ghost) {
+                            Task {
+                                try? await API.shared.demo("reset")
+                                resetDone = true
+                                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                                resetDone = false
+                            }
+                        }
+                        Text("Restores Levin to 90 XP, the streak and the friends list, and clears walks and alerts.")
+                            .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        divider
+                        GameButton(title: "Switch role (now: \(role == "friend" ? "friend" : "walker"))", kind: .ghost) {
+                            onClose()
+                            role = ""
+                        }
+                    }
+
+                    group("Privacy") {
+                        Label("Your location is shared only while a walk is running.", systemImage: "location.slash")
+                        Label("A silent alert never shows on your own screen.", systemImage: "eye.slash")
+                    }
+                    .font(Typeface.body(14)).foregroundStyle(Palette.text)
+
+                    group("About") {
+                        Text("WalkBuddy, built at SunHacks 2026.").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                        Text("3D sprites: Microsoft Fluent Emoji (MIT). Fonts: Bricolage Grotesque and Figtree (SIL OFL). Maps and directions: Apple MapKit.")
+                            .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                    }
+                }
+                .padding(.horizontal, 20).padding(.bottom, 40)
+                .frame(maxWidth: 480).frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private var divider: some View { Rectangle().fill(Palette.line).frame(height: 1) }
+
+    private func group<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(Typeface.displayBold(17)).foregroundStyle(Palette.text).padding(.leading, 4)
+            GameCard { VStack(alignment: .leading, spacing: 12) { content() } }
+        }
+    }
+
+    private func toggle(_ title: String, _ sub: String, _ value: Binding<Bool>) -> some View {
+        Toggle(isOn: value) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                Text(sub).font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+            }
+        }
+        .tint(Palette.gold)
+    }
+
+    private func choice(_ title: String, icon: String, on: Bool, tint: Color, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.system(size: 13, weight: .bold))
+                Text(title).font(Typeface.bold(13)).lineLimit(1).minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(on ? tint : Palette.muted)
+            .frame(maxWidth: .infinity, minHeight: 42)
+            .background(RoundedRectangle(cornerRadius: 14).fill(on ? tint.opacity(0.14) : Color(hex: 0x0f1433)))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(on ? tint : Palette.line, lineWidth: on ? 1.5 : 1))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private func circleRow(_ name: String, _ initial: String, _ color: Color) -> some View {
+        HStack(spacing: 12) {
+            Text(initial).font(Typeface.display(17)).foregroundStyle(Palette.ink)
+                .frame(width: 38, height: 38).background(Circle().fill(color))
+            Text(name).font(Typeface.semi(16)).foregroundStyle(Palette.text)
+            Spacer()
+            Pill(text: "Gets alerts", tint: Palette.ok)
+        }
+    }
+}
+
+/// Gear button that opens Settings as a sheet.
+struct SettingsButton: View {
+    @State private var open = false
+    var body: some View {
+        Button { open = true } label: {
+            Image(systemName: "gearshape.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.muted)
+                .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
+                .overlay(Circle().strokeBorder(.white.opacity(0.09)))
+        }
+        .accessibilityLabel("Settings")
+        .sheet(isPresented: $open) {
+            SettingsView(onClose: { open = false }).presentationBackground(Palette.bg)
+        }
+    }
+}
