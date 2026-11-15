@@ -16,3 +16,6 @@ build-dev/
 .logs/
 deploy/.instance
 deploy/.url
+.venv-tools/
+backend/cache/
+cache/

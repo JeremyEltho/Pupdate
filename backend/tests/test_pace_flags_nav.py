@@ -290,16 +290,31 @@ def test_maneuvers():
 
 
 def test_demo_route_next_turn_advances():
+    # Read the expected turns from the route itself, so rebuilding the routes (tools/build_routes.py) needs no test edits.
+    from app.routes import load_routes
+    route = load_routes()["library-to-tooker"]
+    steps = route["steps"]
+    assert len(steps) >= 3 and all(a["along_m"] < b["along_m"] for a, b in zip(steps, steps[1:]))
     v = c.post("/demo/start", json={}).json()
     t = v["next_turn"]
-    assert t["text"] == "Turn left onto Orange Mall" and t["maneuver"] == "left" and 40 < t["in_m"] < 70
+    assert t["text"] == steps[1]["text"] and abs(t["in_m"] - steps[1]["along_m"]) < 25
     w = walks.STATE["walks"][v["id"]]
-    w["sim"]["dist_m"] = 100
+    w["sim"]["dist_m"] = steps[2]["along_m"] - 10
     t = c.get(f"/walks/{v['id']}").json()["next_turn"]
-    assert t["text"] == "Bear right toward Rural Rd"
-    w["sim"]["dist_m"] = 1150
+    assert t["text"] == steps[2]["text"] and t["maneuver"] == nav.maneuver(steps[2]["text"])
+    w["sim"]["dist_m"] = route["length_m"] - 20
     t = c.get(f"/walks/{v['id']}").json()["next_turn"]
     assert t["maneuver"] == "arrive" and "Tooker House" in t["text"]
+
+
+def test_demo_routes_stay_on_paths():
+    """The demo routes come from the OSM walking graph: dense points, no long straight jumps through buildings."""
+    from app.geo import dist_m
+    from app.routes import load_routes
+    for rid in ("library-to-tooker", "mu-to-vista"):
+        r = load_routes()[rid]
+        assert r["source"] == "osm"
+        assert max(dist_m(a, b) for a, b in zip(r["points"], r["points"][1:])) < 150
 
 
 def test_planned_route_keeps_apple_steps():
