@@ -259,7 +259,7 @@ struct PlanView: View {
                 Spacer()
                 if let d = plan.destination {
                     TripSheet(name: d.name ?? "Destination", address: d.placemark.title, plan: plan, route: plan.route, routing: plan.routing,
-                              demo: $demo, starting: starting, buddyForm: store.user?.buddy.form ?? "sprout",
+                              demo: $demo, starting: starting, buddyForm: store.user?.buddy.form ?? "sprout", buddySpecies: store.user?.buddy.species,
                               buddyName: store.user?.buddy.name ?? "Levin") {
                         Task {
                             starting = true
@@ -291,6 +291,7 @@ private struct TripSheet: View {
     @Binding var demo: Bool
     let starting: Bool
     let buddyForm: String
+    var buddySpecies: String? = "chick"
     let buddyName: String
     let go: () -> Void
 
@@ -298,7 +299,7 @@ private struct TripSheet: View {
         VStack(alignment: .leading, spacing: 16) {
             Capsule().fill(Palette.line).frame(width: 40, height: 5).frame(maxWidth: .infinity)
             HStack(alignment: .top, spacing: 14) {
-                formSprite(buddyForm).image.resizable().scaledToFit().frame(width: 64, height: 64)
+                petSprite(buddySpecies, buddyForm).image.resizable().scaledToFit().frame(width: 64, height: 64)
                     .background(Circle().fill(Palette.gold.opacity(0.14)))
                 VStack(alignment: .leading, spacing: 3) {
                     Text(name).font(Typeface.display(26)).foregroundStyle(Palette.text).lineLimit(2)

@@ -2,7 +2,7 @@ import XCTest
 
 /// End-to-end: the real app, tapping through the demo, against the real backend on localhost:8100.
 final class WalkBuddyE2ETests: XCTestCase {
-    let server = "http://localhost:8100"
+    let server = "http://127.0.0.1:8100"
 
     override func setUp() { continueAfterFailure = false }
 
@@ -23,6 +23,15 @@ final class WalkBuddyE2ETests: XCTestCase {
         return app
     }
 
+    /// Scroll until a button exists and is hittable (SwiftUI drops far off-screen rows from the tree).
+    @discardableResult
+    private func reveal(_ app: XCUIApplication, _ label: String) -> XCUIElement {
+        let b = app.buttons[label].firstMatch
+        var tries = 0
+        while !(b.exists && b.isHittable) && tries < 8 { app.swipeUp(); tries += 1 }
+        return b
+    }
+
     private func text(_ app: XCUIApplication, _ s: String) -> XCUIElement {
         app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", s)).firstMatch
     }
@@ -33,7 +42,13 @@ final class WalkBuddyE2ETests: XCTestCase {
         api("/demo/start")
         let app = launch(role: "walker")
         XCTAssertTrue(text(app, "Still good?").waitForExistence(timeout: 30), "check-in never showed")
-        app.buttons["Your buddy"].firstMatch.tap()
+        // A tap must not count: petting needs a real rub across the buddy.
+        let buddy = app.buttons["Your buddy"].firstMatch
+        buddy.tap()
+        XCTAssertFalse(app.buttons["Awesome"].waitForExistence(timeout: 2), "a tap should not pet")
+        let from = buddy.coordinate(withNormalizedOffset: CGVector(dx: 0.12, dy: 0.5))
+        let to = buddy.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+        from.press(forDuration: 0.05, thenDragTo: to)
         XCTAssertTrue(app.buttons["Awesome"].waitForExistence(timeout: 8), "evolution overlay never showed")
         app.buttons["Awesome"].tap()
         XCTAssertTrue(text(app, "Walking together").waitForExistence(timeout: 8))
@@ -43,12 +58,17 @@ final class WalkBuddyE2ETests: XCTestCase {
     /// Friend runs the demo panel: start, stop answering, the alert takeover, close.
     func testFriendGetsAlertAndClosesIt() {
         let app = launch(role: "friend")
-        app.buttons["Reset"].firstMatch.tap()
-        app.buttons["Start walk"].firstMatch.tap()
+        reveal(app, "Reset").tap()
+        reveal(app, "Start walk").tap()
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
         XCTAssertTrue(text(app, "All good").waitForExistence(timeout: 10), "walk never appeared for the friend")
-        app.buttons["Stop answering"].firstMatch.tap()
+        reveal(app, "Stop answering").tap()
         XCTAssertTrue(text(app, "stopped answering").waitForExistence(timeout: 50), "alert takeover never showed")
-        XCTAssertTrue(app.buttons["Call Jordan"].exists)
+        let call = app.buttons["Call Jordan"]
+        if !call.waitForExistence(timeout: 5) {
+            print("BUTTONS ON SCREEN:", app.buttons.allElementsBoundByIndex.map { $0.label })
+        }
+        XCTAssertTrue(call.exists)
         app.buttons["I've reached Jordan, close alert"].tap()
         let gone = NSPredicate(format: "exists == false")
         expectation(for: gone, evaluatedWith: text(app, "stopped answering"))
@@ -58,8 +78,9 @@ final class WalkBuddyE2ETests: XCTestCase {
     /// Duress from the API reaches the friend with no call button.
     func testDuressHidesCallButton() {
         let app = launch(role: "friend")
-        app.buttons["Reset"].firstMatch.tap()
-        app.buttons["Start walk"].firstMatch.tap()
+        reveal(app, "Reset").tap()
+        reveal(app, "Start walk").tap()
+        app.swipeDown(); app.swipeDown(); app.swipeDown()
         XCTAssertTrue(text(app, "All good").waitForExistence(timeout: 10))
         // The walker's long-press calls /duress; trigger the same call directly.
         var walkId = ""
@@ -83,6 +104,8 @@ final class WalkBuddyE2ETests: XCTestCase {
         XCTAssertTrue(gear.waitForExistence(timeout: 10))
         gear.tap()
         XCTAssertTrue(app.staticTexts["Default route"].waitForExistence(timeout: 5))
+        sleep(6) // the home screen keeps polling underneath; Settings must stay open
+        XCTAssertTrue(app.staticTexts["Default route"].exists, "Settings closed by itself")
         XCTAssertTrue(app.switches.count >= 3)
         app.buttons["Close settings"].tap()
     }

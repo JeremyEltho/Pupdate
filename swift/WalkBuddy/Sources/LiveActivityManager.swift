@@ -55,13 +55,14 @@ final class LiveActivityManager {
 
     private func makeState(_ w: Walk, _ route: RouteInfo?) -> WalkActivityAttributes.ContentState {
         let st = w.engine.state
-        let copy = STATE_COPY[st] ?? STATE_COPY["calm"]!
+        let copy = stateCopy(st, name: w.buddy.name)
         var deadline: Date?
         if let left = w.engine.secondsLeft, st != "calm", st != "alert" {
             deadline = Date().addingTimeInterval(left / max(w.speed, 1))
         }
         let (progress, left) = routeProgress(route?.points, w.pos)
         return .init(state: st, title: copy.title, subtitle: copy.sub, deadline: deadline, form: w.buddy.form,
+                     species: w.buddy.species ?? "chick",
                      xp: w.buddy.xp, progress: progress, metersLeft: left)
     }
 }

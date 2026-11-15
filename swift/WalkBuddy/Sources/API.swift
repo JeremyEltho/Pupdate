@@ -1,6 +1,6 @@
 import Foundation
 
-struct BuddyInfo: Codable, Equatable { var name: String; var xp: Int; var form: String }
+struct BuddyInfo: Codable, Equatable { var name: String; var xp: Int; var form: String; var species: String? }
 
 struct EngineSnap: Codable, Equatable {
     var state: String
@@ -148,6 +148,12 @@ final class API {
         if let lat, let lng { b["lat"] = lat; b["lng"] = lng }
         if let accuracy { b["accuracy"] = accuracy }
         let _: [String: AnyCodable] = try await post("/walks/\(wid)/tick", b)
+    }
+    func customize(_ uid: String, name: String?, species: String?) async throws -> BuddyInfo {
+        var b: [String: Any] = [:]
+        if let name { b["name"] = name }
+        if let species { b["species"] = species }
+        return try await post("/users/\(uid)/buddy", b)
     }
     func end(_ wid: String) async throws -> Walk { try await post("/walks/\(wid)/end") }
     func demo(_ action: String, _ body: [String: Any] = [:]) async throws {

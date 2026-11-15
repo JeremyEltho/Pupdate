@@ -7,6 +7,7 @@ struct LiveMapView: View {
     var trail: [[Double]] = []
     var pos: [Double]?
     var form: String = "sprout"
+    var species: String? = "chick"
     var offRoute = false
     var alert = false
     var follow = true
@@ -38,7 +39,7 @@ struct LiveMapView: View {
                         Circle().fill(dot.opacity(0.28)).frame(width: pulse ? 64 : 38, height: pulse ? 64 : 38)
                         Circle().fill(.white).frame(width: 40, height: 40).shadow(color: .black.opacity(0.35), radius: 5, y: 3)
                         Circle().fill(dot).frame(width: 34, height: 34)
-                        formSprite(form).image.resizable().scaledToFit().frame(width: 28, height: 28)
+                        petSprite(species, form).image.resizable().scaledToFit().frame(width: 28, height: 28)
                     }
                 }
             }

@@ -42,6 +42,8 @@ enum Sprite: String {
     case question = "red_question_mark", exclaim = "red_exclamation_mark", sparkles, sweat = "sweat_droplets"
     case fire, gem = "gem_stone", shield, footprints, house, bell, trophy, star = "glowing_star", crown
     case compass, books, pin = "round_pushpin"
+    case dog = "pet_dog", cat = "pet_cat", bunny = "pet_rabbit", poodle = "pet_poodle", hedgehog = "pet_hedgehog"
+    case chipmunk = "pet_chipmunk", otter = "pet_otter", seal = "pet_seal", sloth = "pet_sloth", turtle = "pet_turtle", penguin
 
     var image: Image {
         if let ui = UIImage(named: rawValue) ?? Bundle.main.path(forResource: rawValue, ofType: "png").flatMap(UIImage.init(contentsOfFile:)) {
@@ -56,20 +58,59 @@ enum Mood { case calm, asking, worried, alarmed, happy }
 struct StateCopy { let title: String; let sub: String; let mood: Mood }
 
 let STATE_COPY: [String: StateCopy] = [
-    "calm": .init(title: "Walking together", sub: "Levin is keeping an eye out.", mood: .calm),
-    "checkin": .init(title: "Still good?", sub: "Tap Levin to say you're OK.", mood: .asking),
-    "nudge": .init(title: "Hey, you there?", sub: "Tap Levin now.", mood: .worried),
+    "calm": .init(title: "Walking together", sub: "{name} is keeping an eye out.", mood: .calm),
+    "checkin": .init(title: "Still good?", sub: "Pet {name} to say you're OK.", mood: .asking),
+    "nudge": .init(title: "Hey, you there?", sub: "Pet {name} now.", mood: .worried),
     "final": .init(title: "Last chance", sub: "Your friends get an alert soon.", mood: .worried),
-    "countdown": .init(title: "Alerting friends", sub: "Tap Levin to cancel.", mood: .alarmed),
-    "alert": .init(title: "Friends alerted", sub: "Tap Levin to tell them you're OK.", mood: .alarmed),
+    "countdown": .init(title: "Alerting friends", sub: "Pet {name} to cancel.", mood: .alarmed),
+    "alert": .init(title: "Friends alerted", sub: "Pet {name} to tell them you're OK.", mood: .alarmed),
 ]
 
-func formSprite(_ form: String) -> Sprite {
-    switch form { case "strider": return .chick; case "guardian": return .owl; default: return .hatchling }
+/// State copy with the buddy's real name filled in.
+func stateCopy(_ state: String, name: String) -> StateCopy {
+    let c = STATE_COPY[state] ?? STATE_COPY["calm"]!
+    return StateCopy(title: c.title, sub: c.sub.replacingOccurrences(of: "{name}", with: name), mood: c.mood)
 }
 
-func formName(_ form: String) -> String {
-    switch form { case "strider": return "Chick"; case "guardian": return "Night Owl"; default: return "Hatchling" }
+struct Species: Identifiable, Hashable {
+    let id: String
+    let name: String
+    let sprite: Sprite
+}
+
+/// Pets you can pick. The chick has its own evolution line (egg, chick, owl); every other
+/// pet keeps its look and earns gear instead: a star at Explorer, a crown at Guardian.
+let SPECIES: [Species] = [
+    .init(id: "chick", name: "Chick", sprite: .chick), .init(id: "dog", name: "Pup", sprite: .dog),
+    .init(id: "cat", name: "Kitty", sprite: .cat), .init(id: "bunny", name: "Bunny", sprite: .bunny),
+    .init(id: "poodle", name: "Poodle", sprite: .poodle), .init(id: "hedgehog", name: "Hedgehog", sprite: .hedgehog),
+    .init(id: "chipmunk", name: "Chipmunk", sprite: .chipmunk), .init(id: "otter", name: "Otter", sprite: .otter),
+    .init(id: "seal", name: "Seal", sprite: .seal), .init(id: "sloth", name: "Sloth", sprite: .sloth),
+    .init(id: "turtle", name: "Turtle", sprite: .turtle), .init(id: "penguin", name: "Penguin", sprite: .penguin),
+]
+
+func petSprite(_ species: String?, _ form: String) -> Sprite {
+    let sp = species ?? "chick"
+    if sp == "chick" {
+        switch form { case "strider": return .chick; case "guardian": return .owl; default: return .hatchling }
+    }
+    return SPECIES.first { $0.id == sp }?.sprite ?? .hatchling
+}
+
+/// Old call sites: chick line by form.
+func formSprite(_ form: String) -> Sprite { petSprite("chick", form) }
+
+func formName(_ form: String, species: String? = "chick") -> String {
+    if (species ?? "chick") == "chick" {
+        switch form { case "strider": return "Chick"; case "guardian": return "Night Owl"; default: return "Hatchling" }
+    }
+    switch form { case "strider": return "Explorer"; case "guardian": return "Guardian"; default: return "Baby" }
+}
+
+/// Gear a non-chick pet wears at each stage.
+func petGear(_ species: String?, _ form: String) -> Sprite? {
+    guard (species ?? "chick") != "chick" else { return nil }
+    switch form { case "strider": return .star; case "guardian": return .crown; default: return nil }
 }
 
 func level(_ xp: Int) -> Int { xp / 25 + 1 }

@@ -32,11 +32,15 @@ final class WalkerStore: ObservableObject {
     func refresh() async {
         do {
             let w = try await API.shared.active(me)
-            if w == nil { user = try await API.shared.user(me) }
+            if w == nil {
+                let u = try await API.shared.user(me)
+                if u != user { user = u }
+            }
             apply(w)
-            error = nil
+            if error != nil { error = nil }
         } catch {
-            self.error = error.localizedDescription
+            let msg = error.localizedDescription
+            if self.error != msg { self.error = msg }
         }
     }
 
@@ -48,7 +52,7 @@ final class WalkerStore: ObservableObject {
         let st = w?.engine.state
         if let st, st != lastState, st != "calm" { Haptics.warning() }
         lastState = st
-        walk = w
+        if w != walk { walk = w }
         // Every active walk (demo too) runs location so the app stays alive with the screen locked
         // and keeps the Live Activity current. Only real walks send GPS fixes to the server.
         if let w, w.status == "active" { location.start(walkId: w.id, sendFixes: !w.demo) } else { location.stop() }
@@ -89,6 +93,7 @@ final class WalkerStore: ObservableObject {
     func end() async {
         guard let w = walk else { return }
         if let v = try? await API.shared.end(w.id) { apply(v.status == "active" ? v : nil) }
+        user = try? await API.shared.user(me)
     }
 
     private func beHappy() {
@@ -130,8 +135,8 @@ final class FriendStore: ObservableObject {
                 routes = (try? await API.shared.routes()) ?? routes
             }
             let hadAlert = alert != nil
-            feed = f
-            error = nil
+            if f != feed { feed = f }
+            if error != nil { error = nil }
             if alert != nil && !hadAlert { startBuzz() }
             if alert == nil { buzz?.cancel(); buzz = nil }
         } catch {

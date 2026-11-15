@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var status: String?
     @State private var busy = false
     @State private var resetDone = false
+    @State private var customizing = false
 
     var body: some View {
         ZStack {
@@ -30,6 +31,14 @@ struct SettingsView: View {
                         .accessibilityLabel("Close settings")
                     }
                     .padding(.top, 8)
+
+                    if role != "friend" {
+                        group("Your buddy") {
+                            GameButton(title: "Change pet and name", kind: .ghost) { customizing = true }
+                            Text("Pick a pup, kitty, bunny, otter, sloth and more. Your friends see your pet too.")
+                                .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
+                        }
+                    }
 
                     group("Check-ins") {
                         VStack(alignment: .leading, spacing: 10) {
@@ -138,6 +147,9 @@ struct SettingsView: View {
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
         }
+        .sheet(isPresented: $customizing) {
+            CustomizeView { _ in customizing = false }.presentationBackground(Palette.bg)
+        }
     }
 
     private var divider: some View { Rectangle().fill(Palette.line).frame(height: 1) }
@@ -185,18 +197,28 @@ struct SettingsView: View {
     }
 }
 
-/// Gear button that opens Settings as a sheet.
+/// Gear button. The sheet itself lives on the screen (see ScreenPanel) so polling re-renders can't dismiss it.
 struct SettingsButton: View {
-    @State private var open = false
+    let action: () -> Void
     var body: some View {
-        Button { open = true } label: {
+        Button(action: action) {
             Image(systemName: "gearshape.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.muted)
                 .frame(width: 40, height: 40).background(Circle().fill(.white.opacity(0.07)))
                 .overlay(Circle().strokeBorder(.white.opacity(0.09)))
         }
         .accessibilityLabel("Settings")
-        .sheet(isPresented: $open) {
-            SettingsView(onClose: { open = false }).presentationBackground(Palette.bg)
+    }
+}
+
+/// Which full-screen panel a screen is showing. Exactly one presenter per screen, driven by one
+/// value, so a re-render can never make two presentation modifiers fight and dismiss each other.
+enum ScreenPanel: Identifiable, Equatable {
+    case settings, customize, plan(String?)
+    var id: String {
+        switch self {
+        case .settings: return "settings"
+        case .customize: return "customize"
+        case .plan(let p): return "plan-\(p ?? "")"
         }
     }
 }

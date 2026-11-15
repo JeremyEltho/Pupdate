@@ -3,8 +3,8 @@ import SwiftUI
 struct HomeView: View {
     @ObservedObject var store: WalkerStore
     let onExit: () -> Void
-    @State private var planning: String?? = nil // nil: closed; .some(nil): open; .some(name): open with a preset
     @State private var appear = false
+    @State private var panel: ScreenPanel?
 
     private var greeting: String {
         let h = Calendar.current.component(.hour, from: Date())
@@ -20,7 +20,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     TopBar(onBack: onExit) {
                         HStack(spacing: 8) {
-                            SettingsButton()
+                            SettingsButton { panel = .settings }
                             StatChip(sprite: .fire, value: "\(streak)")
                             StatChip(sprite: .gem, value: "\(buddy.xp)", tint: Palette.gold)
                         }
@@ -40,16 +40,29 @@ struct HomeView: View {
                             .fill(RadialGradient(colors: [Color(hex: 0x2a2f78), Color(hex: 0x141a44), Palette.card], center: .init(x: 0.5, y: 0.35), startRadius: 10, endRadius: 260))
                             .overlay(RoundedRectangle(cornerRadius: 32, style: .continuous).strokeBorder(Palette.lineTop))
                         VStack(spacing: 6) {
-                            BuddyView(form: buddy.form, mood: store.happy ? .happy : .calm, size: 250, onPet: { Task { await store.pet() } })
+                            BuddyView(form: buddy.form, species: buddy.species, mood: store.happy ? .happy : .calm, size: 250, onPet: { Task { await store.pet() } })
                                 .scaleEffect(appear ? 1 : 0.85).opacity(appear ? 1 : 0)
                             XPBar(buddy: buddy, next: buddy.xp < 100 ? 100 : buddy.xp < 250 ? 250 : nil)
                                 .padding(.horizontal, 20).padding(.bottom, 20)
                         }
                     }
+                    .overlay(alignment: .topTrailing) {
+                        Button { panel = .customize } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "paintbrush.pointed.fill").font(.system(size: 12, weight: .bold))
+                                Text("Customize").font(Typeface.bold(13))
+                            }
+                            .foregroundStyle(Palette.gold)
+                            .padding(.horizontal, 12).padding(.vertical, 8)
+                            .background(Capsule().fill(Palette.gold.opacity(0.14)))
+                            .overlay(Capsule().strokeBorder(Palette.gold.opacity(0.4)))
+                        }
+                        .padding(14)
+                    }
                     .shadow(color: .black.opacity(0.45), radius: 22, y: 12)
 
                     // Primary action: looks like a search field, opens the map.
-                    Button { planning = .some(nil) } label: {
+                    Button { panel = .plan(nil) } label: {
                         HStack(spacing: 14) {
                             Image(systemName: "magnifyingglass").font(.system(size: 20, weight: .heavy)).foregroundStyle(Palette.ink)
                                 .frame(width: 46, height: 46).background(Circle().fill(Palette.gold))
@@ -69,14 +82,14 @@ struct HomeView: View {
 
                     // Quick destinations.
                     HStack(spacing: 10) {
-                        QuickPlace(title: "Home", sub: "Tooker House", sprite: .house) { planning = .some("Tooker House") }
-                        QuickPlace(title: "Library", sub: "Hayden Library", sprite: .books) { planning = .some("Hayden Library") }
+                        QuickPlace(title: "Home", sub: "Tooker House", sprite: .house) { panel = .plan("Tooker House") }
+                        QuickPlace(title: "Library", sub: "Hayden Library", sprite: .books) { panel = .plan("Hayden Library") }
                     }
 
                     // Stats.
                     HStack(spacing: 10) {
                         StatCard(sprite: .fire, value: "\(streak)", label: "safe walks in a row")
-                        StatCard(sprite: .trophy, value: "Lv \(level(buddy.xp))", label: formName(buddy.form))
+                        StatCard(sprite: .trophy, value: "Lv \(level(buddy.xp))", label: formName(buddy.form, species: buddy.species))
                         StatCard(sprite: .shield, value: "2", label: "friends watching")
                     }
 
@@ -93,12 +106,23 @@ struct HomeView: View {
             #if targetEnvironment(simulator)
             // Simulator-only: -previewPlan "<place>" opens the map page for layout checks.
             if let i = CommandLine.arguments.firstIndex(of: "-previewPlan"), i + 1 < CommandLine.arguments.count {
-                planning = .some(CommandLine.arguments[i + 1])
+                panel = .plan(CommandLine.arguments[i + 1])
             }
             #endif
         }
-        .fullScreenCover(isPresented: Binding(get: { planning != nil }, set: { if !$0 { planning = nil } })) {
-            PlanView(store: store, onClose: { planning = nil }, preset: planning ?? nil)
+        .fullScreenCover(item: $panel) { p in
+            Group {
+                switch p {
+                case .settings: SettingsView(onClose: { panel = nil })
+                case .customize:
+                    CustomizeView { saved in
+                        panel = nil
+                        if saved != nil { Task { await store.refresh() } }
+                    }
+                case .plan(let preset):
+                    PlanView(store: store, onClose: { panel = nil }, preset: preset)
+                }
+            }
         }
     }
 }
@@ -156,13 +180,14 @@ private struct EvolutionTrack: View {
                     ForEach(Array(stages.enumerated()), id: \.offset) { i, st in
                         let reached = buddy.xp >= st.xp
                         VStack(spacing: 6) {
-                            formSprite(st.form).image.resizable().scaledToFit().frame(width: 62, height: 62)
+                            petSprite(buddy.species, st.form).image.resizable().scaledToFit().frame(width: 62, height: 62)
+                                .overlay(alignment: .topTrailing) { if let g = petGear(buddy.species, st.form) { g.image.resizable().scaledToFit().frame(width: 24).offset(x: 6, y: -6) } }
                                 .colorMultiply(reached ? .white : .black)
                                 .opacity(reached ? 1 : 0.55)
                                 .padding(8)
                                 .background(Circle().fill(reached ? Palette.gold.opacity(0.16) : Color(hex: 0x0f1433)))
                                 .overlay(Circle().strokeBorder(buddy.form == st.form ? Palette.gold : .clear, lineWidth: 2))
-                            Text(formName(st.form)).font(Typeface.bold(13)).foregroundStyle(reached ? Palette.text : Palette.muted)
+                            Text(formName(st.form, species: buddy.species)).font(Typeface.bold(13)).foregroundStyle(reached ? Palette.text : Palette.muted)
                             Text(reached ? "Unlocked" : "\(st.xp) XP").font(Typeface.body(11)).foregroundStyle(Palette.muted)
                         }
                         .frame(maxWidth: .infinity)

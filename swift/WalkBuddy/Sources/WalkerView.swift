@@ -26,8 +26,8 @@ struct WalkScreen: View {
     var body: some View {
         let walk = store.walk
         let state = walk?.engine.state ?? "calm"
-        let copy = STATE_COPY[state] ?? STATE_COPY["calm"]!
         let buddy = walk?.buddy ?? store.user?.buddy
+        let copy = stateCopy(state, name: buddy?.name ?? "Levin")
         let mood: Mood = store.happy ? .happy : (walk == nil ? .calm : copy.mood)
         let urgent = ["final", "countdown", "alert"].contains(state)
         let route = store.routes.first { $0.id == walk?.routeId }
@@ -90,7 +90,7 @@ struct WalkScreen: View {
                     }
 
                     if let b = buddy {
-                        BuddyView(form: b.form, mood: mood, size: 260,
+                        BuddyView(form: b.form, species: b.species, mood: mood, size: 260,
                                   onPet: { Task { await store.pet() } },
                                   onDuress: { Task { await store.duress() } })
                             .padding(.top, -10)
@@ -104,7 +104,7 @@ struct WalkScreen: View {
                                 EscalationLadder(state: state)
                                 HStack(spacing: 8) {
                                     Image(systemName: "hand.tap.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.muted)
-                                    Text("Tap \(w.buddy.name) to answer. Hold for 2 seconds to send a silent alert.")
+                                    Text("Pet \(w.buddy.name) by rubbing your finger across. Hold still for 2 seconds to send a silent alert.")
                                         .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
                                 }
                             }
@@ -112,7 +112,7 @@ struct WalkScreen: View {
                         SafetyStatusRow(walk: w)
                         GameCard(padding: 0) {
                             VStack(spacing: 0) {
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, offRoute: w.offRoute, alert: state == "alert")
+                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: state == "alert")
                                     .frame(height: 280)
                                 HStack {
                                     Sprite.pin.image.resizable().scaledToFit().frame(width: 22, height: 22)
@@ -128,17 +128,15 @@ struct WalkScreen: View {
                                 .padding(14)
                             }
                         }
-                        if !w.demo {
-                            GameButton(title: "I'm home, end walk", kind: .ghost) { Task { await store.end() } }
-                        }
-                        GameCard { WalkLog(events: w.events) }
+                        GameButton(title: w.demo ? "End demo walk" : "I'm home, end walk", kind: .ghost) { Task { await store.end() } }
+                        GameCard { WalkLog(events: w.events, species: w.buddy.species) }
                     }
                 }
                 .padding(.horizontal, 20).padding(.bottom, 40)
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
             if let evo = store.evolvedTo, let b = buddy {
-                EvolutionOverlay(name: b.name, form: evo) { withAnimation { store.evolvedTo = nil } }
+                EvolutionOverlay(name: b.name, form: evo, species: b.species) { withAnimation { store.evolvedTo = nil } }
                     .transition(.opacity)
             }
         }
@@ -160,6 +158,7 @@ struct BubbleTail: Shape {
 struct EvolutionOverlay: View {
     let name: String
     let form: String
+    var species: String? = "chick"
     let done: () -> Void
     @State private var show = false
     @State private var spin = false
@@ -177,11 +176,11 @@ struct EvolutionOverlay: View {
                 Text("Evolution!").font(Typeface.display(20)).foregroundStyle(Palette.gold).textCase(nil)
                 ZStack {
                     Sprite.sparkles.image.resizable().scaledToFit().frame(width: 260).opacity(show ? 0.9 : 0)
-                    formSprite(form).image.resizable().scaledToFit().frame(width: 200)
+                    petSprite(species, form).image.resizable().scaledToFit().frame(width: 200)
                         .scaleEffect(show ? 1 : 0.2)
                         .shadow(color: Palette.gold.opacity(0.7), radius: 30)
                 }
-                Text("\(name) became a \(formName(form))").font(Typeface.display(32)).foregroundStyle(.white)
+                Text("\(name) became a \(formName(form, species: species))").font(Typeface.display(32)).foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                 Text("Every walk you answer makes \(name) stronger.").font(Typeface.body(16)).foregroundStyle(Palette.muted)
                 GameButton(title: "Awesome", action: done).frame(width: 220).padding(.top, 8)

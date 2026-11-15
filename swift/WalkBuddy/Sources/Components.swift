@@ -154,7 +154,7 @@ struct XPBar: View {
         VStack(spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 Text(buddy.name).font(Typeface.display(22)).foregroundStyle(Palette.text)
-                Text(formName(buddy.form)).font(Typeface.semi(15)).foregroundStyle(Palette.muted)
+                Text(formName(buddy.form, species: buddy.species)).font(Typeface.semi(15)).foregroundStyle(Palette.muted)
                 Spacer()
                 Text(next.map { "\(buddy.xp) / \($0) XP" } ?? "\(buddy.xp) XP")
                     .font(Typeface.bold(14)).foregroundStyle(Palette.muted).monospacedDigit()

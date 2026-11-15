@@ -72,6 +72,7 @@ struct SafetyStatusRow: View {
 struct WalkLog: View {
     let events: [WalkEvent]
     var title = "Walk log"
+    var species: String? = "chick"
     var body: some View {
         let rows = events.compactMap(describe).reversed().prefix(6)
         VStack(alignment: .leading, spacing: 12) {
@@ -111,7 +112,7 @@ struct WalkLog: View {
             return Row(icon: "questionmark", tint: Palette.sky, title: "Levin checked in", sub: why, time: t)
         case "pet_ok":
             if let evo = e.evolved {
-                return Row(icon: "sparkles", tint: Palette.gold, title: "Evolved into \(formName(evo))", sub: "+\(e.xp ?? 0) XP for answering", time: t)
+                return Row(icon: "sparkles", tint: Palette.gold, title: "Evolved into \(formName(evo, species: species))", sub: "+\(e.xp ?? 0) XP for answering", time: t)
             }
             if e.afterAlert == true { return Row(icon: "hand.tap.fill", tint: Palette.warn, title: "Petted after the alert", sub: "Friends still check in", time: t) }
             if (e.xp ?? 0) > 0 { return Row(icon: "hand.tap.fill", tint: Palette.ok, title: "Answered on time", sub: "+\(e.xp!) XP", time: t) }
@@ -149,7 +150,7 @@ struct SafetyPowers: View {
     let buddyName: String
     private var items: [(Sprite, String, String)] {
         [
-            (.question, "Check-ins", "\(buddyName) asks \"Still good?\" on your schedule, every 10 minutes by default. Tap to answer and earn XP."),
+            (.question, "Check-ins", "\(buddyName) asks \"Still good?\" on your schedule, every 10 minutes by default. Pet it to answer and earn XP."),
             (.bell, "Escalation", "No answer? A nudge, a last chance, a countdown, then your friends get an alert. About 2 minutes."),
             (.shield, "Silent alert", "Hold \(buddyName) for 2 seconds. Your screen stays calm while friends get a quiet alert."),
             (.compass, "Route and speed", "Leaving your route, stopping a long time, or moving at car speed triggers a check-in."),

@@ -19,6 +19,7 @@ struct FriendView: View {
     let onExit: () -> Void
     @StateObject private var store = FriendStore()
     @State private var routeId = "library-to-tooker"
+    @State private var panel: ScreenPanel?
 
     var body: some View {
         let walk = store.feed?.walks.first
@@ -29,13 +30,13 @@ struct FriendView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     TopBar(onBack: onExit) {
                         HStack(spacing: 8) {
-                            SettingsButton()
+                            SettingsButton { panel = .settings }
                             StatChip(sprite: .shield, value: "Guardian")
                         }
                     }
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Hi Maya").font(Typeface.display(34)).foregroundStyle(Palette.text)
-                        Text("You'll hear from Levin if Jordan stops answering.").font(Typeface.body(16)).foregroundStyle(Palette.muted)
+                        Text("You'll hear from \(walk?.buddy.name ?? "Levin") if Jordan stops answering.").font(Typeface.body(16)).foregroundStyle(Palette.muted)
                     }
                     if let err = store.error, store.feed == nil { Banner(text: "Can't reach the server: \(err)", alert: true) }
 
@@ -44,7 +45,7 @@ struct FriendView: View {
                             SectionTitle(text: "Walking now")
                             if let w = walk {
                                 HStack(spacing: 12) {
-                                    BuddyView(form: w.buddy.form, mood: STATE_COPY[w.engine.state]?.mood ?? .calm, size: 76, pedestal: false)
+                                    BuddyView(form: w.buddy.form, species: w.buddy.species, mood: STATE_COPY[w.engine.state]?.mood ?? .calm, size: 76, pedestal: false)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(w.walkerName).font(Typeface.display(24)).foregroundStyle(Palette.text)
                                         Text(route.map { "To \($0.to)" } ?? "Walking").font(Typeface.body(14)).foregroundStyle(Palette.muted).lineLimit(1)
@@ -52,7 +53,7 @@ struct FriendView: View {
                                     Spacer()
                                     Pill(text: friendState(w.engine.state, w.walkerName), tint: tone(w.engine.state)).fixedSize()
                                 }
-                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, offRoute: w.offRoute, alert: w.engine.state == "alert")
+                                LiveMapView(route: route?.points, trail: w.trail, pos: w.pos, form: w.buddy.form, species: w.buddy.species, offRoute: w.offRoute, alert: w.engine.state == "alert")
                                     .frame(height: 240)
                                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 EscalationLadder(state: w.engine.state)
@@ -66,7 +67,7 @@ struct FriendView: View {
                     }
 
                     if let w = walk {
-                        GameCard { WalkLog(events: w.events, title: "\(w.walkerName)'s walk log") }
+                        GameCard { WalkLog(events: w.events, title: "\(w.walkerName)'s walk log", species: w.buddy.species) }
                     }
 
                     GameCard {
@@ -96,6 +97,10 @@ struct FriendView: View {
                                 GameButton(title: "Stop answering", kind: .danger, busy: store.busy == "stop") { Task { await store.act("stop") { try await API.shared.demo("stop-answering") } } }
                                     .disabled(walk == nil)
                             }
+                            GameButton(title: "End walk", kind: .ghost, busy: store.busy == "end") {
+                                Task { await store.act("end") { if let w = walk { _ = try await API.shared.end(w.id) } } }
+                            }
+                            .disabled(walk == nil)
                             HStack(spacing: 10) {
                                 GameButton(title: "Off route", kind: .ghost, busy: store.busy == "dev") { Task { await store.act("dev") { try await API.shared.demo("deviate") } } }
                                     .disabled(walk == nil)
@@ -131,7 +136,7 @@ struct FriendView: View {
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
             }
             if let a = store.alert {
-                TakeoverView(alert: a, closing: store.busy == "close") { Task { await store.close(a) } }
+                TakeoverView(alert: a, alertSpecies: store.feed?.walks.first?.buddy.species, closing: store.busy == "close") { Task { await store.close(a) } }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .zIndex(2)
             }
@@ -139,6 +144,9 @@ struct FriendView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.85), value: store.alert?.id)
         .onAppear { store.start() }
         .onDisappear { store.stop() }
+        .fullScreenCover(item: $panel) { _ in
+            SettingsView(onClose: { panel = nil })
+        }
     }
 
     private func friendState(_ s: String, _ name: String) -> String {
@@ -158,6 +166,7 @@ struct FriendView: View {
 
 struct TakeoverView: View {
     let alert: AlertInfo
+    var alertSpecies: String? = "chick"
     let closing: Bool
     let onClose: () -> Void
     @State private var pulse = false
@@ -183,7 +192,7 @@ struct TakeoverView: View {
                     HStack {
                         Spacer()
                         // The duress screen stays calmer on purpose: it may be read over a shoulder.
-                        BuddyView(form: "strider", mood: duress ? .worried : .alarmed, size: 170, pedestal: !duress)
+                        BuddyView(form: "strider", species: alertSpecies, mood: duress ? .worried : .alarmed, size: 170, pedestal: !duress)
                         Spacer()
                     }
                     Text(k.title(first)).font(Typeface.display(36)).foregroundStyle(.white)
@@ -208,16 +217,21 @@ struct TakeoverView: View {
                             .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(0.1)))
                         }
                     }
-                    Spacer(minLength: 20)
-                    VStack(spacing: 10) {
-                        if !duress, let url = URL(string: "tel:\(alert.walkerPhone)") {
-                            GameButton(title: "Call \(first)", kind: .ok) { UIApplication.shared.open(url) }
-                        }
-                        GameButton(title: "I've reached \(first), close alert", kind: .ghost, busy: closing, action: onClose)
-                    }
                 }
                 .padding(22)
                 .frame(maxWidth: 480).frame(maxWidth: .infinity)
+            }
+            // The actions are pinned to the bottom so they are always on screen.
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 10) {
+                    if !duress, let url = URL(string: "tel:\(alert.walkerPhone)") {
+                        GameButton(title: "Call \(first)", kind: .ok) { UIApplication.shared.open(url) }
+                    }
+                    GameButton(title: "I've reached \(first), close alert", kind: .ghost, busy: closing, action: onClose)
+                }
+                .padding(.horizontal, 22).padding(.top, 12).padding(.bottom, 6)
+                .frame(maxWidth: 480).frame(maxWidth: .infinity)
+                .background(LinearGradient(colors: [base.opacity(0), base, base], startPoint: .top, endPoint: .bottom))
             }
         }
         .onAppear { pulse = true }

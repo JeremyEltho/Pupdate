@@ -2,7 +2,7 @@ import XCTest
 
 /// Not a pass/fail test: scrolls each screen and attaches screenshots for design review.
 final class ScreenshotTour: XCTestCase {
-    let server = "http://localhost:8100"
+    let server = "http://127.0.0.1:8100"
 
     private func save(_ name: String) {
         let a = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -17,6 +17,17 @@ final class ScreenshotTour: XCTestCase {
         let e = expectation(description: path)
         URLSession.shared.dataTask(with: r) { _, _, _ in e.fulfill() }.resume()
         wait(for: [e], timeout: 10)
+    }
+
+    func testCustomizeShot() {
+        post("/demo/reset")
+        let app = XCUIApplication()
+        app.launchArguments = ["-wb.role", "walker", "-wb.server", server]
+        app.launch()
+        let c = app.buttons["Customize"].firstMatch
+        _ = c.waitForExistence(timeout: 10); c.tap(); sleep(2)
+        app.buttons["Otter"].firstMatch.tap(); sleep(1); save("c1-otter")
+        app.swipeUp(); sleep(1); save("c2-grid")
     }
 
     func testTour() {
