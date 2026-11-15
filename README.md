@@ -1,4 +1,8 @@
-# WalkBuddy
+# Pupdate
+
+Your pup walks you home and keeps your friends updated. (Formerly WalkBuddy. The code, Xcode targets, bundle IDs and
+server paths still use the internal name `walkbuddy`; see CLAUDE.md.)
+
 
 Raise a little buddy by walking home safe. Pick your pet (pup, kitty, bunny, otter, sloth and more), name it, and while you walk it checks in now and then. You answer by petting it: rub your finger across it, because a tap doesn't count. If you stop answering, it escalates, and then your friends get a full-screen alert with your last location.
 

@@ -1,4 +1,4 @@
-"""WalkBuddy API."""
+"""Pupdate API (the code and server still use the internal name walkbuddy)."""
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -40,7 +40,7 @@ async def lifespan(app):
     demo.stop_loop()
 
 
-app = FastAPI(title="WalkBuddy", lifespan=lifespan)
+app = FastAPI(title="Pupdate", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -509,4 +509,4 @@ def web_app(path: str = ""):
 
 @app.get("/")
 def root():
-    return RedirectResponse("/app/") if WEB.exists() else {"ok": True, "app": "WalkBuddy API"}
+    return RedirectResponse("/app/") if WEB.exists() else {"ok": True, "app": "Pupdate API"}

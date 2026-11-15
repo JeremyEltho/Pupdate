@@ -1,5 +1,5 @@
 #!/bin/bash
-# Creates a Vultr server running the WalkBuddy backend with MongoDB persistence and HTTPS.
+# Creates a Vultr server running the Pupdate backend with MongoDB persistence and HTTPS.
 # Needs VULTR_API_KEY and MONGODB_URI in walkbuddy/.env (git-ignored).
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/.." && pwd)"

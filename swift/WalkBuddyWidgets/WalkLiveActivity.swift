@@ -124,7 +124,7 @@ struct WalkLiveActivity: Widget {
             .padding(16)
             .activityBackgroundTint(night.opacity(0.92))
             .activitySystemActionForegroundColor(.white)
-            .widgetURL(URL(string: "walkbuddy://walk"))
+            .widgetURL(URL(string: "pupdate://walk"))
         } dynamicIsland: { ctx in
             let s = ctx.state
             return DynamicIsland {

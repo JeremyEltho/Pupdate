@@ -20,7 +20,7 @@ chmod 600 /etc/walkbuddy.env
 
 cat > /etc/systemd/system/walkbuddy.service <<UNIT
 [Unit]
-Description=WalkBuddy backend
+Description=Pupdate backend
 After=network-online.target
 [Service]
 WorkingDirectory=/opt/walkbuddy/backend

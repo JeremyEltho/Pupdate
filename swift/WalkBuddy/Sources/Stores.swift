@@ -226,8 +226,8 @@ final class FriendStore: ObservableObject {
             if let a = alert, !hadAlert {
                 startBuzz()
                 Feedback.alertSound()
-                Feedback.speak(a.summary ?? "WalkBuddy alert for \(a.walkerName).")
-                Notify.post("wb.alert", title: "WalkBuddy alert for \(a.walkerName)", body: a.summary ?? "Open WalkBuddy to see where they are.")
+                Feedback.speak(a.summary ?? "Pupdate alert for \(a.walkerName).")
+                Notify.post("wb.alert", title: "Pupdate alert for \(a.walkerName)", body: a.summary ?? "Open Pupdate to see where they are.")
             }
             if alert == nil { buzz?.cancel(); buzz = nil; if hadAlert { Notify.clear("wb.alert") } }
         } catch {

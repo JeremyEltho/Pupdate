@@ -1,4 +1,4 @@
-"""WalkBuddy walk engine: a pure state machine with injected time.
+"""Pupdate walk engine: a pure state machine with injected time.
 
 Times are engine seconds. Real walks use wall clock seconds; demo walks use a
 sim clock that runs faster (see demo.py). The engine never pets by itself.

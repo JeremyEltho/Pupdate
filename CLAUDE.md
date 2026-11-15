@@ -1,4 +1,11 @@
-# WalkBuddy: notes for the next agent
+# Pupdate: notes for the next agent
+
+**Naming.** The product is called **Pupdate** (renamed from WalkBuddy). Everything people see says Pupdate: the Home Screen
+and widget names, permission prompts, in-app titles, notifications, the API title and the README. Internal identifiers
+deliberately keep the old name, because renaming them breaks things that already exist: Xcode project, targets, folders and
+the scheme (`WalkBuddy`), bundle IDs (`com.walkbuddy.app.*`, a change installs a second app and needs new provisioning),
+server paths and the systemd unit (`/opt/walkbuddy`, `walkbuddy`), the MongoDB database `walkbuddy` (holds the live state),
+UserDefaults keys (`wb.*`), and the GitHub repo. Use "Pupdate" in any new user-facing text. The URL scheme is `pupdate://`.
 
 Read `README.md` first for what the product does. This file covers how the code is laid out, how to change it without breaking the demo, and what is still open.
 

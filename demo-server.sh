@@ -1,5 +1,5 @@
 #!/bin/bash
-# Keeps the WalkBuddy backend and its permanent public link alive for the demo.
+# Keeps the Pupdate backend and its permanent public link alive for the demo.
 # - Prevents the Mac from sleeping (keep it plugged in; the lid can stay open on a table).
 # - Restarts the backend or ngrok if either one exits.
 # Usage: ./demo-server.sh            (Ctrl-C to stop everything)
@@ -25,6 +25,6 @@ pkill -f "ngrok http" 2>/dev/null
 sleep 1
 keep backend .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8100 &
 keep tunnel ngrok http 8100 --url="$URL" --log stdout &
-echo "WalkBuddy is live at https://$URL  (logs in $LOGS). Ctrl-C to stop."
+echo "Pupdate is live at https://$URL  (logs in $LOGS). Ctrl-C to stop."
 trap 'pkill -P $$; pkill -f "ngrok http"; pkill -f "port 8100"; exit 0' INT TERM
 wait

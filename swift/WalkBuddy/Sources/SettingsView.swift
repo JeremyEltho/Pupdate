@@ -264,7 +264,7 @@ struct SettingsView: View {
                     .font(Typeface.body(14)).foregroundStyle(Palette.text)
 
                     group("About") {
-                        Text("WalkBuddy, built at SunHacks 2026.").font(Typeface.semi(15)).foregroundStyle(Palette.text)
+                        Text("Pupdate, built at SunHacks 2026.").font(Typeface.semi(15)).foregroundStyle(Palette.text)
                         Text("3D sprites: Microsoft Fluent Emoji (MIT). Fonts: Bricolage Grotesque and Figtree (SIL OFL). Maps and directions: Apple MapKit.")
                             .font(Typeface.body(12.5)).foregroundStyle(Palette.muted)
                     }

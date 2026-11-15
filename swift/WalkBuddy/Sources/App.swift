@@ -37,12 +37,12 @@ struct RoleView: View {
                 VStack(spacing: 22) {
                     VStack(spacing: 8) {
                         HStack(alignment: .bottom, spacing: -18) {
-                            Sprite.hatchling.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
-                            BuddyView(form: "strider", mood: .happy, size: 170, pedestal: true)
-                            Sprite.owl.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
+                            Sprite.poodle.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
+                            BuddyView(form: "strider", species: "dog", mood: .happy, size: 170, pedestal: true)
+                            Sprite.dog.image.resizable().scaledToFit().frame(width: 84).opacity(0.85)
                         }
-                        Text("WalkBuddy").font(Typeface.display(44)).foregroundStyle(Palette.text)
-                        Text("Raise a little buddy by walking home safe. If you stop answering it, your friends find out.")
+                        Text("Pupdate").font(Typeface.display(44)).foregroundStyle(Palette.text)
+                        Text("Your pup walks you home and keeps your friends updated. If you stop answering it, they find out.")
                             .font(Typeface.body(16)).foregroundStyle(Palette.muted).multilineTextAlignment(.center)
                             .padding(.horizontal, 12)
                     }

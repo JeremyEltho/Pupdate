@@ -31,23 +31,23 @@ targets:
     info:
       path: WalkBuddy/Info.plist
       properties:
-        CFBundleDisplayName: WalkBuddy
+        CFBundleDisplayName: Pupdate
         UILaunchScreen:
           UIColorName: ""
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIUserInterfaceStyle: Dark
         NSSupportsLiveActivities: true
         UIBackgroundModes: [location]
-        NSLocationAlwaysAndWhenInUseUsageDescription: During a walk WalkBuddy keeps sharing your location with the screen locked so your friends can find you.
+        NSLocationAlwaysAndWhenInUseUsageDescription: During a walk Pupdate keeps sharing your location with the screen locked so your friends can find you.
         CFBundleURLTypes:
-          - CFBundleURLSchemes: [walkbuddy]
+          - CFBundleURLSchemes: [pupdate]
         UIAppFonts:
           - BricolageGrotesque_800ExtraBold.ttf
           - BricolageGrotesque_700Bold.ttf
           - Figtree_500Medium.ttf
           - Figtree_600SemiBold.ttf
           - Figtree_700Bold.ttf
-        NSLocationWhenInUseUsageDescription: WalkBuddy shares your location during a walk so your friends can find you if you stop answering.
+        NSLocationWhenInUseUsageDescription: Pupdate shares your location during a walk so your friends can find you if you stop answering.
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         WBDefaultServer: https://45-76-67-21.sslip.io
@@ -67,7 +67,7 @@ targets:
     info:
       path: WalkBuddyWidgets/Info.plist
       properties:
-        CFBundleDisplayName: WalkBuddy
+        CFBundleDisplayName: Pupdate
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
   WalkBuddyUITests:

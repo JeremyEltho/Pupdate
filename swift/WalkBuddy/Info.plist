@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>WalkBuddy</string>
+	<string>Pupdate</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -23,7 +23,7 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>walkbuddy</string>
+				<string>pupdate</string>
 			</array>
 		</dict>
 	</array>
@@ -35,9 +35,9 @@
 		<true/>
 	</dict>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>During a walk WalkBuddy keeps sharing your location with the screen locked so your friends can find you.</string>
+	<string>During a walk Pupdate keeps sharing your location with the screen locked so your friends can find you.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>WalkBuddy shares your location during a walk so your friends can find you if you stop answering.</string>
+	<string>Pupdate shares your location during a walk so your friends can find you if you stop answering.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UIAppFonts</key>
