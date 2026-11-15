@@ -60,14 +60,28 @@ class Clock:
 
 
 def reset():
-    """Reseed XP, streaks, walks and alerts. Keeps each buddy's chosen name and species."""
+    """Reseed XP, streaks, walks and alerts. Keeps each buddy's chosen name and species,
+    and keeps Jordan's circle (friends added or removed in Settings)."""
     with LOCK:
+        old = STATE.get("users", {})
         keep = {uid: {k: u["buddy"][k] for k in ("name", "species") if k in u["buddy"]}
-                for uid, u in STATE.get("users", {}).items()}
+                for uid, u in old.items()}
+        circle = {uid for uid, u in old.items() if "jordan" in u.get("friends", [])} if old else None
+        added = {uid: u for uid, u in old.items() if u.get("added")}
         STATE["users"] = copy.deepcopy(SEED_USERS)
+        for uid, u in added.items():
+            STATE["users"][uid] = copy.deepcopy(u)
         for uid, extra in keep.items():
             if uid in STATE["users"]:
                 STATE["users"][uid]["buddy"].update(extra)
+        if circle is not None:
+            for uid, u in STATE["users"].items():
+                if uid == "jordan":
+                    continue
+                if uid in circle and "jordan" not in u["friends"]:
+                    u["friends"].append("jordan")
+                if uid not in circle and "jordan" in u["friends"]:
+                    u["friends"].remove("jordan")
         STATE["walks"] = {}
         STATE["alerts"] = {}
         STATE.setdefault("seq", 0)
@@ -101,6 +115,46 @@ def customize_buddy(uid, name=None, species=None):
             b["species"] = species
         u["buddy"] = b
         return b
+
+
+def circle(walker_id):
+    """People who get this walker's alerts."""
+    with LOCK:
+        user(walker_id)
+        return [{"id": u["id"], "name": u["name"], "phone": u["phone"]}
+                for u in STATE["users"].values() if walker_id in u.get("friends", []) and u["id"] != walker_id]
+
+
+def add_friend(walker_id, name, phone=""):
+    import re as _re
+    with LOCK:
+        user(walker_id)
+        name = (name or "").strip()[:24]
+        if not name:
+            raise ValueError("name can't be empty")
+        phone = _re.sub(r"[^0-9+]", "", phone or "")[:16]
+        base = _re.sub(r"[^a-z0-9]", "", name.lower()) or "friend"
+        uid, n = base, 2
+        while uid in STATE["users"] and walker_id in STATE["users"][uid].get("friends", []):
+            uid, n = f"{base}{n}", n + 1
+        if uid in STATE["users"]:  # an existing person (like Maya) rejoining the circle
+            u = STATE["users"][uid]
+            u["friends"].append(walker_id)
+            if phone:
+                u["phone"] = phone
+        else:
+            STATE["users"][uid] = {"id": uid, "name": name, "phone": phone, "friends": [walker_id], "streak": 0,
+                                   "added": True, "buddy": {"name": "Pal", "xp": 0, "form": "sprout", "species": "cat"}}
+        return {"id": uid, "name": STATE["users"][uid]["name"], "phone": STATE["users"][uid]["phone"]}
+
+
+def remove_friend(walker_id, friend_id):
+    with LOCK:
+        u = user(friend_id)
+        if walker_id not in u.get("friends", []):
+            raise KeyError(friend_id)
+        u["friends"].remove(walker_id)
+        return {"ok": True}
 
 
 def friends_watching(walker_id):
@@ -145,6 +199,35 @@ def _log(w, ev):
     return ev
 
 
+def place_of(w):
+    """Plain-language position on the route, e.g. 'about halfway from Hayden Library to Tooker House'."""
+    route = load_routes().get(w["route_id"]) if w["route_id"] else None
+    pos = w["engine"].last_pos
+    if not route or not pos:
+        return "on their walk"
+    from .geo import dist_m
+    pts = route["points"]
+    total = sum(dist_m(pts[i], pts[i + 1]) for i in range(len(pts) - 1)) or 1
+    best_i = min(range(len(pts)), key=lambda i: dist_m(pts[i], pos))
+    done = sum(dist_m(pts[i], pts[i + 1]) for i in range(best_i))
+    f = done / total
+    where = "just after leaving" if f < 0.15 else "almost at" if f > 0.85 else \
+        "about halfway between" if 0.35 < f < 0.65 else "partway between"
+    if where in ("just after leaving",):
+        return f"{where} {route['from']}"
+    if where == "almost at":
+        return f"{where} {route['to']}"
+    return f"{where} {route['from']} and {route['to']}"
+
+
+def minutes_in(w):
+    try:
+        start = datetime.fromisoformat(w["started_at"]).timestamp()
+        return max(0, round((time.time() - start) / 60))
+    except Exception:
+        return 0
+
+
 def handle(w, events):
     """Apply engine events to the store (XP, alerts). Caller holds LOCK."""
     out = []
@@ -156,11 +239,20 @@ def handle(w, events):
                 u["buddy"], evolved = buddy_mod.add_xp(u["buddy"], ev["xp"])
                 if evolved:
                     ev = dict(ev, evolved=evolved)
+            w.pop("buddy_line", None)
             if ev.get("after_alert"):
                 for a in open_alerts(w["id"]):
                     a["petted_after"] = iso()
         elif t == "alert_raised":
             open_alert(w, ev["kind"])
+        elif t == "checkin_started":
+            from . import buddy_ai
+            u = user(w["walker_id"])
+            b = u["buddy"]
+            w["buddy_line"] = buddy_ai.fallback_line(ev.get("reason"), u["name"])
+            w["buddy_line_source"] = "fallback"
+            buddy_ai.fill_async(w, "buddy_line", buddy_ai.checkin_prompt(
+                b["name"], b.get("species", "chick"), u["name"], ev.get("reason"), place_of(w)), 80)
         elif t == "contact_restored":
             for a in open_alerts(w["id"]):
                 if a["kind"] == "lost_contact":
@@ -197,7 +289,20 @@ def open_alert(w, kind):
         "pos": w["engine"].last_pos, "route_id": w["route_id"], "closed_by": None,
         "petted_after": None, "contact_restored": None, "notify": friends_watching(walker["id"]),
     }
+    from . import buddy_ai
+    place = place_of(w)
+    mins = minutes_in(w)
+    last = next((e.get("real_at") for e in reversed(w["events"]) if e["type"] == "pet_ok"), None)
+    last_txt = "none yet" if not last else last[11:16] + " UTC"
+    first = walker["name"].split(" ")[0]
+    a["summary"] = {
+        "no_answer": f"{first} stopped answering {place}, {mins} min into the walk. Call them first.",
+        "duress": f"{first} sent a silent alert {place}. Don't call. Text, or go there with someone.",
+        "lost_contact": f"{first}'s phone went quiet {place}, {mins} min into the walk. Try calling.",
+    }.get(kind, f"Alert for {first} {place}.")
+    a["summary_source"] = "fallback"
     STATE["alerts"][aid] = a
+    buddy_ai.fill_async(a, "summary", buddy_ai.alert_prompt(first, kind, place, mins, last_txt, walker["buddy"]["name"]), 220)
     return a
 
 
@@ -241,6 +346,8 @@ def walk_view(w, viewer="walker"):
         "next_form_at": buddy_mod.next_form_at(u["buddy"]["xp"]),
         "alerts": alerts, "events": w["events"][-12:],
         "off_route": w["sim"].get("off_route", False),
+        "buddy_line": w.get("buddy_line") if snap["state"] != "calm" else None,
+        "buddy_line_source": w.get("buddy_line_source"),
         "checkin_every_s": w["engine"].every, "watch_route": w.get("watch_route", True), "watch_speed": w.get("watch_speed", True),
     }
 

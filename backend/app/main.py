@@ -65,7 +65,7 @@ async def persisted_state(request: Request, call_next):
     """In the cloud, wrap every request in lock -> load -> catch up -> handle -> save -> unlock."""
     if store.mongo_enabled() and not store.enabled():
         response = await call_next(request)
-        if request.method == "POST":  # every change is saved; reads are free
+        if request.method in ("POST", "DELETE"):  # every change is saved; reads are free
             await run_in_threadpool(lambda: store.mongo_save(walks.dump()))
         return response
     if not store.enabled() or request.url.path.startswith("/app") or request.url.path == "/health":
@@ -125,6 +125,11 @@ class RouteCandidate(BaseModel):
 class AssessRoutes(BaseModel):
     routes: List[RouteCandidate]
     hour: int = 21
+
+
+class FriendAdd(BaseModel):
+    name: str
+    phone: str = ""
 
 
 class BuddyEdit(BaseModel):
@@ -194,6 +199,32 @@ def edit_buddy(uid: str, req: BuddyEdit):
         raise HTTPException(404, "unknown user")
     except ValueError as e:
         raise HTTPException(400, str(e))
+
+
+@app.get("/users/{uid}/circle")
+def get_circle(uid: str):
+    try:
+        return walks.circle(uid)
+    except KeyError:
+        raise HTTPException(404, "unknown user")
+
+
+@app.post("/users/{uid}/circle")
+def add_to_circle(uid: str, req: FriendAdd):
+    try:
+        return walks.add_friend(uid, req.name, req.phone)
+    except KeyError:
+        raise HTTPException(404, "unknown user")
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@app.delete("/users/{uid}/circle/{fid}")
+def remove_from_circle(uid: str, fid: str):
+    try:
+        return walks.remove_friend(uid, fid)
+    except KeyError:
+        raise HTTPException(404, "not in the circle")
 
 
 @app.get("/users/{uid}/active")
