@@ -1,0 +1,53 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "hard-offset-shadow",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-15T13:19:38.454Z",
+        "reason": "User brief: buttons with a chunky 3D bottom lip in a darker gold"
+      },
+      {
+        "rule": "shape-assembled-illustration",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-15T13:19:38.695Z",
+        "reason": "User brief: draw an ORIGINAL cute cartoon puppy in inline SVG"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-15T13:19:38.937Z",
+        "reason": "User brief: dog on a glowing pedestal"
+      },
+      {
+        "rule": "radial-halo",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-15T13:19:39.177Z",
+        "reason": "User brief: subtle star field on the navy ground; stars are radial-gradient dots"
+      },
+      {
+        "rule": "icon-tile-stack",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-11-15T13:20:06.098Z",
+        "reason": "Agent: icons now sit beside the h3 in a grid row; detector reads DOM order, not layout"
+      }
+    ]
+  }
+}

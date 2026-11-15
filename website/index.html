@@ -1,0 +1,1348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pupdate · Pet me if you're OK</title>
+<meta name="description" content="Pupdate is an iPhone app with a cartoon dog that walks you home at night. Pet it to check in. Go quiet and your friends are alerted. A SunHacks 2026 project.">
+<meta name="theme-color" content="#0a0d1c">
+<meta property="og:title" content="Pupdate · Pet me if you're OK">
+<meta property="og:description" content="Location apps show where you are. Pupdate tells your friends when something's wrong, even if you can't.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='22' fill='%23f3b24a'/%3E%3Cpath d='M14 18c-8 2-10 18-6 26 3 5 9 3 9-3 0-8 2-15 6-20z' fill='%238a4e1a'/%3E%3Cpath d='M50 18c8 2 10 18 6 26-3 5-9 3-9-3 0-8-2-15-6-20z' fill='%238a4e1a'/%3E%3Cellipse cx='32' cy='42' rx='11' ry='8' fill='%23fff1d6'/%3E%3Ccircle cx='24' cy='32' r='3.4' fill='%23140d0a'/%3E%3Ccircle cx='40' cy='32' r='3.4' fill='%23140d0a'/%3E%3Cpath d='M28 39q4-2 8 0-1 4-4 4t-4-4z' fill='%23140d0a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --night-0:#0a0d1c;
+  --night-1:#141a44;
+  --card:#151a33;
+  --card-2:#1a2042;
+  --line:#2a3260;
+  --ink:#f6f3ff;
+  --text:#c9cdec;
+  --muted:#9ea6d4;
+  --gold:#ffbe3d;
+  --gold-lip:#b97f12;
+  --gold-deep:#8a5c08;
+  --sky:#7aa2ff;
+  --amber:#ffb547;
+  --red:#ff4d6d;
+  --mint:#3ee0a1;
+  --radius:24px;
+  --max:1120px;
+  --gutter:clamp(16px,4vw,40px);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --display:"Bricolage Grotesque",ui-rounded,system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%;scrollbar-color:#3a4380 var(--night-0)}
+html{background:var(--night-0)}
+body{background:transparent;
+  margin:0;font-family:var(--body);font-weight:500;font-size:1.0625rem;line-height:1.6;color:var(--text);
+  overflow-x:hidden;position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 78% -10%, rgba(122,162,255,.16), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(255,190,61,.07), transparent 60%),
+    linear-gradient(180deg,var(--night-0) 0%,var(--night-1) 55%,#0f1433 100%);
+}
+body::after{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.75;
+  background-image:
+    radial-gradient(1.2px 1.2px at 24px 38px,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 140px 120px,#dfe6ff 50%,transparent 51%),
+    radial-gradient(1.4px 1.4px at 260px 60px,#fff7dd 50%,transparent 51%),
+    radial-gradient(1px 1px at 330px 210px,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 80px 260px,#cfd9ff 50%,transparent 51%),
+    radial-gradient(1.6px 1.6px at 200px 330px,#fff 50%,transparent 51%),
+    radial-gradient(1px 1px at 380px 360px,#fff 50%,transparent 51%);
+  background-size:420px 420px;
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 60%,rgba(0,0,0,.25) 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.55) 60%,rgba(0,0,0,.25) 100%);
+}
+::selection{background:rgba(255,190,61,.35);color:#fff}
+::-webkit-scrollbar{width:12px}
+::-webkit-scrollbar-track{background:var(--night-0)}
+::-webkit-scrollbar-thumb{background:#2f3770;border-radius:8px;border:3px solid var(--night-0)}
+img,svg{display:block;max-width:100%}
+a{color:var(--gold);text-underline-offset:.22em;text-decoration-thickness:1.5px}
+a:not(.btn):not(.nav-gh):not(.brand):not(.skip):hover{color:#ffd47a}
+:focus{outline:none}
+:focus-visible{outline:3px solid #ffe3a0;outline-offset:3px;border-radius:12px}
+h1,h2,h3{font-family:var(--display);font-weight:800;color:var(--ink);line-height:1.05;letter-spacing:-.025em;margin:0;text-wrap:balance}
+h2{font-size:clamp(2rem,1.3rem + 3vw,3.25rem)}
+h3{font-size:1.25rem;letter-spacing:-.01em;line-height:1.2}
+p{margin:0}
+.wrap{width:100%;max-width:calc(var(--max) + var(--gutter)*2);margin-inline:auto;padding-inline:var(--gutter)}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:16px;top:-60px;z-index:50;background:var(--gold);color:#1f1400;padding:10px 16px;border-radius:12px;font-weight:700;text-decoration:none}
+.skip:focus{top:12px}
+section{scroll-margin-top:24px}
+.section{padding-block:clamp(72px,10vw,128px)}
+.section-head{max-width:40rem;margin-bottom:clamp(36px,5vw,56px)}
+.section-head p{margin-top:16px;font-size:1.125rem;color:var(--muted);max-width:36rem}
+
+/* ---------- Buttons ---------- */
+.btn{
+  --lip:var(--gold-lip);
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-height:52px;padding:0 24px;border-radius:16px;border:0;cursor:pointer;
+  font:700 1.0625rem/1 var(--body);text-decoration:none;white-space:nowrap;
+  background:var(--gold);color:#1f1400;
+  box-shadow:0 6px 0 var(--lip),0 16px 28px -10px rgba(0,0,0,.6);
+  transform:translateY(0);transition:transform .14s var(--ease-out),box-shadow .14s var(--ease-out),background-color .2s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.btn:hover{background:#ffc95c;color:#1f1400}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--lip),0 6px 12px -6px rgba(0,0,0,.6)}
+.btn svg{width:20px;height:20px;flex:none}
+.btn-ghost{--lip:#0b0f2a;background:#1d2450;color:var(--ink);box-shadow:0 6px 0 var(--lip),inset 0 0 0 1px var(--line),0 16px 28px -10px rgba(0,0,0,.6)}
+.btn-ghost:hover{background:#252d60;color:var(--ink)}
+.btn-ghost:active{box-shadow:0 2px 0 var(--lip),inset 0 0 0 1px var(--line)}
+.btn[disabled]{cursor:default;background:#3a3f63;color:#c9cdec;--lip:#22264a}
+.btn-sm{min-height:44px;padding:0 18px;font-size:.9875rem;border-radius:14px;box-shadow:0 4px 0 var(--lip),0 10px 20px -10px rgba(0,0,0,.6)}
+.btn-sm:active{transform:translateY(3px);box-shadow:0 1px 0 var(--lip)}
+
+/* ---------- Nav ---------- */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:20px}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--ink);text-decoration:none;font:800 1.25rem/1 var(--display);letter-spacing:-.02em}
+.brand:hover{color:var(--ink)}
+.brand svg{width:34px;height:34px}
+.nav ul{display:none;list-style:none;margin:0;padding:0;gap:4px}
+.nav ul a{display:block;padding:10px 12px;border-radius:10px;color:var(--text);text-decoration:none;font-weight:600;font-size:.975rem}
+.nav ul a:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.nav-gh{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;color:var(--ink);text-decoration:none;font-weight:600;font-size:.975rem;box-shadow:inset 0 0 0 1px var(--line)}
+.nav-gh:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+.nav-gh svg{width:18px;height:18px}
+@media (min-width:860px){.nav ul{display:flex}}
+
+/* ---------- Hero ---------- */
+.hero{padding-block:clamp(24px,5vw,56px) clamp(72px,9vw,120px)}
+.hero-grid{display:grid;gap:56px;align-items:center}
+.hero h1{font-size:clamp(4rem,2.2rem + 9vw,6rem);letter-spacing:-.04em;line-height:.9}
+.tagline{margin-top:18px;font:800 clamp(1.6rem,1.1rem + 2vw,2.25rem)/1.1 var(--display);color:var(--gold);letter-spacing:-.02em}
+.oneliner{margin-top:20px;font-size:clamp(1.125rem,1rem + .5vw,1.3rem);color:var(--text);max-width:31rem;line-height:1.5}
+.oneliner strong{color:var(--ink);font-weight:700}
+.cta-row{display:flex;flex-wrap:wrap;gap:14px 16px;margin-top:34px}
+.hero-note{margin-top:28px;font-size:.9375rem;color:var(--muted);display:flex;align-items:center;gap:10px}
+.hero-note svg{width:18px;height:18px;color:var(--gold);flex:none}
+.hero-phone-col{display:flex;justify-content:center}
+@media (max-width:919px){
+  .hero{padding-top:4px}
+  .hero-grid{gap:28px}
+  .tagline{margin-top:12px}
+  .oneliner{margin-top:14px;font-size:1.0625rem}
+  .cta-row{margin-top:24px;gap:12px}
+  .hero .btn{min-height:50px}
+  .hero-note{margin-top:16px}
+  .hero .phone{--w:min(300px,76vw)}
+  .nav{padding-block:14px}
+}
+@media (min-width:920px){
+  .hero-grid{grid-template-columns:1.08fr .92fr;gap:40px}
+  .hero-phone-col{justify-content:flex-end}
+}
+
+/* ---------- Phone ---------- */
+.phone{
+  --w:min(312px,80vw);
+  width:var(--w);aspect-ratio:9/19.3;position:relative;flex:none;
+  border-radius:calc(var(--w)*.16);padding:calc(var(--w)*.035);
+  background:linear-gradient(145deg,#3a4170,#141832 40%,#262c55);
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.85),0 0 0 1px #474f86,inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.phone-screen{
+  position:relative;height:100%;border-radius:calc(var(--w)*.13);overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(120% 60% at 50% 46%, rgba(122,162,255,.16), transparent 60%),
+    linear-gradient(180deg,#121842 0%,#0c1030 60%,#0a0d22 100%);
+  display:flex;flex-direction:column;
+}
+.phone-screen::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:5;
+  box-shadow:inset 0 0 0 0 transparent;transition:box-shadow .6s var(--ease-out);
+}
+.island{
+  position:absolute;top:calc(var(--w)*.035);left:50%;transform:translateX(-50%);z-index:6;
+  height:calc(var(--w)*.1);min-width:calc(var(--w)*.34);border-radius:999px;background:#000;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 calc(var(--w)*.03) 0 calc(var(--w)*.018);
+  color:#fff;font:700 calc(var(--w)*.042)/1 var(--body);font-variant-numeric:tabular-nums;
+  transition:min-width .5s var(--ease-out);
+}
+.island .mini-face{width:calc(var(--w)*.075);height:calc(var(--w)*.075)}
+.island-time{color:var(--gold);transition:color .4s}
+.status{display:flex;justify-content:space-between;align-items:center;padding:calc(var(--w)*.05) calc(var(--w)*.085) 0;font:700 calc(var(--w)*.042)/1 var(--body);color:#fff;font-variant-numeric:tabular-nums;height:calc(var(--w)*.14)}
+.status svg{height:calc(var(--w)*.038);width:auto}
+.status-icons{display:flex;gap:5px;align-items:center}
+.walkline{margin:calc(var(--w)*.05) calc(var(--w)*.06) 0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:calc(var(--w)*.04);color:var(--muted);font-weight:600}
+.walkline b{color:var(--ink);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-weight:700;font-size:.8125rem;line-height:1.2;background:rgba(62,224,161,.12);color:var(--mint);box-shadow:inset 0 0 0 1px rgba(62,224,161,.3)}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip[data-tone="red"]{color:#ff8da2;background:rgba(255,77,109,.14);box-shadow:inset 0 0 0 1px rgba(255,77,109,.45)}
+.phone .chip{font-size:calc(var(--w)*.036);padding:3px 8px}
+
+.pet-stage{
+  position:relative;flex:1;display:flex;align-items:center;justify-content:center;
+  touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;
+  border-radius:28px;margin:4px 10px 0;
+}
+.pet-stage:active{cursor:grabbing}
+.pet-stage:focus-visible{outline-offset:-4px}
+.pedestal{
+  position:absolute;left:50%;bottom:9%;width:78%;aspect-ratio:3/1;transform:translateX(-50%);pointer-events:none;
+  background:radial-gradient(closest-side,rgba(255,190,61,.55),rgba(255,190,61,.18) 55%,transparent 100%);
+  filter:blur(2px);
+}
+.pedestal::after{
+  content:"";position:absolute;left:14%;right:14%;top:34%;bottom:26%;border-radius:50%;
+  background:linear-gradient(180deg,#2b3370,#171c45);box-shadow:0 0 0 1px rgba(255,214,140,.35),0 0 32px rgba(255,190,61,.45),inset 0 3px 8px rgba(255,214,140,.25);
+}
+.pet-stage .dog{position:relative;width:74%;z-index:1;margin-bottom:12%}
+.dog > .pedestal{left:-12%;width:124%;bottom:-14%;transform:none;z-index:-1}
+.dog{isolation:isolate}
+.pet-hint{
+  position:absolute;left:50%;bottom:2%;transform:translateX(-50%);z-index:2;white-space:nowrap;pointer-events:none;
+  display:flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(10,13,28,.72);
+  font:700 calc(var(--w)*.037)/1 var(--body);color:#e7e9fb;box-shadow:inset 0 0 0 1px var(--line);
+}
+.pet-hint svg{width:16px;height:16px;flex:none;color:var(--gold)}
+.pet-hint.nudge{animation:nudge .5s var(--ease-out)}
+@keyframes nudge{0%,100%{transform:translateX(-50%)}25%{transform:translateX(calc(-50% - 6px))}75%{transform:translateX(calc(-50% + 6px))}}
+
+.check-card{
+  margin:calc(var(--w)*.04) calc(var(--w)*.05) calc(var(--w)*.065);
+  display:flex;align-items:center;gap:calc(var(--w)*.04);
+  padding:calc(var(--w)*.04);border-radius:calc(var(--w)*.07);
+  background:rgba(21,26,51,.92);box-shadow:inset 0 0 0 1px var(--line),0 10px 24px -12px rgba(0,0,0,.7);
+}
+.ring{position:relative;width:calc(var(--w)*.16);height:calc(var(--w)*.16);flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke:#262d58}
+.ring .bar{stroke:var(--gold);transition:stroke-dashoffset 1s linear,stroke .4s}
+.ring-num{position:absolute;inset:0;display:grid;place-items:center;font:800 calc(var(--w)*.05)/1 var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.check-title{font:800 calc(var(--w)*.062)/1.1 var(--display);color:var(--ink);letter-spacing:-.01em}
+.check-sub{font-size:calc(var(--w)*.041);color:var(--muted);margin-top:4px;line-height:1.3}
+.home-bar{position:absolute;bottom:calc(var(--w)*.022);left:50%;transform:translateX(-50%);width:34%;height:4px;border-radius:4px;background:rgba(255,255,255,.55);z-index:6}
+
+/* ---------- Dog ---------- */
+.dog{aspect-ratio:1;position:relative}
+.dog-svg{width:100%;height:100%;overflow:visible}
+.dog-svg *{transform-box:view-box}
+.d-shadow{fill:rgba(0,0,0,.32)}
+.d-figure{transform-origin:110px 200px}
+.d-body{transform-origin:110px 205px;animation:breathe 3.8s ease-in-out infinite}
+.d-head{transform-origin:110px 128px;transition:transform .55s var(--ease-out)}
+.d-tail{transform-origin:156px 166px;animation:wag 1.7s ease-in-out infinite;transition:transform .5s var(--ease-out)}
+.d-ear{transition:transform .5s var(--ease-out)}
+.d-ear-l{transform-origin:80px 60px}
+.d-ear-r{transform-origin:140px 60px}
+.d-eye{transform-box:fill-box;transform-origin:center;transition:transform .35s var(--ease-out)}
+.d-sclera{opacity:0;transition:opacity .25s}
+.d-eyes-happy,.d-tongue,.d-brows,.d-frown,.d-sweat,.d-ask{opacity:0;transition:opacity .3s,transform .4s var(--ease-out)}
+.d-ask{transform-origin:176px 40px;transform:scale(.4)}
+.d-sweat{transform:translateY(-6px)}
+.d-mouth{transition:opacity .3s}
+.acc-bandana,.acc-vest,.acc-headlamp{display:none}
+.dog[data-stage="scout"] .acc-bandana{display:inline}
+.dog[data-stage="guardian"] .acc-vest,.dog[data-stage="guardian"] .acc-headlamp{display:inline}
+
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.018,1.03)}}
+@keyframes wag{0%,100%{transform:rotate(-9deg)}50%{transform:rotate(11deg)}}
+@keyframes wagfast{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(24deg)}}
+@keyframes tremble{0%,100%{transform:translate(0,0)}25%{transform:translate(-1.6px,.6px)}50%{transform:translate(1.4px,-.4px)}75%{transform:translate(-.8px,-.6px)}}
+@keyframes hop{0%,100%{transform:translateY(0)}35%{transform:translateY(-9px)}60%{transform:translateY(0)}78%{transform:translateY(-3px)}}
+
+/* asking */
+.dog[data-mood="asking"] .d-head{transform:rotate(-9deg)}
+.dog[data-mood="asking"] .d-ear-r{transform:rotate(-34deg)}
+.dog[data-mood="asking"] .d-ask{opacity:1;transform:scale(1)}
+/* worried */
+.dog[data-mood="worried"] .d-ear-l{transform:rotate(-14deg) translateY(4px)}
+.dog[data-mood="worried"] .d-ear-r{transform:rotate(14deg) translateY(4px)}
+.dog[data-mood="worried"] .d-tail,.dog[data-mood="scared"] .d-tail{animation:none;transform:rotate(72deg)}
+.dog[data-mood="worried"] .d-brows,.dog[data-mood="scared"] .d-brows{opacity:1}
+.dog[data-mood="worried"] .d-frown,.dog[data-mood="scared"] .d-frown{opacity:1}
+.dog[data-mood="worried"] .d-mouth,.dog[data-mood="scared"] .d-mouth{opacity:0}
+.dog[data-mood="worried"] .d-sweat{opacity:1;transform:none}
+.dog[data-mood="worried"] .d-head{transform:translateY(3px)}
+/* scared */
+.dog[data-mood="scared"] .d-figure{animation:tremble .16s linear infinite}
+.dog[data-mood="scared"] .d-ear-l{transform:rotate(-20deg) translateY(6px)}
+.dog[data-mood="scared"] .d-ear-r{transform:rotate(20deg) translateY(6px)}
+.dog[data-mood="scared"] .d-sclera{opacity:1}
+.dog[data-mood="scared"] .d-eye{transform:scale(1.14)}
+.dog[data-mood="scared"] .d-pupil{transform:scale(.72)}
+.dog[data-mood="scared"] .d-sweat{opacity:1;transform:none}
+.dog[data-mood="scared"] .d-head{transform:translateY(5px)}
+.d-pupil{transform-box:fill-box;transform-origin:center;transition:transform .3s var(--ease-out)}
+/* happy */
+.dog[data-mood="happy"] .d-eyes-open{opacity:0}
+.dog[data-mood="happy"] .d-eyes-happy{opacity:1}
+.dog[data-mood="happy"] .d-tongue{opacity:1}
+.dog[data-mood="happy"] .d-tail{animation:wagfast .26s ease-in-out infinite}
+.dog[data-mood="happy"] .d-figure{animation:hop .7s var(--ease-out) 1}
+.dog[data-mood="happy"] .d-ear-l{transform:rotate(8deg)}
+.dog[data-mood="happy"] .d-ear-r{transform:rotate(-8deg)}
+.d-eyes-open{transition:opacity .2s}
+
+.hearts{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:visible}
+.heart{position:absolute;width:22px;height:22px;color:#ff7a93;animation:heart 1.3s var(--ease-out) forwards;filter:drop-shadow(0 4px 8px rgba(255,77,109,.35))}
+@keyframes heart{0%{opacity:0;transform:translate(0,0) scale(.4)}15%{opacity:1;transform:translate(0,-10px) scale(1)}100%{opacity:0;transform:translate(var(--dx),-90px) scale(.8) rotate(var(--rot))}}
+
+/* ---------- Problem ---------- */
+.problems{display:grid;gap:20px}
+.problem{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:28px;display:flex;flex-direction:column;gap:20px}
+.problem h3{font-size:1.375rem}
+.problem p{color:var(--muted)}
+.vignette{height:150px;border-radius:18px;background:#0e1330;box-shadow:inset 0 0 0 1px #222a55;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:16px 18px;gap:8px}
+.bubble{max-width:80%;padding:8px 12px;border-radius:16px;font-size:.875rem;font-weight:600;line-height:1.3}
+.bubble.them{background:#262e5e;color:#e7e9fb;border-bottom-left-radius:5px;align-self:flex-start}
+.bubble.me{background:var(--sky);color:#0a0d1c;border-bottom-right-radius:5px;align-self:flex-end}
+.meta{font-size:.75rem;color:var(--muted);align-self:flex-end;font-variant-numeric:tabular-nums}
+.meta.l{align-self:flex-start}
+.sos-steps{display:flex;flex-direction:column;gap:6px;font-size:.875rem;font-weight:600;color:var(--muted)}
+.sos-steps span{display:flex;align-items:center;gap:8px}
+.sos-steps s{text-decoration-color:rgba(255,77,109,.8);text-decoration-thickness:2px}
+.sos-steps svg{width:16px;height:16px;color:var(--red);flex:none}
+.sos-btn{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font:800 1rem/1 var(--display);color:#fff;background:radial-gradient(circle at 40% 35%,#c42b49,#8f0f2b);box-shadow:0 0 0 6px rgba(255,77,109,.15),0 10px 20px -6px rgba(0,0,0,.6);opacity:.9}
+.dots-map{display:grid;grid-template-columns:1fr 1fr;gap:12px;height:100%}
+.dots-map figure{margin:0;position:relative;border-radius:12px;background:
+  linear-gradient(90deg,transparent 47%,#1f2858 47% 53%,transparent 53%),
+  linear-gradient(0deg,transparent 30%,#1f2858 30% 36%,transparent 36%),
+  linear-gradient(0deg,transparent 70%,#1a2250 70% 74%,transparent 74%),#121838;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-size:.75rem;font-weight:700;color:var(--muted)}
+.dots-map figure::before{content:"";position:absolute;left:50%;top:38%;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--sky);box-shadow:0 0 0 5px rgba(122,162,255,.25)}
+@media (min-width:860px){.problems{grid-template-columns:repeat(3,1fr)}}
+
+/* ---------- Timeline ---------- */
+.timeline{list-style:none;margin:0;padding:0;display:grid;gap:28px;position:relative;counter-reset:none}
+.step{position:relative;display:grid;grid-template-columns:64px 1fr;gap:18px;align-items:start}
+.step-node{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--c,var(--gold));position:relative;z-index:1;box-shadow:0 10px 24px -12px rgba(0,0,0,.7)}
+.step-node svg{width:30px;height:30px}
+.step h3{margin-top:4px}
+.step p{color:var(--muted);margin-top:8px;max-width:22rem}
+.timeline::before{content:"";position:absolute;left:31px;top:32px;bottom:32px;width:2px;background:linear-gradient(180deg,var(--gold),var(--sky),var(--mint),var(--red));opacity:.55}
+@media (min-width:860px){
+  .timeline{grid-template-columns:repeat(4,1fr);gap:28px}
+  .timeline::before{left:32px;right:calc((100% - 84px)/4 - 32px);top:31px;bottom:auto;width:auto;height:2px;background:linear-gradient(90deg,var(--gold),var(--sky),var(--mint),var(--red))}
+  .step{grid-template-columns:1fr;gap:22px;align-content:start}
+}
+
+/* ---------- Demo ---------- */
+.demo{background:linear-gradient(180deg,rgba(21,26,51,0),rgba(21,26,51,.55) 20%,rgba(21,26,51,.55) 80%,rgba(21,26,51,0))}
+.demo-grid{display:grid;gap:48px;align-items:start}
+.ladder{list-style:none;margin:28px 0 32px;padding:0;display:grid;gap:6px}
+.ladder li{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:14px;font-weight:600;color:var(--muted);transition:background-color .3s,color .3s}
+.ladder li::before{content:"";width:12px;height:12px;border-radius:50%;flex:none;background:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 18%,transparent);opacity:.6;transition:opacity .3s,transform .3s var(--ease-out)}
+.ladder li[aria-current="step"]{background:var(--card);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.ladder li[aria-current="step"]::before{opacity:1;transform:scale(1.25)}
+.ladder li.done{color:#7c84b4}
+.ladder small{margin-left:auto;font-weight:600;font-size:.8125rem;color:var(--muted)}
+.demo-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px}
+.demo-tip{font-size:.9375rem;color:var(--muted);max-width:30rem;margin-top:18px}
+.demo-tip b{color:var(--text)}
+.phones{display:flex;flex-wrap:wrap;gap:28px;justify-content:center}
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.phone-label{font-weight:700;font-size:.9375rem;color:var(--muted)}
+.phone.mini{--w:min(252px,74vw)}
+.phone.mini .pet-stage .dog{width:82%}
+.phone.mini .check-card{margin-bottom:calc(var(--w)*.08)}
+.phone-screen[data-glow="gold"]::after{box-shadow:inset 0 0 0 2px rgba(255,190,61,.85),inset 0 0 36px rgba(255,190,61,.45)}
+.phone-screen[data-glow="amber"]::after{box-shadow:inset 0 0 0 3px rgba(255,181,71,.95),inset 0 0 48px rgba(255,140,40,.55)}
+.phone-screen[data-glow="hot"]::after{box-shadow:inset 0 0 0 3px rgba(255,120,80,1),inset 0 0 60px rgba(255,100,70,.6);animation:pulseglow 1s ease-in-out infinite}
+.phone-screen[data-glow="red"]::after{box-shadow:inset 0 0 0 4px rgba(255,77,109,1),inset 0 0 70px rgba(255,77,109,.65);animation:pulseglow .7s ease-in-out infinite}
+.phone-screen[data-glow="mint"]::after{box-shadow:inset 0 0 0 2px rgba(62,224,161,.8),inset 0 0 36px rgba(62,224,161,.35)}
+@keyframes pulseglow{50%{opacity:.55}}
+.island[data-tone="red"] .island-time{color:var(--red)}
+.island[data-tone="amber"] .island-time{color:var(--amber)}
+.island[data-tone="mint"] .island-time{color:var(--mint)}
+.island[data-tone="sky"] .island-time{color:var(--sky)}
+.walker .ring .bar{stroke:var(--rc,var(--gold))}
+
+/* friend */
+.friend-screen{padding:calc(var(--w)*.16) calc(var(--w)*.06) calc(var(--w)*.08);gap:12px}
+.f-panel{display:flex;flex-direction:column;gap:12px;flex:1}
+.f-panel[hidden]{display:none}
+.f-title{font:800 calc(var(--w)*.075)/1.1 var(--display);color:var(--ink);letter-spacing:-.015em}
+.f-sub{font-size:calc(var(--w)*.044);color:var(--muted);line-height:1.35}
+.mini-map{border-radius:18px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line);background:#0f1538}
+.mini-map svg{width:100%;height:auto}
+.f-row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:calc(var(--w)*.042);font-weight:600}
+.friend-screen.is-alert{background:radial-gradient(120% 70% at 50% 0%,rgba(255,77,109,.45),transparent 60%),linear-gradient(180deg,#3b0c1c,#1c0610 70%)}
+.alert-badge{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:5px 10px;border-radius:999px;background:var(--red);color:#fff;font:800 calc(var(--w)*.04)/1 var(--body);letter-spacing:.01em}
+.alert-badge svg{width:14px;height:14px}
+.summary{list-style:none;margin:0;padding:12px 14px;border-radius:16px;background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px rgba(255,140,160,.25);display:grid;gap:6px;font-size:calc(var(--w)*.04);color:#ffe3e8;line-height:1.35}
+.summary b{color:#fff}
+.btn-alert{--lip:#9e1631;background:#fff;color:#a3142f;width:100%;margin-top:auto}
+.btn-alert:hover{background:#ffe9ed;color:#a3142f}
+.closed-note{display:flex;align-items:center;gap:10px;color:var(--mint);font-weight:700;font-size:calc(var(--w)*.045)}
+.closed-note svg{width:22px;height:22px}
+.sample-tag{font-size:.8125rem;color:var(--muted);text-align:center;margin-top:18px;width:100%}
+@media (min-width:980px){
+  .demo-grid{grid-template-columns:.85fr 1.15fr;gap:40px}
+  .phones{justify-content:flex-end;flex-wrap:nowrap}
+}
+
+/* ---------- Features ---------- */
+.features{display:grid;gap:18px}
+.feature{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 24px 28px;display:grid;grid-template-columns:auto 1fr;grid-auto-rows:auto;align-content:start;column-gap:14px;row-gap:14px;align-items:center;transition:border-color .3s,transform .4s var(--ease-out)}
+.feature > :not(.f-icon):not(h3),.feature > h3:first-child{grid-column:1/-1}
+.feature .f-icon{width:44px;height:44px;border-radius:14px}
+.feature .f-icon svg{width:22px;height:22px}
+.feature .mood-chips,.feature .stages{align-self:end}
+.feature:hover{border-color:#3a4486;transform:translateY(-3px)}
+.f-icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;color:var(--c,var(--gold));background:color-mix(in srgb,var(--c,var(--gold)) 12%,#151a33);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c,var(--gold)) 30%,transparent)}
+.f-icon svg{width:26px;height:26px}
+.feature p{color:var(--muted);font-size:1rem;line-height:1.55}
+.mood-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:4px}
+.mood-chips span{font-size:.75rem;font-weight:700;padding:3px 9px;border-radius:999px;color:var(--c);background:color-mix(in srgb,var(--c) 12%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 35%,transparent)}
+.stages{display:flex;align-items:flex-end;gap:6px;margin-top:auto}
+.stages figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.75rem;font-weight:700;color:var(--muted);flex:1}
+.stages .dog{width:100%;max-width:84px}
+.stages figure:nth-child(1) .dog{max-width:62px}
+.stages figure:nth-child(2) .dog{max-width:74px}
+@media (min-width:640px){.features{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1040px){.features{grid-template-columns:repeat(4,1fr)}}
+
+/* ---------- Compare ---------- */
+.compare-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.compare{width:100%;border-collapse:collapse;font-size:.9875rem}
+.compare th,.compare td{padding:16px 18px;text-align:left;vertical-align:top}
+.compare thead th{font:800 1.0625rem/1.2 var(--display);color:var(--ink);letter-spacing:-.01em;background:#121735;border-bottom:1px solid var(--line)}
+.compare thead th small{display:block;font:600 .8125rem/1.3 var(--body);color:var(--muted);letter-spacing:0;margin-top:4px}
+.compare thead th.us{color:var(--gold)}
+.compare tbody th{font-weight:700;color:var(--ink);width:28%}
+.compare tbody tr+tr th,.compare tbody tr+tr td{border-top:1px solid #222a55}
+.compare td.us{background:rgba(255,190,61,.05)}
+.mark{display:flex;align-items:flex-start;gap:10px;color:var(--text);line-height:1.35}
+.mark svg{width:20px;height:20px;flex:none;margin-top:1px}
+.mark.yes svg{color:var(--mint)}
+.mark.part svg{color:var(--amber)}
+.mark.no svg{color:#6c74a6}
+.mark.no{color:var(--muted)}
+.compare-note{font-size:.875rem;color:var(--muted);margin-top:18px;max-width:52rem}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-size:.875rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend svg{width:16px;height:16px}
+@media (max-width:719px){
+  .compare thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+  .compare,.compare tbody,.compare tr{display:block}
+  .compare tr{padding:18px 18px 16px;display:grid;gap:10px}
+  .compare tbody tr+tr{border-top:1px solid #222a55}
+  .compare tbody tr+tr th,.compare tbody tr+tr td{border-top:0}
+  .compare tbody th,.compare td{display:block;padding:0;width:auto}
+  .compare tbody th{font-family:var(--display);font-weight:800;font-size:1.0625rem}
+  .compare td{display:grid;grid-template-columns:7.5rem 1fr;gap:10px;align-items:start}
+  .compare td::before{content:attr(data-label);font-size:.8125rem;font-weight:700;color:var(--muted);padding-top:2px}
+  .compare td.us{background:none}
+  .compare td.us::before{color:var(--gold)}
+}
+
+/* ---------- Privacy ---------- */
+.privacy{display:grid;gap:40px;align-items:center}
+.privacy-list{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.privacy-list li{display:grid;grid-template-columns:48px 1fr;gap:16px;align-items:start;padding:20px 22px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+.privacy-list .f-icon{width:48px;height:48px;border-radius:14px}
+.privacy-list b{display:block;color:var(--ink);font-size:1.0625rem;margin-bottom:2px}
+.privacy-list span{color:var(--muted)}
+@media (min-width:900px){.privacy{grid-template-columns:.9fr 1.1fr;gap:64px}}
+
+/* ---------- Built with ---------- */
+.pills{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.pills li{padding:9px 16px;border-radius:999px;background:var(--card);box-shadow:inset 0 0 0 1px var(--line);font-weight:700;font-size:.9375rem;color:var(--ink)}
+.built{display:grid;gap:28px}
+@media (min-width:900px){.built{grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}}
+
+/* ---------- Close ---------- */
+.close{text-align:center;padding-block:clamp(72px,10vw,128px) clamp(56px,8vw,96px)}
+.close .dog{width:min(220px,56vw);margin:0 auto -10px}
+.close-stage{position:relative;width:min(300px,70vw);margin:0 auto;display:flex;justify-content:center;touch-action:none;cursor:grab;border-radius:24px}
+.close-stage .dog{margin-bottom:24px}
+.close h2{font-size:clamp(2.25rem,1.4rem + 4vw,4rem);margin-top:28px}
+.close p{margin:18px auto 0;max-width:30rem;color:var(--muted);font-size:1.125rem}
+.close .cta-row{justify-content:center}
+
+/* ---------- Footer ---------- */
+footer{border-top:1px solid #1f2650;padding-block:32px 40px;font-size:.9375rem;color:var(--muted)}
+.foot{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:center;justify-content:space-between}
+.foot nav{display:flex;flex-wrap:wrap;gap:8px 22px}
+.foot strong{color:var(--ink)}
+
+/* ---------- Reveal ---------- */
+.js .reveal{opacity:0;transform:translateY(22px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out);transition-delay:var(--d,0ms)}
+.js .reveal.in{opacity:1;transform:none}
+.js .step.reveal .step-node{transform:scale(.6);transition:transform .7s var(--ease-out);transition-delay:calc(var(--d,0ms) + 80ms)}
+.js .step.reveal.in .step-node{transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;transition-delay:0ms!important}
+  .js .reveal{opacity:1;transform:none}
+  .js .step.reveal .step-node{transform:none}
+  .phone-screen::after{animation:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- Shared SVG paint for every dog on the page -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="pd-fur" cx="42%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#ffe09a"/>
+      <stop offset=".5" stop-color="#f5b649"/>
+      <stop offset="1" stop-color="#cf8124"/>
+    </radialGradient>
+    <radialGradient id="pd-ear" cx="40%" cy="25%" r="85%">
+      <stop offset="0" stop-color="#b9742b"/>
+      <stop offset="1" stop-color="#6f3c12"/>
+    </radialGradient>
+    <radialGradient id="pd-cream" cx="45%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#f3d9a6"/>
+    </radialGradient>
+    <radialGradient id="pd-patch" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#a7662a"/>
+      <stop offset="1" stop-color="#743f13"/>
+    </radialGradient>
+    <radialGradient id="pd-eye" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#4a362c"/>
+      <stop offset="1" stop-color="#110b08"/>
+    </radialGradient>
+    <radialGradient id="pd-vest" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#ffab62"/>
+      <stop offset="1" stop-color="#e0631c"/>
+    </radialGradient>
+    <radialGradient id="pd-lamp" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff6cf" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#ffe08a" stop-opacity="0"/>
+    </radialGradient>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.7 4.5c2.1 0 3.6 1.2 4.3 2.5.7-1.3 2.2-2.5 4.3-2.5 3.7 0 5.8 3.9 4.3 7.3C19.5 16.4 12 21 12 21z"/></symbol>
+    <symbol id="i-yes" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="currentColor" opacity=".16"/><path d="M5.8 10.4l2.8 2.8 5.6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-part" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="currentColor" opacity=".16"/><path d="M6 10h8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-no" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7.2 7.2l5.6 5.6M12.8 7.2l-5.6 5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5z"/></symbol>
+    <symbol id="i-paw" viewBox="0 0 24 24"><g fill="currentColor"><ellipse cx="6.2" cy="10" rx="2.1" ry="2.7"/><ellipse cx="10" cy="6.4" rx="2.1" ry="2.8"/><ellipse cx="14.4" cy="6.4" rx="2.1" ry="2.8"/><ellipse cx="18" cy="10" rx="2.1" ry="2.7"/><path d="M12.2 11.2c3 0 5.6 3.4 5.6 5.9 0 2-1.6 2.6-3 2.3-1-.2-1.7-.6-2.6-.6s-1.6.4-2.6.6c-1.4.3-3-.3-3-2.3 0-2.5 2.6-5.9 5.6-5.9z"/></g></symbol>
+    <symbol id="i-swipe" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h6M3 8l2.5-2.5M3 8l2.5 2.5M21 8h-6M21 8l-2.5-2.5M21 8l-2.5 2.5"/><path d="M10 21v-6.5a1.5 1.5 0 0 1 3 0V17l3.2.6a2 2 0 0 1 1.6 2.2l-.2 1.2"/></g></symbol>
+  </defs>
+</svg>
+
+<!-- The dog, cloned into every [data-dog] mount by script -->
+<template id="dog-tpl">
+  <svg class="dog-svg" viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+    <ellipse class="d-shadow" cx="110" cy="208" rx="62" ry="7"/>
+    <g class="d-figure">
+      <g class="d-tail">
+        <path d="M154 168 C 176 162 194 140 186 121 C 180 107 163 110 167 123 C 170 131 180 129 181 122" fill="none" stroke="#c97d22" stroke-width="14" stroke-linecap="round"/>
+        <path d="M156 165 C 175 159 189 141 183 124" fill="none" stroke="#f8c766" stroke-width="5" stroke-linecap="round" opacity=".8"/>
+      </g>
+      <g class="d-body">
+        <ellipse cx="110" cy="166" rx="50" ry="42" fill="url(#pd-fur)"/>
+        <ellipse cx="72" cy="184" rx="23" ry="18" fill="url(#pd-fur)"/>
+        <ellipse cx="148" cy="184" rx="23" ry="18" fill="url(#pd-fur)"/>
+        <path d="M88 136 Q110 126 132 136 Q138 170 110 186 Q82 170 88 136 Z" fill="url(#pd-cream)"/>
+        <ellipse cx="92" cy="199" rx="15.5" ry="10.5" fill="url(#pd-cream)"/>
+        <ellipse cx="128" cy="199" rx="15.5" ry="10.5" fill="url(#pd-cream)"/>
+        <path d="M87 197v5M97 197v5M123 197v5M133 197v5" stroke="#d6b27c" stroke-width="2" stroke-linecap="round"/>
+        <g class="acc-vest">
+          <path d="M70 141 Q86 131 100 135 L101 150 Q98 168 102 185 Q85 190 70 183 Q61 163 70 141 Z" fill="url(#pd-vest)" stroke="#b9531a" stroke-width="1.5"/>
+          <path d="M150 141 Q134 131 120 135 L119 150 Q122 168 118 185 Q135 190 150 183 Q159 163 150 141 Z" fill="url(#pd-vest)" stroke="#b9531a" stroke-width="1.5"/>
+          <path d="M65 165 Q82 171 100 166" fill="none" stroke="#eef4ff" stroke-width="5" stroke-linecap="round" opacity=".92"/>
+          <path d="M155 165 Q138 171 120 166" fill="none" stroke="#eef4ff" stroke-width="5" stroke-linecap="round" opacity=".92"/>
+          <path d="M100 156 H120" stroke="#2b2f4a" stroke-width="3.2" stroke-linecap="round"/>
+          <rect x="106" y="152.5" width="8" height="7" rx="1.6" fill="#c9cfe6" stroke="#2b2f4a" stroke-width="1.6"/>
+        </g>
+        <g class="acc-bandana">
+          <path d="M76 128 Q110 146 144 128 L138 138 Q124 172 110 176 Q96 172 82 138 Z" fill="#5f86ee"/>
+          <circle cx="102" cy="146" r="2.6" fill="#dfe8ff"/><circle cx="118" cy="146" r="2.6" fill="#dfe8ff"/><circle cx="110" cy="160" r="2.6" fill="#dfe8ff"/>
+        </g>
+      </g>
+      <g class="d-head">
+        <ellipse cx="110" cy="90" rx="51" ry="45" fill="url(#pd-fur)"/>
+        <path d="M104 50 Q110 46 116 50 L122 92 Q110 100 98 92 Z" fill="url(#pd-cream)"/>
+        <ellipse cx="110" cy="113" rx="31" ry="21" fill="url(#pd-cream)"/>
+        <path d="M121 73 C 137 66 155 75 153 92 C 151 105 133 108 124 99 C 117 92 115 80 121 73 Z" fill="url(#pd-patch)"/>
+        <g class="d-ear d-ear-l"><path d="M76 57 C 50 52 31 86 37 119 C 41 140 65 140 69 121 C 73 102 81 80 90 63 Z" fill="url(#pd-ear)"/></g>
+        <g class="d-ear d-ear-r"><path d="M144 57 C 170 52 189 86 183 119 C 179 140 155 140 151 121 C 147 102 139 80 130 63 Z" fill="url(#pd-ear)"/></g>
+        <g class="acc-headlamp">
+          <circle cx="110" cy="48" r="22" fill="url(#pd-lamp)"/>
+          <path d="M62 72 Q110 38 158 72" fill="none" stroke="#2b2f4a" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="110" cy="52" r="8.5" fill="#fff3c4" stroke="#2b2f4a" stroke-width="3.5"/>
+        </g>
+        <ellipse cx="72" cy="108" rx="9" ry="5.5" fill="#ff8fa3" opacity=".55"/>
+        <ellipse cx="148" cy="108" rx="9" ry="5.5" fill="#ff8fa3" opacity=".55"/>
+        <g class="d-brows" fill="none" stroke="#6b3a12" stroke-width="3.6" stroke-linecap="round">
+          <path d="M77 77 Q87 75 97 69"/><path d="M143 77 Q133 75 123 69"/>
+        </g>
+        <g class="d-eyes-open">
+          <g class="d-eye">
+            <circle class="d-sclera" cx="88" cy="89" r="13" fill="#fff"/>
+            <g class="d-pupil">
+              <ellipse cx="88" cy="89" rx="9.5" ry="10.5" fill="url(#pd-eye)"/>
+              <circle cx="91.5" cy="84.5" r="3.4" fill="#fff"/>
+              <circle cx="85" cy="93" r="1.6" fill="#fff" opacity=".9"/>
+            </g>
+          </g>
+          <g class="d-eye">
+            <circle class="d-sclera" cx="132" cy="89" r="13" fill="#fff"/>
+            <g class="d-pupil">
+              <ellipse cx="132" cy="89" rx="9.5" ry="10.5" fill="url(#pd-eye)"/>
+              <circle cx="135.5" cy="84.5" r="3.4" fill="#fff"/>
+              <circle cx="129" cy="93" r="1.6" fill="#fff" opacity=".9"/>
+            </g>
+          </g>
+        </g>
+        <g class="d-eyes-happy" fill="none" stroke="#2a1a10" stroke-width="4" stroke-linecap="round">
+          <path d="M79 92 Q88 80 97 92"/><path d="M123 92 Q132 80 141 92"/>
+        </g>
+        <path d="M99 102 Q110 97 121 102 Q119 112 110 114 Q101 112 99 102 Z" fill="url(#pd-eye)"/>
+        <ellipse cx="105.5" cy="102.5" rx="3.4" ry="1.7" fill="#fff" opacity=".65"/>
+        <path class="d-tongue" d="M104 121 Q104 136 110.5 136 Q117 136 116.5 121 Z" fill="#ff7a93"/>
+        <path class="d-mouth" d="M110 114v5M110 119q-7 6-13 1M110 119q7 6 13 1" fill="none" stroke="#3b2a24" stroke-width="2.6" stroke-linecap="round"/>
+        <path class="d-frown" d="M100 126 Q110 118 120 126" fill="none" stroke="#3b2a24" stroke-width="2.6" stroke-linecap="round"/>
+        <path class="d-sweat" d="M163 56 Q170 68 163 73 Q156 68 163 56 Z" fill="#a9d4ff"/>
+        <g class="d-ask">
+          <circle cx="176" cy="40" r="15" fill="#7aa2ff"/>
+          <text x="176" y="47" text-anchor="middle" font-size="20" font-family="Bricolage Grotesque, sans-serif" font-weight="800" fill="#0a0d1c">?</text>
+        </g>
+      </g>
+    </g>
+  </svg>
+</template>
+
+<header class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="#top" aria-label="Pupdate, back to top">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="34" r="22" fill="url(#pd-fur)"/><path d="M14 18c-8 2-10 18-6 26 3 5 9 3 9-3 0-8 2-15 6-20z" fill="url(#pd-ear)"/><path d="M50 18c8 2 10 18 6 26-3 5-9 3-9-3 0-8-2-15-6-20z" fill="url(#pd-ear)"/><ellipse cx="32" cy="42" rx="11" ry="8" fill="url(#pd-cream)"/><circle cx="24" cy="32" r="3.4" fill="#140d0a"/><circle cx="40" cy="32" r="3.4" fill="#140d0a"/><circle cx="25.2" cy="30.8" r="1.1" fill="#fff"/><circle cx="41.2" cy="30.8" r="1.1" fill="#fff"/><path d="M28 39q4-2 8 0-1 4-4 4t-4-4z" fill="#140d0a"/></svg>
+      Pupdate
+    </a>
+    <ul>
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#demo">Try the demo</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#privacy">Privacy</a></li>
+    </ul>
+    <a class="nav-gh" href="https://github.com/JeremyEltho/walkbuddy"><svg aria-hidden="true"><use href="#i-github"/></svg>GitHub</a>
+  </nav>
+</header>
+
+<main id="main">
+  <!-- 1. Hero -->
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div>
+        <h1 id="hero-title">Pupdate</h1>
+        <p class="tagline">Pet me if you're OK.</p>
+        <p class="oneliner">Location apps show where you are. <strong>Pupdate tells your friends when something's wrong, even if you can't.</strong></p>
+        <div class="cta-row">
+          <a class="btn" href="#how">See how it works
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/JeremyEltho/walkbuddy"><svg aria-hidden="true"><use href="#i-github"/></svg>View on GitHub</a>
+        </div>
+        <p class="hero-note"><svg aria-hidden="true"><use href="#i-paw"/></svg>An iPhone app built at SunHacks 2026, ASU.</p>
+      </div>
+
+      <div class="hero-phone-col">
+        <div class="phone" id="hero-phone">
+          <div class="phone-screen" data-glow="">
+            <div class="island" data-tone="sky" aria-hidden="true">
+              <svg class="mini-face" viewBox="0 0 64 64"><circle cx="32" cy="34" r="22" fill="url(#pd-fur)"/><path d="M14 18c-8 2-10 18-6 26 3 5 9 3 9-3 0-8 2-15 6-20z" fill="url(#pd-ear)"/><path d="M50 18c8 2 10 18 6 26-3 5-9 3-9-3 0-8-2-15-6-20z" fill="url(#pd-ear)"/><ellipse cx="32" cy="42" rx="11" ry="8" fill="url(#pd-cream)"/><circle cx="24" cy="32" r="3.6" fill="#140d0a"/><circle cx="40" cy="32" r="3.6" fill="#140d0a"/></svg>
+              <span class="island-time" data-island>0:20</span>
+            </div>
+            <div class="status" aria-hidden="true">
+              <span>11:47</span>
+              <span class="status-icons">
+                <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#fff"/><rect x="5" y="5" width="3" height="7" rx="1" fill="#fff"/><rect x="10" y="2" width="3" height="10" rx="1" fill="#fff"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#fff" opacity=".4"/></svg>
+                <svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="#fff" opacity=".6"/><rect x="2" y="2" width="14" height="8" rx="1.5" fill="#fff"/><rect x="23.5" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6"/></svg>
+              </span>
+            </div>
+            <div class="walkline" aria-hidden="true"><span>Walking home · <b>0.8 mi</b></span><span class="chip">On route</span></div>
+            <div class="pet-stage" id="hero-stage" role="button" tabindex="0" aria-label="Pet the dog. Drag across it, or press Enter.">
+              <div class="pedestal"></div>
+              <div class="dog" data-dog data-mood="asking"></div>
+              <div class="hearts" aria-hidden="true"></div>
+              <div class="pet-hint" aria-hidden="true"><svg><use href="#i-swipe"/></svg>Swipe or rub to pet</div>
+            </div>
+            <div class="check-card">
+              <div class="ring" aria-hidden="true">
+                <svg viewBox="0 0 40 40"><circle class="track" cx="20" cy="20" r="17" fill="none" stroke-width="4"/><circle class="bar" cx="20" cy="20" r="17" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="0"/></svg>
+                <span class="ring-num" data-num>20</span>
+              </div>
+              <div>
+                <p class="check-title" data-title>Still good?</p>
+                <p class="check-sub" data-sub>Pet me if you're OK.</p>
+              </div>
+            </div>
+            <div class="home-bar" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="sr-only" aria-live="polite" id="hero-live"></p>
+  </section>
+
+  <!-- 2. Problem -->
+  <section class="section" id="problem" aria-labelledby="problem-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="problem-title">Safety apps leave the hard part to you.</h2>
+        <p>Usually at the exact moment you can't do it.</p>
+      </div>
+      <div class="problems">
+        <article class="problem reveal">
+          <div class="vignette" aria-hidden="true">
+            <span class="bubble them">text me when you're home!!</span>
+            <span class="meta l">11:02 PM</span>
+            <span class="bubble me">hello?? you home?</span>
+            <span class="meta">1:14 AM · Delivered</span>
+          </div>
+          <h3>"Text me when you're home" gets forgotten.</h3>
+          <p>By you, by them, by everyone who fell asleep waiting.</p>
+        </article>
+        <article class="problem reveal" style="--d:90ms">
+          <div class="vignette" aria-hidden="true">
+            <div class="sos-steps">
+              <span><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><s>Unlock phone</s></span>
+              <span><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><s>Find the app</s></span>
+              <span><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><s>Press it unnoticed</s></span>
+            </div>
+            <span class="sos-btn">SOS</span>
+          </div>
+          <h3>Panic buttons fail when you're scared or watched.</h3>
+          <p>Hands shake. Someone is standing right there. The button stays unpressed.</p>
+        </article>
+        <article class="problem reveal" style="--d:180ms">
+          <div class="vignette" aria-hidden="true" style="padding:12px">
+            <div class="dots-map"><figure>Fine</figure><figure>Not fine</figure></div>
+          </div>
+          <h3>A dot on a map looks the same either way.</h3>
+          <p>Fine or not fine, it's still just a blue dot. Nobody knows to look.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. How it works -->
+  <section class="section" id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="how-title">Four steps. One very good dog.</h2>
+        <p>Silence becomes the signal, so you never have to find a panic button.</p>
+      </div>
+      <ol class="timeline">
+        <li class="step reveal" style="--c:var(--gold)">
+          <span class="step-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg></span>
+          <div><h3>Start a walk</h3><p>Pick where you're going. Your circle can follow along, only while you walk.</p></div>
+        </li>
+        <li class="step reveal" style="--c:var(--sky);--d:120ms">
+          <span class="step-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M10 9.2a2 2 0 1 1 2.6 1.9c-.4.2-.6.5-.6.9v.3M12 14.2v.1"/></svg></span>
+          <div><h3>The dog checks in</h3><p>Every so often it tilts its head and asks, "Still good?"</p></div>
+        </li>
+        <li class="step reveal" style="--c:var(--mint);--d:240ms">
+          <span class="step-node" aria-hidden="true"><svg><use href="#i-paw"/></svg></span>
+          <div><h3>Pet it to say you're OK</h3><p>Rub across the dog, or tap Pet on the Lock Screen. It wags. You earn XP.</p></div>
+        </li>
+        <li class="step reveal" style="--c:var(--red);--d:360ms">
+          <span class="step-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/><path d="M3 7l2 1M21 7l-2 1"/></svg></span>
+          <div><h3>Go quiet and your friends are alerted</h3><p>No pet? The dog gets worried, then scared, then sends your circle your location, your route and a summary.</p></div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 4. Escalation demo -->
+  <section class="section demo" id="demo" aria-labelledby="demo-title">
+    <div class="wrap demo-grid">
+      <div class="reveal">
+        <h2 id="demo-title">Go quiet. See what happens.</h2>
+        <p style="margin-top:16px;font-size:1.125rem;color:var(--muted);max-width:30rem">Press the button and stop answering. In about ten seconds, the dog climbs the whole ladder.</p>
+        <ol class="ladder" id="ladder" aria-label="Escalation ladder">
+          <li data-step="calm" style="--c:var(--mint)" aria-current="step">Calm<small>walking</small></li>
+          <li data-step="asking" style="--c:var(--sky)">Asking<small>"Still good?"</small></li>
+          <li data-step="worried" style="--c:var(--amber)">Worried<small>ears down</small></li>
+          <li data-step="last" style="--c:#ff8a5c">Last chance<small>"Pet me!"</small></li>
+          <li data-step="countdown" style="--c:var(--red)">Countdown<small>3, 2, 1</small></li>
+          <li data-step="alerted" style="--c:var(--red)">Friends alerted<small>map + summary</small></li>
+        </ol>
+        <div class="demo-controls">
+          <button class="btn" id="demo-start" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>
+            <span>Stop answering</span>
+          </button>
+        </div>
+        <p class="demo-tip" id="demo-tip">Changed your mind? <b>Pet Jordan's dog</b> any time before the alert to call it off.</p>
+      </div>
+
+      <div>
+        <div class="phones">
+          <div class="phone-wrap">
+            <div class="phone mini walker" id="walker">
+              <div class="phone-screen" data-glow="">
+                <div class="island" data-tone="mint" aria-hidden="true">
+                  <svg class="mini-face" viewBox="0 0 64 64"><circle cx="32" cy="34" r="22" fill="url(#pd-fur)"/><path d="M14 18c-8 2-10 18-6 26 3 5 9 3 9-3 0-8 2-15 6-20z" fill="url(#pd-ear)"/><path d="M50 18c8 2 10 18 6 26-3 5-9 3-9-3 0-8-2-15-6-20z" fill="url(#pd-ear)"/><ellipse cx="32" cy="42" rx="11" ry="8" fill="url(#pd-cream)"/><circle cx="24" cy="32" r="3.6" fill="#140d0a"/><circle cx="40" cy="32" r="3.6" fill="#140d0a"/></svg>
+                  <span class="island-time" data-island>OK</span>
+                </div>
+                <div class="status" aria-hidden="true"><span>1:09</span><span class="status-icons"><svg viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3" fill="none" stroke="#fff" opacity=".6"/><rect x="2" y="2" width="9" height="8" rx="1.5" fill="#fff"/></svg></span></div>
+                <div class="walkline" aria-hidden="true"><span>Home in <b>9 min</b></span><span class="chip" data-chip>On route</span></div>
+                <div class="pet-stage" id="walker-stage" role="button" tabindex="0" aria-label="Pet Jordan's dog. Drag across it, or press Enter.">
+                  <div class="pedestal"></div>
+                  <div class="dog" data-dog data-mood="calm"></div>
+                  <div class="hearts" aria-hidden="true"></div>
+                </div>
+                <div class="check-card">
+                  <div class="ring" aria-hidden="true">
+                    <svg viewBox="0 0 40 40"><circle class="track" cx="20" cy="20" r="17" fill="none" stroke-width="4"/><circle class="bar" cx="20" cy="20" r="17" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="106.8" stroke-dashoffset="0"/></svg>
+                    <span class="ring-num" data-num>
+                      <svg viewBox="0 0 24 24" width="18" height="18" style="color:var(--mint)"><use href="#i-paw"/></svg>
+                    </span>
+                  </div>
+                  <div>
+                    <p class="check-title" data-title>All good</p>
+                    <p class="check-sub" data-sub>Walking with Jordan.</p>
+                  </div>
+                </div>
+                <div class="home-bar" aria-hidden="true"></div>
+              </div>
+            </div>
+            <span class="phone-label">Jordan's phone</span>
+          </div>
+
+          <div class="phone-wrap">
+            <div class="phone mini" id="friend">
+              <div class="phone-screen friend-screen">
+                <div class="island" aria-hidden="true" style="min-width:34%"></div>
+                <div class="f-panel" data-panel="idle">
+                  <p class="f-title">Jordan's walk</p>
+                  <div class="mini-map">
+                    <svg viewBox="0 0 200 130" role="img" aria-label="Map: Jordan's route home, on track">
+                      <rect width="200" height="130" fill="#0f1538"/>
+                      <g stroke="#1d2758" stroke-width="7"><path d="M0 40H200M0 96H200M58 0V130M140 0V130"/></g>
+                      <path d="M24 110 L58 96 L58 40 L140 40 L170 18" fill="none" stroke="#ffbe3d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="2 8" opacity=".6"/>
+                      <path d="M24 110 L58 96 L58 62" fill="none" stroke="#ffbe3d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="58" cy="62" r="7" fill="#3ee0a1" stroke="#0f1538" stroke-width="3"/>
+                      <path d="M170 10l7 6v8h-14v-8z" fill="#7aa2ff"/>
+                    </svg>
+                  </div>
+                  <div class="f-row"><span class="chip">Checked in 1 min ago</span></div>
+                  <p class="f-sub">Home in 9 min. You'll only see Jordan while they're walking.</p>
+                </div>
+                <div class="f-panel" data-panel="alert" hidden>
+                  <span class="alert-badge"><svg viewBox="0 0 16 16"><path d="M8 1.5l7 12.5H1z" fill="#fff"/><path d="M8 6v4M8 12v.1" stroke="#ff4d6d" stroke-width="1.8" stroke-linecap="round"/></svg>ALERT</span>
+                  <p class="f-title" id="alert-title">Jordan isn't answering</p>
+                  <div class="mini-map">
+                    <svg viewBox="0 0 200 130" role="img" aria-label="Map: Jordan's last location, stopped partway home">
+                      <rect width="200" height="130" fill="#1a0b1c"/>
+                      <g stroke="#3a1830" stroke-width="7"><path d="M0 40H200M0 96H200M58 0V130M140 0V130"/></g>
+                      <path d="M24 110 L58 96 L58 40 L104 40" fill="none" stroke="#ffbe3d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle class="ping" cx="104" cy="40" r="14" fill="#ff4d6d" opacity=".25"/>
+                      <circle cx="104" cy="40" r="7" fill="#ff4d6d" stroke="#1a0b1c" stroke-width="3"/>
+                      <path d="M170 10l7 6v8h-14v-8z" fill="#7aa2ff"/>
+                    </svg>
+                  </div>
+                  <ul class="summary">
+                    <li><b>Missed 3 check-ins.</b> Last pet 4 min ago.</li>
+                    <li>Stopped near Apache Blvd &amp; Rural Rd, 0.6 mi from home.</li>
+                  </ul>
+                  <button class="btn btn-sm btn-alert" type="button" id="got-them">I've got them</button>
+                </div>
+                <div class="f-panel" data-panel="closed" hidden>
+                  <p class="f-title">You've got Jordan</p>
+                  <p class="closed-note"><svg viewBox="0 0 20 20"><use href="#i-yes"/></svg>Alert closed by you</p>
+                  <p class="f-sub">Only a friend can close an alert. A late pet can't.</p>
+                </div>
+                <div class="home-bar" aria-hidden="true"></div>
+              </div>
+            </div>
+            <span class="phone-label">Sam's phone (a friend)</span>
+          </div>
+        </div>
+        <p class="sample-tag">Simulation with sample data. The real ladder runs over minutes, not seconds.</p>
+      </div>
+    </div>
+    <p class="sr-only" aria-live="assertive" id="demo-live"></p>
+  </section>
+
+  <!-- 5. Features -->
+  <section class="section" id="features" aria-labelledby="features-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="features-title">Small dog. Serious job.</h2>
+      </div>
+      <div class="features">
+        <article class="feature reveal" style="--c:var(--mint)">
+          <span class="f-icon" aria-hidden="true"><svg><use href="#i-paw"/></svg></span>
+          <h3>Pet to check in</h3>
+          <p>The dog asks, you pet it, it wags and goes happy. Every check-in earns XP.</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--amber);--d:60ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4v-4h4v-4h4V8h4V4"/></svg></span>
+          <h3>Escalation ladder</h3>
+          <p>No jump scares. The dog climbs one rung at a time.</p>
+          <div class="mood-chips" aria-label="Ladder steps">
+            <span style="--c:var(--mint)">calm</span><span style="--c:var(--sky)">asking</span><span style="--c:var(--amber)">worried</span><span style="--c:#ff8a5c">last chance</span><span style="--c:var(--red)">countdown</span><span style="--c:var(--red)">friends alerted</span>
+          </div>
+        </article>
+        <article class="feature reveal" style="--c:var(--red);--d:120ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6z"/><rect x="9" y="11" width="6" height="5" rx="1"/><path d="M10 11V9.5a2 2 0 0 1 4 0V11"/></svg></span>
+          <h3>Coercion-proof</h3>
+          <p>A duress PIN shows a normal "all clear" but quietly alerts friends. Hold the dog for 2 seconds for a silent alert. A late pet can't cancel an alert; only a friend can close it.</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--sky);--d:180ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg></span>
+          <h3>Pace watch</h3>
+          <p>Gemini notices running, backtracking, sudden stops or getting into a car, and checks in early with a reason. AI never decides whether an alert fires. Fixed rules do.</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--gold)">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="19" r="2"/><path d="M7 19h6a3.5 3.5 0 0 0 0-7h-2a3.5 3.5 0 0 1 0-7h6"/><path d="M19 3l2 2-2 2"/></svg></span>
+          <h3>Safer routes</h3>
+          <p>Walking routes that steer around spots your friends flagged as "avoid" or "caution".</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--sky);--d:60ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="3"/><rect x="9" y="4.5" width="6" height="2" rx="1" fill="currentColor"/><path d="M9 15h6"/></svg></span>
+          <h3>Lock Screen + Dynamic Island</h3>
+          <p>A Live Activity shows the dog's mood, a countdown and turn-by-turn directions, with a Pet button that works without unlocking.</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--mint);--d:120ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 5.5 5.8"/></svg></span>
+          <h3>Your circle</h3>
+          <p>Friends see your walk only while you're walking. If you go quiet, they get a full-screen alert with a map, a summary and an "I've got them" button.</p>
+        </article>
+        <article class="feature reveal" style="--c:var(--gold);--d:180ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-9"/><path d="M12 12c0-4 3-7 7-7 0 4-3 7-7 7z"/><path d="M12 15c0-3-2.5-5.5-6-5.5 0 3 2.5 5.5 6 5.5z"/></svg></span>
+          <h3>Your dog grows up</h3>
+          <p>Puppy, then Scout Pup with a bandana, then Guardian Dog with a vest and headlamp. Plus a safe-walk streak.</p>
+          <div class="stages">
+            <figure><div class="dog" data-dog data-mood="calm" data-stage="puppy" role="img" aria-label="Puppy"></div><figcaption>Puppy</figcaption></figure>
+            <figure><div class="dog" data-dog data-mood="calm" data-stage="scout" role="img" aria-label="Scout Pup wearing a blue bandana"></div><figcaption>Scout Pup</figcaption></figure>
+            <figure><div class="dog" data-dog data-mood="calm" data-stage="guardian" role="img" aria-label="Guardian Dog wearing an orange vest and a headlamp"></div><figcaption>Guardian</figcaption></figure>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Comparison -->
+  <section class="section" id="compare" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2 id="compare-title">Why not just share location?</h2>
+        <p>Sharing your location is great. It just can't tell anyone that something's wrong.</p>
+      </div>
+      <div class="compare-wrap reveal">
+        <table class="compare">
+          <caption class="sr-only">How location sharing, Apple Check In and Pupdate compare</caption>
+          <thead>
+            <tr>
+              <th scope="col"><span class="sr-only">Feature</span></th>
+              <th scope="col">Location sharing<small>Life360-style</small></th>
+              <th scope="col">Apple Check In<small>Built into Messages</small></th>
+              <th scope="col" class="us">Pupdate<small>Hackathon prototype</small></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Checks in during the walk</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No, it just tracks</span></td>
+              <td data-label="Apple Check In"><span class="mark part"><svg aria-hidden="true"><use href="#i-part"/></svg>Only if you stop making progress</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Yes, every few minutes</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Alerts when you go quiet</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No, someone has to notice</span></td>
+              <td data-label="Apple Check In"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Yes, if you don't arrive or respond</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Yes, step by step</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Duress / coercion protection</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No</span></td>
+              <td data-label="Apple Check In"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No duress mode</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Duress PIN, silent hold</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Detects unusual pace</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No</span></td>
+              <td data-label="Apple Check In"><span class="mark part"><svg aria-hidden="true"><use href="#i-part"/></svg>Notices delays only</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Running, backtracking, stops, cars</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Safer routes</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No</span></td>
+              <td data-label="Apple Check In"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Around spots friends flagged</span></td>
+            </tr>
+            <tr>
+              <th scope="row">Only shares during the walk</th>
+              <td data-label="Location sharing"><span class="mark no"><svg aria-hidden="true"><use href="#i-no"/></svg>No, it's always on</span></td>
+              <td data-label="Apple Check In"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Yes, only if an alert fires</span></td>
+              <td data-label="Pupdate" class="us"><span class="mark yes"><svg aria-hidden="true"><use href="#i-yes"/></svg>Yes, walk or alert only</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><svg style="color:var(--mint)"><use href="#i-yes"/></svg>Yes</span>
+        <span><svg style="color:var(--amber)"><use href="#i-part"/></svg>Partly</span>
+        <span><svg style="color:#6c74a6"><use href="#i-no"/></svg>No</span>
+      </div>
+      <p class="compare-note">Based on publicly documented features, November 2026. Apple Check In is genuinely good: it alerts a contact if you don't arrive or respond, and shares your location, battery and signal when it does. Life360-style apps vary, and some add SOS or crash detection. Pupdate's difference is the check-in during the walk, plus duress protection.</p>
+    </div>
+  </section>
+
+  <!-- 7. Privacy -->
+  <section class="section" id="privacy" aria-labelledby="privacy-title">
+    <div class="wrap privacy">
+      <div class="reveal">
+        <h2 id="privacy-title">Your location goes on the walk. Then it stays home.</h2>
+        <p style="margin-top:16px;font-size:1.125rem;color:var(--muted);max-width:28rem">A safety app shouldn't become a tracking app. Pupdate only shares while it matters.</p>
+      </div>
+      <ul class="privacy-list">
+        <li class="reveal" style="--c:var(--mint)">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.3-6-11a6 6 0 0 1 12 0c0 5.7-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg></span>
+          <div><b>Shared only during a walk or an alert</b><span>When the walk ends, your friends stop seeing you.</span></div>
+        </li>
+        <li class="reveal" style="--c:var(--sky);--d:80ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><path d="M12 7.5l1.4 3.1 3.1 1.4-3.1 1.4L12 16.5l-1.4-3.1L7.5 12l3.1-1.4z"/></svg></span>
+          <div><b>Gemini gets walk facts, never raw coordinates</b><span>Things like pace and stops, never where you actually are.</span></div>
+        </li>
+        <li class="reveal" style="--c:var(--gold);--d:160ms">
+          <span class="f-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></span>
+          <div><b>No ads</b><span>Nothing about your walk gets sold. The dog works for you.</span></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 8. Built with -->
+  <section class="section" id="built" aria-labelledby="built-title" style="padding-top:0">
+    <div class="wrap built reveal">
+      <h2 id="built-title">Built with</h2>
+      <ul class="pills">
+        <li>SwiftUI</li><li>ActivityKit Live Activities</li><li>App Intents</li><li>MapKit</li><li>FastAPI</li><li>Python</li><li>Google Gemini</li><li>MongoDB Atlas</li><li>Vultr</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Close -->
+  <section class="close" aria-labelledby="close-title">
+    <div class="wrap">
+      <div class="close-stage" id="close-stage" role="button" tabindex="0" aria-label="Pet the dog. Drag across it, or press Enter.">
+        <div class="pedestal"></div>
+        <div class="dog" data-dog data-mood="calm" data-stage="guardian"></div>
+        <div class="hearts" aria-hidden="true"></div>
+      </div>
+      <h2 id="close-title">Good dog. You made it home.</h2>
+      <p>Pupdate is open source and still learning new tricks.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://github.com/JeremyEltho/walkbuddy"><svg aria-hidden="true"><use href="#i-github"/></svg>View on GitHub</a>
+        <a class="btn btn-ghost" href="#demo">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.9l10.4-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5z"/></svg>
+          Watch the demo
+        </a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span><strong>Made at SunHacks 2026</strong> · ASU</span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/JeremyEltho/walkbuddy">GitHub</a>
+      <span>Pupdate is not an emergency service.</span>
+    </nav>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var doc = document.documentElement;
+  doc.classList.add("js");
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+  var C = 106.8;
+
+  /* ---------- Mount dogs ---------- */
+  var tpl = document.getElementById("dog-tpl");
+  document.querySelectorAll("[data-dog]").forEach(function(el){
+    var ped = el.parentNode.querySelector(":scope > .pedestal");
+    if(ped) el.appendChild(ped);
+    el.appendChild(tpl.content.cloneNode(true));
+  });
+
+  function setMood(dog, mood){ dog.setAttribute("data-mood", mood); }
+
+  /* ---------- Hearts ---------- */
+  function hearts(stage, n){
+    var box = stage.querySelector(".hearts");
+    if(!box) return;
+    n = reduce.matches ? 1 : (n || 1);
+    for(var i=0;i<n;i++){
+      var h = document.createElement("span");
+      h.className = "heart";
+      h.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><use href="#i-heart"/></svg>';
+      h.style.left = (28 + Math.random()*44) + "%";
+      h.style.top = (22 + Math.random()*26) + "%";
+      h.style.setProperty("--dx", (Math.random()*50 - 25).toFixed(0) + "px");
+      h.style.setProperty("--rot", (Math.random()*40 - 20).toFixed(0) + "deg");
+      h.style.animationDelay = (i*90) + "ms";
+      box.appendChild(h);
+      (function(node){ setTimeout(function(){ node.remove(); }, 1600 + i*90); })(h);
+    }
+  }
+
+  /* ---------- Pet gesture: drag across, or Enter/Space ---------- */
+  function pettable(stage, opts){
+    var down = false, last = null, dist = 0, tick = 0, done = false;
+    stage.addEventListener("pointerdown", function(e){
+      down = true; done = false; dist = 0; tick = 0;
+      last = {x:e.clientX, y:e.clientY};
+      try{ stage.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    stage.addEventListener("pointermove", function(e){
+      if(!down || done) return;
+      var d = Math.hypot(e.clientX - last.x, e.clientY - last.y);
+      last = {x:e.clientX, y:e.clientY};
+      dist += d; tick += d;
+      if(tick > 42){ tick = 0; if(opts.onRub) opts.onRub(); }
+      if(dist > 170){ done = true; opts.onPet(); }
+    });
+    function end(){
+      if(down && !done && dist < 12 && opts.onTap) opts.onTap();
+      down = false;
+    }
+    stage.addEventListener("pointerup", end);
+    stage.addEventListener("pointercancel", function(){ down = false; });
+    stage.addEventListener("keydown", function(e){
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); opts.onPet(); }
+    });
+  }
+
+  /* ---------- Hero phone ---------- */
+  (function(){
+    var phone = document.getElementById("hero-phone");
+    var stage = document.getElementById("hero-stage");
+    var dog = stage.querySelector(".dog");
+    var bar = phone.querySelector(".bar");
+    var num = phone.querySelector("[data-num]");
+    var title = phone.querySelector("[data-title]");
+    var sub = phone.querySelector("[data-sub]");
+    var island = phone.querySelector(".island");
+    var islandTime = phone.querySelector("[data-island]");
+    var hint = stage.querySelector(".pet-hint");
+    var live = document.getElementById("hero-live");
+    var screen = phone.querySelector(".phone-screen");
+    var TOTAL = 20, left = TOTAL, state = "asking", xp = 120, timer = null, wait = null;
+
+    function fmt(s){ return "0:" + (s < 10 ? "0" : "") + s; }
+    function ring(frac, color){
+      bar.style.strokeDashoffset = (C * (1 - frac)).toFixed(2);
+      bar.style.stroke = color || "";
+    }
+    function asking(){
+      state = "asking"; left = TOTAL;
+      setMood(dog, "asking");
+      title.textContent = "Still good?";
+      sub.textContent = "Pet me if you're OK.";
+      num.textContent = left; ring(1);
+      island.dataset.tone = "sky"; islandTime.textContent = fmt(left);
+      screen.dataset.glow = "";
+      hint.style.opacity = "";
+    }
+    function step(){
+      if(state === "asking"){
+        left--;
+        num.textContent = Math.max(left,0);
+        islandTime.textContent = fmt(Math.max(left,0));
+        ring(left / TOTAL);
+        if(left <= 6 && left > 0){ setMood(dog, "worried"); island.dataset.tone = "amber"; bar.style.stroke = "var(--amber)"; title.textContent = "Hey, you there?"; sub.textContent = "Just one pet. Please?"; }
+        if(left <= 0){
+          state = "rest";
+          title.textContent = "I'll ask again";
+          sub.textContent = "On a real walk, I'd keep escalating.";
+          clearTimeout(wait); wait = setTimeout(asking, 2600);
+        }
+      }
+    }
+    function pet(){
+      if(state === "happy") { hearts(stage, 3); return; }
+      state = "happy";
+      xp += 10;
+      setMood(dog, "happy");
+      hearts(stage, 5);
+      title.textContent = "Good dog.";
+      sub.textContent = "Checked in · +10 XP (" + xp + ")";
+      num.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" style="color:var(--mint)"><use href="#i-paw"/></svg>';
+      ring(1, "var(--mint)");
+      island.dataset.tone = "mint"; islandTime.textContent = "OK";
+      screen.dataset.glow = "mint";
+      hint.style.opacity = "0";
+      live.textContent = "Good dog. Check-in logged, plus 10 XP.";
+      clearTimeout(wait);
+      wait = setTimeout(function(){
+        state = "calm"; setMood(dog, "calm");
+        screen.dataset.glow = "";
+        title.textContent = "All good";
+        sub.textContent = "I'll check in again soon.";
+        wait = setTimeout(asking, 3600);
+      }, 2400);
+    }
+    pettable(stage, {
+      onPet: pet,
+      onRub: function(){ if(state !== "happy") hearts(stage, 1); },
+      onTap: function(){ hint.classList.remove("nudge"); void hint.offsetWidth; hint.classList.add("nudge"); }
+    });
+    asking();
+    timer = setInterval(step, 1000);
+  })();
+
+  /* ---------- Escalation demo ---------- */
+  (function(){
+    var walker = document.getElementById("walker");
+    var stage = document.getElementById("walker-stage");
+    var dog = stage.querySelector(".dog");
+    var screen = walker.querySelector(".phone-screen");
+    var bar = walker.querySelector(".bar");
+    var num = walker.querySelector("[data-num]");
+    var title = walker.querySelector("[data-title]");
+    var sub = walker.querySelector("[data-sub]");
+    var chip = walker.querySelector("[data-chip]");
+    var island = walker.querySelector(".island");
+    var islandTime = walker.querySelector("[data-island]");
+    var friend = document.getElementById("friend");
+    var fscreen = friend.querySelector(".friend-screen");
+    var panels = friend.querySelectorAll(".f-panel");
+    var startBtn = document.getElementById("demo-start");
+    var startLabel = startBtn.querySelector("span");
+    var gotBtn = document.getElementById("got-them");
+    var tip = document.getElementById("demo-tip");
+    var live = document.getElementById("demo-live");
+    var ladder = document.querySelectorAll("#ladder li");
+    var timers = [], running = false, alerted = false;
+    var pawSVG = '<svg viewBox="0 0 24 24" width="18" height="18" style="color:var(--mint)"><use href="#i-paw"/></svg>';
+    var TIP = tip.innerHTML;
+
+    function clear(){ timers.forEach(clearTimeout); timers = []; }
+    function at(ms, fn){ timers.push(setTimeout(fn, ms)); }
+    function rung(id){
+      var hit = false;
+      ladder.forEach(function(li){
+        if(li.dataset.step === id){ li.setAttribute("aria-current","step"); li.classList.remove("done"); hit = true; }
+        else { li.removeAttribute("aria-current"); li.classList.toggle("done", !hit && id !== "calm"); }
+      });
+    }
+    function panel(name){ panels.forEach(function(p){ p.hidden = p.dataset.panel !== name; }); fscreen.classList.toggle("is-alert", name === "alert"); }
+    function view(o){
+      setMood(dog, o.mood);
+      screen.dataset.glow = o.glow || "";
+      title.textContent = o.title; sub.textContent = o.sub;
+      if(o.num != null) num.textContent = o.num; else num.innerHTML = pawSVG;
+      bar.style.transition = o.instant ? "none" : "";
+      bar.style.strokeDashoffset = (C * (1 - (o.frac == null ? 1 : o.frac))).toFixed(2);
+      walker.style.setProperty("--rc", o.rc || "var(--gold)");
+      island.dataset.tone = o.tone || "mint"; islandTime.textContent = o.island || "OK";
+      chip.textContent = o.chip || "On route";
+      chip.dataset.tone = o.chip ? "red" : "";
+      rung(o.rung);
+      if(o.say) live.textContent = o.say;
+    }
+    function calm(msg){
+      clear(); running = false; alerted = false;
+      view({mood:"calm", title:"All good", sub: msg || "Walking with Jordan.", rung:"calm", rc:"var(--mint)", instant:true});
+      panel("idle");
+      startBtn.disabled = false; startLabel.textContent = "Stop answering";
+      tip.innerHTML = TIP;
+    }
+    function run(){
+      if(running) return;
+      clear(); running = true; alerted = false;
+      startBtn.disabled = true; startLabel.textContent = "Jordan has gone quiet…";
+      if(window.matchMedia("(max-width: 979px)").matches){
+        walker.scrollIntoView({behavior: reduce.matches ? "auto" : "smooth", block:"center"});
+      }
+      view({mood:"asking", glow:"gold", title:"Still good?", sub:"Pet me if you're OK.", num:"20", frac:1, rung:"asking", tone:"sky", island:"0:20", instant:true, say:"Jordan's dog asks: still good?"});
+      at(60, function(){ bar.style.transition = ""; bar.style.strokeDashoffset = (C*.55).toFixed(2); });
+      at(2200, function(){ view({mood:"worried", glow:"amber", title:"Hey, you there?", sub:"Just one pet. Please?", num:"9", frac:.4, rung:"worried", rc:"var(--amber)", tone:"amber", island:"0:09", say:"No answer. The dog is worried."}); });
+      at(4400, function(){ view({mood:"scared", glow:"hot", title:"Last chance.", sub:"Pet me or I tell your friends.", num:"5", frac:.2, rung:"last", rc:"#ff8a5c", tone:"amber", island:"0:05", chip:"No answer", say:"Last chance."}); });
+      [3,2,1].forEach(function(n, i){
+        at(6400 + i*1000, function(){ view({mood:"scared", glow:"red", title:"Alerting friends in " + n, sub:"Sending your location and route.", num:String(n), frac:n/12, rung:"countdown", rc:"var(--red)", tone:"red", island:"0:0" + n, chip:"No answer", say: i===0 ? "Alerting friends in 3." : ""}); });
+      });
+      at(9400, alert);
+    }
+    function alert(){
+      alerted = true; running = false;
+      view({mood:"scared", glow:"red", title:"Friends alerted", sub:"Sam has your location, route and a summary.", num:"!", frac:1, rung:"alerted", rc:"var(--red)", tone:"red", island:"SOS", chip:"Alert sent", say:"Friends alerted. On Sam's phone: Jordan isn't answering."});
+      panel("alert");
+      startLabel.textContent = "Alert sent";
+      tip.innerHTML = "Now only Sam can close it. Press <b>I've got them</b> on Sam's phone.";
+      gotBtn.focus({preventScroll:true});
+      if(window.matchMedia("(max-width: 979px)").matches){
+        friend.scrollIntoView({behavior: reduce.matches ? "auto" : "smooth", block:"center"});
+      }
+    }
+    function pet(){
+      if(alerted){
+        hearts(stage, 1);
+        sub.textContent = "A late pet can't cancel this. Only a friend can.";
+        live.textContent = "A late pet can't cancel the alert. Only a friend can close it.";
+        return;
+      }
+      var wasRunning = running;
+      clear(); running = false;
+      setMood(dog, "happy"); hearts(stage, 5);
+      screen.dataset.glow = "mint";
+      title.textContent = wasRunning ? "Phew. Good dog." : "Good dog.";
+      sub.textContent = "Checked in · +10 XP";
+      num.innerHTML = pawSVG; bar.style.strokeDashoffset = "0"; walker.style.setProperty("--rc","var(--mint)");
+      island.dataset.tone = "mint"; islandTime.textContent = "OK"; chip.textContent = "On route"; chip.dataset.tone = "";
+      rung("calm");
+      startBtn.disabled = false; startLabel.textContent = "Stop answering";
+      live.textContent = wasRunning ? "Phew. Check-in logged, escalation stopped." : "Good dog. Check-in logged.";
+      at(2400, function(){ calm(); });
+    }
+    pettable(stage, { onPet: pet, onRub: function(){ if(!alerted) hearts(stage, 1); } });
+    startBtn.addEventListener("click", run);
+    gotBtn.addEventListener("click", function(){
+      clear();
+      panel("closed");
+      view({mood:"happy", glow:"mint", title:"Sam's got you.", sub:"Alert closed by a friend.", rung:"calm", rc:"var(--mint)", say:"Sam closed the alert. Demo resets in a moment."});
+      hearts(stage, 4);
+      alerted = false;
+      startBtn.disabled = false; startLabel.textContent = "Run it again";
+      tip.innerHTML = "Sam closed it. Only a friend can, which is the point.";
+      startBtn.focus({preventScroll:true});
+      at(3200, function(){ calm(); });
+    });
+    calm();
+  })();
+
+  /* ---------- Closing dog ---------- */
+  (function(){
+    var stage = document.getElementById("close-stage");
+    var dog = stage.querySelector(".dog");
+    var t = null;
+    function pet(){ setMood(dog, "happy"); hearts(stage, 5); clearTimeout(t); t = setTimeout(function(){ setMood(dog, "calm"); }, 2200); }
+    pettable(stage, { onPet: pet, onRub: function(){ hearts(stage, 1); }, onTap: pet });
+  })();
+
+  /* ---------- Reveal on scroll ---------- */
+  var els = document.querySelectorAll(".reveal");
+  if(!("IntersectionObserver" in window) || reduce.matches){
+    els.forEach(function(el){ el.classList.add("in"); });
+  } else {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, {rootMargin:"0px 0px -8% 0px", threshold:.12});
+    els.forEach(function(el){ io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>
