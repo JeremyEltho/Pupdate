@@ -78,6 +78,7 @@
 		DF68D33D86FBAA8A2CF1DC85 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E289BC8D1F1F4E1F161E51E2 /* API.swift */; };
 		E07C467F056164CE2E373EA3 /* front-facing_baby_chick.png in Resources */ = {isa = PBXBuildFile; fileRef = B582BE88DBC43EFE3FA7FA3B /* front-facing_baby_chick.png */; };
 		E13AE9C37A9B4BD8EBBB0987 /* owl.png in Resources */ = {isa = PBXBuildFile; fileRef = DA59E75C56FF0C96A90196C4 /* owl.png */; };
+		E1A8E251F77572D6DFAC9173 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 091BF42DF1200DB9EC1C7079 /* Assets.xcassets */; };
 		E3FBF88C022A26A936D2C9C6 /* sweat_droplets.png in Resources */ = {isa = PBXBuildFile; fileRef = E15C95D6D2366FF5C341AA4F /* sweat_droplets.png */; };
 		E6457C6C9EFCE92DC9AF50D4 /* fire.png in Resources */ = {isa = PBXBuildFile; fileRef = 6B71A6F8D4FC502605C2782A /* fire.png */; };
 		E9FC5ADB36705212A9AAB430 /* pet_cat.png in Resources */ = {isa = PBXBuildFile; fileRef = 80FCE687106C73BE363BE783 /* pet_cat.png */; };
@@ -129,6 +130,7 @@
 		04FE03BF453D467FF8C4C835 /* Features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features.swift; sourceTree = "<group>"; };
 		050185B07BDEA79DF58B1745 /* pet_turtle.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_turtle.png; sourceTree = "<group>"; };
 		058B01E14B6BBCB91351EAF9 /* pet_hedgehog.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pet_hedgehog.png; sourceTree = "<group>"; };
+		091BF42DF1200DB9EC1C7079 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0AD6582E8F3C1A3F3EAFCB26 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		0AEE91B97020907042DBA94E /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		0E81B80B738B66DA0487CC46 /* sparkles.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sparkles.png; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 		B976D3B9F90370B9DB9B740E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				091BF42DF1200DB9EC1C7079 /* Assets.xcassets */,
 				1F763F663F63C1F294D335A3 /* Fonts */,
 				4A97B898663A06AFE1BED9A7 /* Sprites */,
 			);
@@ -513,6 +516,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E1A8E251F77572D6DFAC9173 /* Assets.xcassets in Resources */,
 				ACB6DF5BDBF2FEE4F963FF02 /* BricolageGrotesque_700Bold.ttf in Resources */,
 				C0C0139E5A6C58B30DEE7162 /* BricolageGrotesque_800ExtraBold.ttf in Resources */,
 				391B2F39F2CDD24FC9E4C51C /* FLUENT_EMOJI_LICENSE.txt in Resources */,
